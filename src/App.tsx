@@ -407,8 +407,9 @@ export default function App() {
     let d = 0;
     let g = 0;
     let actionRequired = 0;
+    let watchlistCount = 0;
+    let protectionWatchCount = 0;
     let promoted = 0;
-    let protectedCount = 0;
     let developing = 0;
 
     activeGm.prospects.forEach((p) => {
@@ -417,16 +418,19 @@ export default function App() {
       if (p.position === 'G') g++;
 
       const ev = evaluateProspect(p);
-      if (ev.isMandatoryPromotion || ev.isWatchlist) {
+      if (ev.isMandatoryPromotion) {
         actionRequired++;
       }
-      if (p.promoted || ev.isMandatoryPromotion) {
+      if (ev.isWatchlist) {
+        watchlistCount++;
+      }
+      if (ev.isProtectionWatchlist) {
+        protectionWatchCount++;
+      }
+      if (p.promoted) {
         promoted++;
       }
-      if (p.isProtected) {
-        protectedCount++;
-      }
-      if (!p.promoted && !ev.isMandatoryPromotion && !ev.isWatchlist && !p.isProtected) {
+      if (!p.promoted && !ev.isMandatoryPromotion && !ev.isWatchlist && !ev.isProtectionWatchlist) {
         developing++;
       }
     });
@@ -437,8 +441,9 @@ export default function App() {
       d,
       g,
       actionRequired,
+      watchlist: watchlistCount,
+      protectionWatch: protectionWatchCount,
       promoted,
-      protected: protectedCount,
       developing,
     };
   }, [activeGm.prospects]);
@@ -453,16 +458,19 @@ export default function App() {
 
       // Status filter
       const ev = evaluateProspect(p);
-      if (statusFilter === 'ACTION_REQUIRED' && !ev.isMandatoryPromotion && !ev.isWatchlist) {
+      if (statusFilter === 'ACTION_REQUIRED' && !ev.isMandatoryPromotion) {
         return false;
       }
-      if (statusFilter === 'PROMOTED' && !(p.promoted || ev.isMandatoryPromotion)) {
+      if (statusFilter === 'WATCHLIST' && !ev.isWatchlist) {
         return false;
       }
-      if (statusFilter === 'PROTECTED' && !p.isProtected) {
+      if (statusFilter === 'PROTECTION_WATCH' && !ev.isProtectionWatchlist) {
         return false;
       }
-      if (statusFilter === 'DEVELOPING' && (p.promoted || ev.isMandatoryPromotion || ev.isWatchlist || p.isProtected)) {
+      if (statusFilter === 'PROMOTED' && !p.promoted) {
+        return false;
+      }
+      if (statusFilter === 'DEVELOPING' && (p.promoted || ev.isMandatoryPromotion || ev.isWatchlist || ev.isProtectionWatchlist)) {
         return false;
       }
 

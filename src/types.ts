@@ -68,7 +68,7 @@ export interface GeneralManager {
 }
 
 export type PositionFilter = 'ALL' | 'F' | 'D' | 'G';
-export type StatusFilter = 'ALL' | 'ACTION_REQUIRED' | 'PROMOTED' | 'PROTECTED' | 'DEVELOPING';
+export type StatusFilter = 'ALL' | 'ACTION_REQUIRED' | 'WATCHLIST' | 'PROTECTION_WATCH' | 'PROMOTED' | 'DEVELOPING';
 export type ViewMode = 'list' | 'card';
 
 export interface ProspectEvaluation {
@@ -82,6 +82,7 @@ export interface ProspectEvaluation {
   isAlreadyPromoted: boolean;
   isMandatoryPromotion: boolean;
   isWatchlist: boolean; // within 5 games of either threshold
+  isProtectionWatchlist: boolean; // within 15 games of protection expiration limit
   seasonGamesRemaining: number;
   cumulativeGamesRemaining: number;
   seasonProgress: number; // percentage 0-100
@@ -139,6 +140,8 @@ export function evaluateProspect(p: Prospect, rules: LeagueRules = DEFAULT_LEAGU
       statusLabel += ` • Protected (${protectionGamesRemaining} GP cushion)`;
     }
 
+    const isProtectionWatchlist = isProtectionEligible && protectionGamesRemaining <= 15 && protectionGamesRemaining > 0;
+
     return {
       totalGP,
       seasonLimit,
@@ -150,6 +153,7 @@ export function evaluateProspect(p: Prospect, rules: LeagueRules = DEFAULT_LEAGU
       isAlreadyPromoted: true,
       isMandatoryPromotion: false,
       isWatchlist: false,
+      isProtectionWatchlist,
       seasonGamesRemaining: 0,
       cumulativeGamesRemaining: 0,
       seasonProgress,
@@ -208,6 +212,8 @@ export function evaluateProspect(p: Prospect, rules: LeagueRules = DEFAULT_LEAGU
     ? Math.min(100, Math.max(0, Math.round((totalGP / cumulativeLimit) * 100)))
     : 0;
 
+  const isProtectionWatchlist = isProtectionEligible && protectionGamesRemaining <= 15 && protectionGamesRemaining > 0;
+
   return {
     totalGP,
     seasonLimit,
@@ -219,6 +225,7 @@ export function evaluateProspect(p: Prospect, rules: LeagueRules = DEFAULT_LEAGU
     isAlreadyPromoted: false,
     isMandatoryPromotion,
     isWatchlist,
+    isProtectionWatchlist,
     seasonGamesRemaining,
     cumulativeGamesRemaining,
     seasonProgress,

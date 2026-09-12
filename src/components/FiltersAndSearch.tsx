@@ -26,8 +26,9 @@ interface FiltersAndSearchProps {
     d: number;
     g: number;
     actionRequired: number;
+    watchlist: number;
+    protectionWatch: number;
     promoted: number;
-    protected: number;
     developing: number;
   };
   onResetFilters: () => void;
@@ -223,9 +224,10 @@ export const FiltersAndSearch: React.FC<FiltersAndSearchProps> = ({
             onClick={() => setStatusFilter('ACTION_REQUIRED')}
             className={`inline-flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-bold transition-all ${
               statusFilter === 'ACTION_REQUIRED'
-                ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/25'
-                : 'bg-amber-950/40 text-amber-300 hover:bg-amber-950/60 border border-amber-800/40'
+                ? 'bg-red-500 text-white shadow-md shadow-red-500/25'
+                : 'bg-red-950/40 text-red-300 hover:bg-red-950/60 border border-red-800/40'
             }`}
+            title="Threshold crossed - Promotion required now"
           >
             <AlertTriangle className="h-3.5 w-3.5 stroke-[2.5]" />
             <span>Action Required</span>
@@ -233,28 +235,43 @@ export const FiltersAndSearch: React.FC<FiltersAndSearchProps> = ({
           </button>
 
           <button
+            onClick={() => setStatusFilter('WATCHLIST')}
+            className={`inline-flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-bold transition-all ${
+              statusFilter === 'WATCHLIST'
+                ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/25'
+                : 'bg-amber-950/40 text-amber-300 hover:bg-amber-950/60 border border-amber-800/40'
+            }`}
+            title="Approaching threshold (within 5 GP) - No action required yet"
+          >
+            <span>Watchlist (Approaching)</span>
+            <span className="font-mono text-[10px] ml-0.5">({counts.watchlist})</span>
+          </button>
+
+          <button
             onClick={() => setStatusFilter('PROMOTED')}
             className={`inline-flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-bold transition-all ${
               statusFilter === 'PROMOTED'
-                ? 'bg-red-500 text-white shadow-md shadow-red-500/25'
-                : 'bg-red-950/40 text-red-300 hover:bg-red-950/60 border border-red-800/40'
+                ? 'bg-emerald-500 text-slate-950 shadow-md shadow-emerald-500/25'
+                : 'bg-emerald-950/40 text-emerald-300 hover:bg-emerald-950/60 border border-emerald-800/40'
             }`}
+            title="Graduated to active roster"
           >
-            <span>Promoted (Mandatory)</span>
+            <span>Promoted</span>
             <span className="font-mono text-[10px] ml-0.5">({counts.promoted})</span>
           </button>
 
           <button
-            onClick={() => setStatusFilter('PROTECTED')}
+            onClick={() => setStatusFilter('PROTECTION_WATCH')}
             className={`inline-flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-bold transition-all ${
-              statusFilter === 'PROTECTED'
-                ? 'bg-emerald-500 text-slate-950 shadow-md shadow-emerald-500/25'
-                : 'bg-emerald-950/40 text-emerald-300 hover:bg-emerald-950/60 border border-emerald-800/40'
+              statusFilter === 'PROTECTION_WATCH'
+                ? 'bg-cyan-500 text-slate-950 shadow-md shadow-cyan-500/25'
+                : 'bg-cyan-950/40 text-cyan-300 hover:bg-cyan-950/60 border border-cyan-800/40'
             }`}
+            title="Approaching protection game limit (within 15 GP) - Protection expiration imminent"
           >
             <ShieldCheck className="h-3.5 w-3.5" />
-            <span>Protected</span>
-            <span className="font-mono text-[10px] ml-0.5">({counts.protected})</span>
+            <span>Protection Watch</span>
+            <span className="font-mono text-[10px] ml-0.5">({counts.protectionWatch})</span>
           </button>
         </div>
       </div>
