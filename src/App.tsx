@@ -90,8 +90,12 @@ export default function App() {
 
   // Handle GP update simulation (+1 or -1)
   const handleUpdateGP = async (prospectId: string, delta: number) => {
-    let newSeasonGP = 0;
-    let newTotal = 0;
+    const prospect = activeGm.prospects.find((p) => p.id === prospectId);
+    if (!prospect) return;
+
+    const newSeasonGP = Math.max(0, prospect.currentSeasonGP + delta);
+    const currentTotal = prospect.totalGames !== undefined ? prospect.totalGames : (prospect.priorCareerGP + prospect.currentSeasonGP);
+    const newTotal = Math.max(0, currentTotal + delta);
 
     setGms((prevGms) =>
       prevGms.map((gm) => {
@@ -100,9 +104,6 @@ export default function App() {
           ...gm,
           prospects: gm.prospects.map((p) => {
             if (p.id !== prospectId) return p;
-            newSeasonGP = Math.max(0, p.currentSeasonGP + delta);
-            const currentTotal = p.totalGames !== undefined ? p.totalGames : (p.priorCareerGP + p.currentSeasonGP);
-            newTotal = Math.max(0, currentTotal + delta);
             return {
               ...p,
               currentSeasonGP: newSeasonGP,
@@ -120,8 +121,13 @@ export default function App() {
 
   // Handle toggle promotion to active roster
   const handleTogglePromotion = async (prospectId: string) => {
-    let nextPromoted = false;
-    let newDate: string | null = null;
+    const prospect = activeGm.prospects.find((p) => p.id === prospectId);
+    if (!prospect) return;
+
+    const nextPromoted = !prospect.promoted;
+    const newDate = nextPromoted
+      ? (prospect.promotionDate || new Date().toLocaleDateString('en-US'))
+      : null;
 
     setGms((prevGms) =>
       prevGms.map((gm) => {
@@ -130,10 +136,6 @@ export default function App() {
           ...gm,
           prospects: gm.prospects.map((p) => {
             if (p.id !== prospectId) return p;
-            nextPromoted = !p.promoted;
-            newDate = nextPromoted
-                ? (p.promotionDate || new Date().toLocaleDateString('en-US'))
-                : null;
             return {
               ...p,
               promoted: nextPromoted,
@@ -151,7 +153,10 @@ export default function App() {
 
   // Handle toggle protection
   const handleToggleProtection = async (prospectId: string) => {
-    let nextProtected = false;
+    const prospect = activeGm.prospects.find((p) => p.id === prospectId);
+    if (!prospect) return;
+
+    const nextProtected = !prospect.isProtected;
 
     setGms((prevGms) =>
       prevGms.map((gm) => {
@@ -160,7 +165,6 @@ export default function App() {
           ...gm,
           prospects: gm.prospects.map((p) => {
             if (p.id !== prospectId) return p;
-            nextProtected = !p.isProtected;
             return {
               ...p,
               isProtected: nextProtected,
@@ -282,25 +286,11 @@ export default function App() {
 
   // Handle adding a new prospect
   const handleAddProspect = async (newProspectData: Omit<Prospect, 'id'>) => {
-    const newProspectId = `p-${Date.now()}`;
-    const newProspect: Prospect = {
-      ...newProspectData,
-      id: newProspectId,
-      apiSyncStatus: 'idle',
-    };
-
-    setGms((prevGms) =>
-      prevGms.map((gm) => {
-        if (gm.id !== activeGm.id) return gm;
-        return {
-          ...gm,
-          prospects: [newProspect, ...gm.prospects],
-        };
-      })
-    );
-
-    // Save to Supabase
-    await supabase.from('prospects').insert([{
+    // We do NOT optimistically update here to avoid ID mismatch duplicates 
+    // with the real-time subscription. We await the DB insert and let the 
+    // postgres_changes event populate the new row, OR we update immediately 
+    // with the returned DB ID.
+    const { data, error } = await supabase.from('prospects').insert([{
       gm_name: activeGm.name,
       player_name: newProspectData.name,
       position: newProspectData.position,
@@ -319,7 +309,27 @@ export default function App() {
       photo_url: newProspectData.photoUrl,
       status_notes: newProspectData.statusNotes,
       nhl_player_id: newProspectData.nhlPlayerId,
-    }]);
+    }]).select();
+
+    if (error) {
+      console.error("Error adding prospect:", error);
+      return;
+    }
+
+    if (data && data.length > 0) {
+      const mappedProspect = mapProspectRow(data[0]);
+      setGms((prevGms) =>
+        prevGms.map((gm) => {
+          if (gm.id !== activeGm.id) return gm;
+          if (gm.prospects.some(p => p.id === mappedProspect.id)) return gm;
+          
+          return {
+            ...gm,
+            prospects: [mappedProspect, ...gm.prospects],
+          };
+        })
+      );
+    }
   };
 
   // Compute counts for active GM
