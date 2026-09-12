@@ -33,13 +33,7 @@ if (rawLeagueData && Array.isArray((rawLeagueData as any).gms)) {
     if (Array.isArray(gm.prospects)) {
       for (const p of gm.prospects) {
         if (p?.name) {
-          const key = p.name
-            .normalize('NFD')
-            .replace(/[\u0300-\u036f]/g, '')
-            .toLowerCase()
-            .replace(/[-_.'’]/g, ' ')
-            .replace(/\s+/g, ' ')
-            .trim();
+          const key = normalizeNameForComparison(p.name);
           if (key) {
             CACHED_LEAGUE_MAP.set(key, {
               totalGames: typeof p.totalGames === 'number' ? p.totalGames : 0,

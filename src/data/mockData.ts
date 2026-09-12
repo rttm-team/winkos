@@ -75,7 +75,7 @@ const GM_METADATA: Record<string, GmMeta> = {
 };
 
 // Known NHL Teams dictionary to enrich cards with authentic club badges
-const NHL_TEAMS_MAP: Record<string, { team: string; abbr: string }> = {
+export const NHL_TEAMS_MAP: Record<string, { team: string; abbr: string }> = {
   'pavel dorofeyev': { team: 'Vegas Golden Knights', abbr: 'VGK' },
   'zach benson': { team: 'Buffalo Sabres', abbr: 'BUF' },
   'sam rinzel': { team: 'Chicago Blackhawks', abbr: 'CHI' },
