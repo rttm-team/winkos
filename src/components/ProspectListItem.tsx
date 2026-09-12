@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Prospect, evaluateProspect } from '../types';
 import {
   ShieldCheck,
@@ -16,6 +16,8 @@ import {
   ChevronRight,
   TrendingUp,
   ExternalLink,
+  Edit3,
+  Trash2,
 } from 'lucide-react';
 
 interface ProspectListItemProps {
@@ -26,6 +28,8 @@ interface ProspectListItemProps {
   onToggleProtection: (prospectId: string) => void;
   onTogglePromotion?: (prospectId: string) => void;
   onSyncProspect?: (prospectId: string) => void;
+  onEdit?: (prospect: Prospect) => void;
+  onDelete?: (prospectId: string) => void;
 }
 
 export const ProspectListItem: React.FC<ProspectListItemProps> = ({
@@ -36,7 +40,10 @@ export const ProspectListItem: React.FC<ProspectListItemProps> = ({
   onToggleProtection,
   onTogglePromotion,
   onSyncProspect,
+  onEdit,
+  onDelete,
 }) => {
+  const [imgError, setImgError] = useState(false);
   const ev = evaluateProspect(prospect);
   const isGoalie = prospect.position === 'G';
   const isSyncing = prospect.apiSyncStatus === 'syncing';
@@ -141,15 +148,13 @@ export const ProspectListItem: React.FC<ProspectListItemProps> = ({
 
           {/* Player Photo or Avatar Initials */}
           <div className="relative shrink-0">
-            {prospect.photoUrl ? (
+            {prospect.photoUrl && !imgError ? (
               <img
                 src={prospect.photoUrl}
                 alt={prospect.name}
                 referrerPolicy="no-referrer"
                 className="h-10 w-10 sm:h-11 sm:w-11 rounded-xl object-cover border border-slate-700 bg-slate-800"
-                onError={(e) => {
-                  (e.target as HTMLElement).style.display = 'none';
-                }}
+                onError={() => setImgError(true)}
               />
             ) : (
               <div className="flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-xl bg-slate-800 font-bold text-slate-300 border border-slate-700 text-sm">
@@ -340,6 +345,32 @@ export const ProspectListItem: React.FC<ProspectListItemProps> = ({
               title="Sync with NHL API"
             >
               <RefreshCw className={`h-3.5 w-3.5 ${isSyncing ? 'animate-spin text-cyan-400' : ''}`} />
+            </button>
+          )}
+
+          {/* Edit Button */}
+          {onEdit && (
+            <button
+              type="button"
+              onClick={() => onEdit(prospect)}
+              className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium text-amber-400 hover:text-amber-300 bg-amber-500/10 border border-amber-500/30 hover:bg-amber-500/20 transition-colors"
+              title="Edit prospect details"
+            >
+              <Edit3 className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline">Edit</span>
+            </button>
+          )}
+
+          {/* Delete Button */}
+          {onDelete && (
+            <button
+              type="button"
+              onClick={() => onDelete(prospect.id)}
+              className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium text-red-400 hover:text-red-300 bg-red-500/10 border border-red-500/30 hover:bg-red-500/20 transition-colors"
+              title="Delete prospect from pool"
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline">Delete</span>
             </button>
           )}
 

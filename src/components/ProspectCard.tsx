@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Prospect, evaluateProspect } from '../types';
 import {
   ShieldCheck,
@@ -18,6 +18,8 @@ import {
   Check,
   ChevronDown,
   ChevronUp,
+  Edit3,
+  Trash2,
 } from 'lucide-react';
 
 interface ProspectCardProps {
@@ -28,6 +30,8 @@ interface ProspectCardProps {
   onToggleProtection: (prospectId: string) => void;
   onTogglePromotion?: (prospectId: string) => void;
   onSyncProspect?: (prospectId: string) => void;
+  onEdit?: (prospect: Prospect) => void;
+  onDelete?: (prospectId: string) => void;
 }
 
 export const ProspectCard: React.FC<ProspectCardProps> = ({
@@ -38,8 +42,11 @@ export const ProspectCard: React.FC<ProspectCardProps> = ({
   onToggleProtection,
   onTogglePromotion,
   onSyncProspect,
+  onEdit,
+  onDelete,
 }) => {
   const cardExpanded = isExpanded !== undefined ? isExpanded : true;
+  const [imgError, setImgError] = useState(false);
   const ev = evaluateProspect(prospect);
   const isGoalie = prospect.position === 'G';
   const isSyncing = prospect.apiSyncStatus === 'syncing';
@@ -222,15 +229,13 @@ export const ProspectCard: React.FC<ProspectCardProps> = ({
           {/* Header: Player Name, Photo, Team, Draft Year, Position Badge */}
           <div className="flex items-start justify-between gap-3">
             <div className="flex items-start gap-3">
-              {prospect.photoUrl ? (
+              {prospect.photoUrl && !imgError ? (
                 <img
                   src={prospect.photoUrl}
                   alt={prospect.name}
                   referrerPolicy="no-referrer"
                   className="h-12 w-12 rounded-xl object-cover border border-slate-700 bg-slate-800 shrink-0"
-                  onError={(e) => {
-                    (e.target as HTMLElement).style.display = 'none';
-                  }}
+                  onError={() => setImgError(true)}
                 />
               ) : (
                 <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-slate-800 text-base font-black text-cyan-400 border border-slate-700">
@@ -365,12 +370,38 @@ export const ProspectCard: React.FC<ProspectCardProps> = ({
               </button>
             )}
 
+            {/* Edit Button */}
+            {onEdit && (
+              <button
+                type="button"
+                onClick={() => onEdit(prospect)}
+                className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-[11px] font-medium text-amber-400 hover:text-amber-300 bg-amber-500/10 border border-amber-500/30 hover:bg-amber-500/20 transition-colors ml-auto"
+                title="Edit prospect details"
+              >
+                <Edit3 className="h-3 w-3" />
+                <span>Edit</span>
+              </button>
+            )}
+
+            {/* Delete Button */}
+            {onDelete && (
+              <button
+                type="button"
+                onClick={() => onDelete(prospect.id)}
+                className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-[11px] font-medium text-red-400 hover:text-red-300 bg-red-500/10 border border-red-500/30 hover:bg-red-500/20 transition-colors"
+                title="Delete prospect from pool"
+              >
+                <Trash2 className="h-3 w-3" />
+                <span>Delete</span>
+              </button>
+            )}
+
             {/* Expand / Collapse Details Button */}
             {onToggleExpand && (
               <button
                 type="button"
                 onClick={onToggleExpand}
-                className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-[11px] font-medium text-slate-400 hover:text-slate-200 bg-slate-800 border border-slate-700 hover:border-slate-600 transition-colors ml-auto"
+                className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-[11px] font-medium text-slate-400 hover:text-slate-200 bg-slate-800 border border-slate-700 hover:border-slate-600 transition-colors"
                 title={cardExpanded ? 'Collapse details' : 'Expand details'}
               >
                 <span>{cardExpanded ? 'Less' : 'Details'}</span>

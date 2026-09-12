@@ -15,6 +15,8 @@ interface PositionSectionProps {
   onToggleProtection: (prospectId: string) => void;
   onTogglePromotion?: (prospectId: string) => void;
   onSyncProspect?: (prospectId: string) => void;
+  onEdit?: (prospect: Prospect) => void;
+  onDelete?: (prospectId: string) => void;
 }
 
 export const PositionSection: React.FC<PositionSectionProps> = ({
@@ -28,6 +30,8 @@ export const PositionSection: React.FC<PositionSectionProps> = ({
   onToggleProtection,
   onTogglePromotion,
   onSyncProspect,
+  onEdit,
+  onDelete,
 }) => {
   if (prospects.length === 0) {
     return null;
@@ -142,6 +146,8 @@ export const PositionSection: React.FC<PositionSectionProps> = ({
               onToggleProtection={onToggleProtection}
               onTogglePromotion={onTogglePromotion}
               onSyncProspect={onSyncProspect}
+              onEdit={onEdit}
+              onDelete={onDelete}
             />
           ))}
         </div>
@@ -157,6 +163,8 @@ export const PositionSection: React.FC<PositionSectionProps> = ({
               onToggleProtection={onToggleProtection}
               onTogglePromotion={onTogglePromotion}
               onSyncProspect={onSyncProspect}
+              onEdit={onEdit}
+              onDelete={onDelete}
             />
           ))}
         </div>

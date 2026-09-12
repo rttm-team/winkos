@@ -7,6 +7,7 @@ import { FiltersAndSearch } from './components/FiltersAndSearch';
 import { PositionSection } from './components/PositionSection';
 import { RulesModal } from './components/RulesModal';
 import { AddProspectModal } from './components/AddProspectModal';
+import { EditProspectModal } from './components/EditProspectModal';
 import { syncProspectWithNhlApi } from './services/nhlApi';
 import { supabase, fetchLeagueData, mapProspectRow } from './lib/supabase';
 import {
@@ -332,6 +333,73 @@ export default function App() {
     }
   };
 
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editingProspect, setEditingProspect] = useState<Prospect | null>(null);
+
+  const handleOpenEdit = (prospect: Prospect) => {
+    setEditingProspect(prospect);
+    setIsEditModalOpen(true);
+  };
+
+  const handleEditProspect = async (prospectId: string, updatedData: Partial<Prospect>) => {
+    const { error } = await supabase.from('prospects').update({
+      player_name: updatedData.name,
+      position: updatedData.position,
+      draft_year: updatedData.draftYear,
+      draft_round: updatedData.draftRound,
+      draft_pick: updatedData.draftPick,
+      nhl_team: updatedData.nhlTeam,
+      nhl_team_abbr: updatedData.nhlTeamAbbr,
+      total_games: updatedData.totalGames,
+      current_season_gp: updatedData.currentSeasonGP,
+      prior_career_gp: updatedData.priorCareerGP,
+      protected: updatedData.isProtected,
+      status_notes: updatedData.statusNotes,
+    }).eq('id', prospectId);
+
+    if (error) {
+      console.error("Error editing prospect:", error);
+      return;
+    }
+
+    setGms((prevGms) =>
+      prevGms.map((gm) => {
+        if (gm.id !== activeGm.id) return gm;
+        return {
+          ...gm,
+          prospects: gm.prospects.map((p) => {
+            if (p.id !== prospectId) return p;
+            return {
+              ...p,
+              ...updatedData,
+            };
+          }),
+        };
+      })
+    );
+  };
+
+  const handleDeleteProspect = async (prospectId: string) => {
+    if (!window.confirm("Are you sure you want to delete this prospect from the pool?")) return;
+
+    const { error } = await supabase.from('prospects').delete().eq('id', prospectId);
+
+    if (error) {
+      console.error("Error deleting prospect:", error);
+      return;
+    }
+
+    setGms((prevGms) =>
+      prevGms.map((gm) => {
+        if (gm.id !== activeGm.id) return gm;
+        return {
+          ...gm,
+          prospects: gm.prospects.filter((p) => p.id !== prospectId),
+        };
+      })
+    );
+  };
+
   // Compute counts for active GM
   const counts = useMemo(() => {
     const all = activeGm.prospects.length;
@@ -652,6 +720,8 @@ export default function App() {
                 onToggleProtection={handleToggleProtection}
                 onTogglePromotion={handleTogglePromotion}
                 onSyncProspect={handleSyncProspect}
+                onEdit={handleOpenEdit}
+                onDelete={handleDeleteProspect}
               />
             )}
 
@@ -668,6 +738,8 @@ export default function App() {
                 onToggleProtection={handleToggleProtection}
                 onTogglePromotion={handleTogglePromotion}
                 onSyncProspect={handleSyncProspect}
+                onEdit={handleOpenEdit}
+                onDelete={handleDeleteProspect}
               />
             )}
 
@@ -684,6 +756,8 @@ export default function App() {
                 onToggleProtection={handleToggleProtection}
                 onTogglePromotion={handleTogglePromotion}
                 onSyncProspect={handleSyncProspect}
+                onEdit={handleOpenEdit}
+                onDelete={handleDeleteProspect}
               />
             )}
           </div>
@@ -725,6 +799,14 @@ export default function App() {
         isOpen={isAddModalOpen}
         onClose={() => setIsAddModalOpen(false)}
         onAdd={handleAddProspect}
+        gmName={activeGm.name}
+      />
+
+      <EditProspectModal
+        isOpen={isEditModalOpen}
+        onClose={() => setIsEditModalOpen(false)}
+        onEdit={handleEditProspect}
+        prospect={editingProspect}
         gmName={activeGm.name}
       />
     </div>
