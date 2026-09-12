@@ -1,0 +1,6 @@
+{
+  "name": "Winko's Hockey Pool",
+  "description": "Fantasy hockey prospect tracker, GM roster management, and mandatory promotion watch for Winko's Hockey Pool.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
