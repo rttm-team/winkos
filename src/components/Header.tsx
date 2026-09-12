@@ -141,7 +141,7 @@ export const Header: React.FC<HeaderProps> = ({
                   <span className="font-semibold text-slate-100 leading-tight">
                     {selectedGm.name}{' '}
                     <span className="text-xs font-normal text-slate-400">
-                      ({selectedGm.teamName.split(' ')[0]})
+                      ({(selectedGm.teamName || '').split(' ')[0]})
                     </span>
                   </span>
                 </div>

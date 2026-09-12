@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { GeneralManager, PositionFilter, StatusFilter, Prospect, evaluateProspect, ViewMode } from './types';
 import { INITIAL_GMS } from './data/mockData';
 import { Header } from './components/Header';
@@ -8,6 +8,7 @@ import { PositionSection } from './components/PositionSection';
 import { RulesModal } from './components/RulesModal';
 import { AddProspectModal } from './components/AddProspectModal';
 import { syncProspectWithNhlApi } from './services/nhlApi';
+import { supabase, fetchLeagueData, mapProspectRow } from './lib/supabase';
 import {
   UserPlus,
   Shield,
@@ -30,6 +31,57 @@ export default function App() {
   const [isAddModalOpen, setIsAddModalOpen] = useState<boolean>(false);
   const [isSyncingAll, setIsSyncingAll] = useState<boolean>(false);
   const [globalLastUpdated, setGlobalLastUpdated] = useState<string>('');
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+
+  // 1. Fetch live data & Subscribe
+  useEffect(() => {
+    async function loadData() {
+      const data = await fetchLeagueData();
+      if (data && data.length > 0) {
+        setGms(data);
+        if (data[0] && !data.find(g => g.id === selectedGmId)) {
+          setSelectedGmId(data[0].id);
+        }
+      }
+      setIsLoading(false);
+    }
+    loadData();
+
+    // 2. Listen for live updates on prospects
+    const channel = supabase
+      .channel('public:prospects')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'prospects' }, (payload) => {
+        setGms((prevGms) => {
+          // Find the GM this prospect belongs to
+          const payloadNew = payload.new as Record<string, any>;
+          const mappedProspect = mapProspectRow(payloadNew);
+
+          return prevGms.map(gm => {
+            if (gm.id !== String(payloadNew.gm_id) && gm.id !== payloadNew.gmId && gm.name !== payloadNew.gm_name) {
+              // If it's not this GM, just ensure the prospect isn't here (in case it moved)
+              return { ...gm, prospects: gm.prospects.filter(p => p.id !== mappedProspect.id) };
+            }
+            // It belongs to this GM
+            const exists = gm.prospects.some(p => p.id === mappedProspect.id);
+            if (exists) {
+              return {
+                ...gm,
+                prospects: gm.prospects.map(p => p.id === mappedProspect.id ? mappedProspect : p)
+              };
+            }
+            return {
+              ...gm,
+              prospects: [...gm.prospects, mappedProspect]
+            };
+          });
+        });
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [selectedGmId]);
 
   // Active GM
   const activeGm = useMemo(() => {
@@ -37,7 +89,10 @@ export default function App() {
   }, [gms, selectedGmId]);
 
   // Handle GP update simulation (+1 or -1)
-  const handleUpdateGP = (prospectId: string, delta: number) => {
+  const handleUpdateGP = async (prospectId: string, delta: number) => {
+    let newSeasonGP = 0;
+    let newTotal = 0;
+
     setGms((prevGms) =>
       prevGms.map((gm) => {
         if (gm.id !== activeGm.id) return gm;
@@ -45,9 +100,9 @@ export default function App() {
           ...gm,
           prospects: gm.prospects.map((p) => {
             if (p.id !== prospectId) return p;
-            const newSeasonGP = Math.max(0, p.currentSeasonGP + delta);
+            newSeasonGP = Math.max(0, p.currentSeasonGP + delta);
             const currentTotal = p.totalGames !== undefined ? p.totalGames : (p.priorCareerGP + p.currentSeasonGP);
-            const newTotal = Math.max(0, currentTotal + delta);
+            newTotal = Math.max(0, currentTotal + delta);
             return {
               ...p,
               currentSeasonGP: newSeasonGP,
@@ -57,10 +112,17 @@ export default function App() {
         };
       })
     );
+
+    await supabase.from('prospects')
+      .update({ current_season_gp: newSeasonGP, total_games: newTotal })
+      .eq('id', prospectId);
   };
 
   // Handle toggle promotion to active roster
-  const handleTogglePromotion = (prospectId: string) => {
+  const handleTogglePromotion = async (prospectId: string) => {
+    let nextPromoted = false;
+    let newDate: string | null = null;
+
     setGms((prevGms) =>
       prevGms.map((gm) => {
         if (gm.id !== activeGm.id) return gm;
@@ -68,22 +130,29 @@ export default function App() {
           ...gm,
           prospects: gm.prospects.map((p) => {
             if (p.id !== prospectId) return p;
-            const nextPromoted = !p.promoted;
+            nextPromoted = !p.promoted;
+            newDate = nextPromoted
+                ? (p.promotionDate || new Date().toLocaleDateString('en-US'))
+                : null;
             return {
               ...p,
               promoted: nextPromoted,
-              promotionDate: nextPromoted
-                ? (p.promotionDate || new Date().toLocaleDateString('en-US'))
-                : undefined,
+              promotionDate: newDate ?? undefined,
             };
           }),
         };
       })
     );
+
+    await supabase.from('prospects')
+      .update({ promoted: nextPromoted, promotion_date: newDate })
+      .eq('id', prospectId);
   };
 
   // Handle toggle protection
-  const handleToggleProtection = (prospectId: string) => {
+  const handleToggleProtection = async (prospectId: string) => {
+    let nextProtected = false;
+
     setGms((prevGms) =>
       prevGms.map((gm) => {
         if (gm.id !== activeGm.id) return gm;
@@ -91,14 +160,19 @@ export default function App() {
           ...gm,
           prospects: gm.prospects.map((p) => {
             if (p.id !== prospectId) return p;
+            nextProtected = !p.isProtected;
             return {
               ...p,
-              isProtected: !p.isProtected,
+              isProtected: nextProtected,
             };
           }),
         };
       })
     );
+
+    await supabase.from('prospects')
+      .update({ protected: nextProtected })
+      .eq('id', prospectId);
   };
 
   // Handle syncing a single prospect with NHL API
@@ -207,10 +281,11 @@ export default function App() {
   }, [activeGm]);
 
   // Handle adding a new prospect
-  const handleAddProspect = (newProspectData: Omit<Prospect, 'id'>) => {
+  const handleAddProspect = async (newProspectData: Omit<Prospect, 'id'>) => {
+    const newProspectId = `p-${Date.now()}`;
     const newProspect: Prospect = {
       ...newProspectData,
-      id: `p-${Date.now()}`,
+      id: newProspectId,
       apiSyncStatus: 'idle',
     };
 
@@ -223,6 +298,28 @@ export default function App() {
         };
       })
     );
+
+    // Save to Supabase
+    await supabase.from('prospects').insert([{
+      gm_name: activeGm.name,
+      player_name: newProspectData.name,
+      position: newProspectData.position,
+      draft_year: newProspectData.draftYear,
+      draft_round: newProspectData.draftRound,
+      draft_pick: newProspectData.draftPick,
+      nhl_team: newProspectData.nhlTeam,
+      nhl_team_abbr: newProspectData.nhlTeamAbbr,
+      total_games: newProspectData.totalGames,
+      current_season_gp: newProspectData.currentSeasonGP,
+      prior_career_gp: newProspectData.priorCareerGP,
+      promoted: newProspectData.promoted,
+      promotion_date: newProspectData.promotionDate,
+      protected: newProspectData.isProtected,
+      age: newProspectData.age,
+      photo_url: newProspectData.photoUrl,
+      status_notes: newProspectData.statusNotes,
+      nhl_player_id: newProspectData.nhlPlayerId,
+    }]);
   };
 
   // Compute counts for active GM
@@ -353,6 +450,25 @@ export default function App() {
       setExpandedProspectIds(new Set(filteredProspects.map((p) => p.id)));
     }
   }, [allExpanded, filteredProspects]);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-[#0f172a] text-slate-100 font-sans antialiased flex flex-col items-center justify-center space-y-4">
+        <Loader2 className="h-8 w-8 text-cyan-400 animate-spin" />
+        <p className="text-slate-400 font-medium">Connecting to Supabase...</p>
+      </div>
+    );
+  }
+
+  if (!activeGm) {
+    return (
+      <div className="min-h-screen bg-[#0f172a] text-slate-100 font-sans antialiased flex flex-col items-center justify-center space-y-4">
+        <Activity className="h-10 w-10 text-slate-600 mb-2" />
+        <h2 className="text-xl font-bold text-slate-300">No Teams Found</h2>
+        <p className="text-slate-500 max-w-sm text-center">Your Supabase database is connected but no GMs were found in the "gms" table.</p>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#0f172a] text-slate-100 font-sans antialiased selection:bg-cyan-500/30 selection:text-cyan-200">

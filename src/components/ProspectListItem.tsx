@@ -153,7 +153,7 @@ export const ProspectListItem: React.FC<ProspectListItemProps> = ({
               />
             ) : (
               <div className="flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-xl bg-slate-800 font-bold text-slate-300 border border-slate-700 text-sm">
-                {prospect.name
+                {(prospect.name || 'U')
                   .split(' ')
                   .map((n) => n[0])
                   .join('')

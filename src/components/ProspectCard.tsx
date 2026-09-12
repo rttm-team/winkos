@@ -234,7 +234,7 @@ export const ProspectCard: React.FC<ProspectCardProps> = ({
                 />
               ) : (
                 <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-slate-800 text-base font-black text-cyan-400 border border-slate-700">
-                  {prospect.name.split(' ').map((n) => n[0]).join('')}
+                  {(prospect.name || 'U').split(' ').map((n) => n[0]).join('')}
                 </div>
               )}
 
