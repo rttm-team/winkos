@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { GeneralManager } from '../types';
 import {
-  Coins,
   ChevronDown,
   Trophy,
   ShieldCheck,
@@ -82,7 +81,7 @@ export const Header: React.FC<HeaderProps> = ({
             </button>
           </div>
 
-          {/* Controls: GM Selector + Winkoin Balance + NHL API Sync Button */}
+          {/* Controls: GM Selector + NHL API Sync Button */}
           <div className="flex flex-wrap items-center justify-between sm:justify-end gap-2.5 sm:gap-3.5">
             {/* Sync with NHL API Button */}
             {onSyncAll && (
@@ -189,39 +188,15 @@ export const Header: React.FC<HeaderProps> = ({
                           </div>
                         </div>
                         <div className="text-right">
-                          <div className="text-xs font-mono font-semibold text-amber-400">
-                            {gm.winkoinBalance.toLocaleString()} WKC
-                          </div>
-                          <div className="text-[10px] text-slate-400">
+                          <span className="inline-flex items-center rounded-md bg-slate-900/80 px-2 py-0.5 text-[10px] font-medium text-slate-300 border border-slate-700/60">
                             {gm.prospects.length} prospects
-                          </div>
+                          </span>
                         </div>
                       </button>
                     ))}
                   </div>
                 </>
               )}
-            </div>
-
-            {/* Winkoin Balance Display (Prominent) */}
-            <div
-              id="winkoin-balance-card"
-              className="flex items-center gap-2 rounded-xl border border-amber-500/30 bg-gradient-to-r from-amber-500/10 via-amber-400/10 to-orange-500/10 px-3.5 py-1.5 sm:py-2 shadow-inner shadow-amber-500/5"
-            >
-              <div className="relative flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-amber-400 to-amber-600 text-slate-950 shadow-sm shadow-amber-500/30">
-                <Coins className="h-4 w-4 stroke-[2.5]" />
-              </div>
-              <div className="flex flex-col">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-amber-400/90 leading-tight">
-                  Winkoin Balance
-                </span>
-                <div className="flex items-baseline gap-1">
-                  <span className="text-base sm:text-lg font-black tracking-tight text-amber-300 font-mono">
-                    {selectedGm.winkoinBalance.toLocaleString()}
-                  </span>
-                  <span className="text-[10px] font-bold text-amber-500/80">WKC</span>
-                </div>
-              </div>
             </div>
           </div>
         </div>

@@ -61,7 +61,7 @@ export interface GeneralManager {
   id: string;
   name: string;
   teamName: string;
-  winkoinBalance: number;
+  winkoinBalance?: number;
   avatarColor: string;
   avatarInitials: string;
   prospects: Prospect[];
@@ -69,6 +69,7 @@ export interface GeneralManager {
 
 export type PositionFilter = 'ALL' | 'F' | 'D' | 'G';
 export type StatusFilter = 'ALL' | 'ACTION_REQUIRED' | 'PROMOTED' | 'PROTECTED' | 'DEVELOPING';
+export type ViewMode = 'list' | 'card';
 
 export interface ProspectEvaluation {
   totalGP: number;

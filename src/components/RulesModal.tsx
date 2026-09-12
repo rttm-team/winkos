@@ -1,5 +1,5 @@
 import React from 'react';
-import { X, Shield, AlertTriangle, Coins, CheckCircle, Info, Sparkles } from 'lucide-react';
+import { X, Shield, AlertTriangle, CheckCircle, Info, Sparkles } from 'lucide-react';
 
 interface RulesModalProps {
   isOpen: boolean;
@@ -30,7 +30,7 @@ export const RulesModal: React.FC<RulesModalProps> = ({ isOpen, onClose }) => {
                 Winko's Hockey Pool Prospect Constitution
               </h2>
               <p className="text-xs text-slate-400">
-                Official rules for prospect eligibility, mandatory promotions & Winkoin
+                Official rules for prospect eligibility, mandatory promotions & roster protection
               </p>
             </div>
           </div>
@@ -103,15 +103,15 @@ export const RulesModal: React.FC<RulesModalProps> = ({ isOpen, onClose }) => {
             </p>
           </div>
 
-          {/* Winkoin & Roster Protection */}
+          {/* Roster Protection Rules */}
           <div className="rounded-xl border border-slate-700 bg-slate-800/60 p-4">
-            <div className="flex items-center gap-2 text-amber-400 font-bold text-base mb-2">
-              <Coins className="h-4 w-4" />
-              <span>Roster Protection Rules & Winkoin (WKC)</span>
+            <div className="flex items-center gap-2 text-cyan-400 font-bold text-base mb-2">
+              <Shield className="h-4 w-4" />
+              <span>Roster Protection Rules</span>
             </div>
             <div className="space-y-2 text-xs text-slate-300 leading-relaxed">
               <p>
-                Winkoins are the official currency of Winko's Hockey Pool. GMs can designate prospects or active players with <strong>Protected Status</strong> subject to league protection ceilings:
+                GMs can designate prospects or active players with <strong>Protected Status</strong> subject to league protection ceilings:
               </p>
               <ul className="list-disc pl-5 space-y-1 text-slate-300">
                 <li><strong>Skaters (F/D):</strong> Maximum of <strong>200 NHL games</strong> or <strong>4 seasons</strong> before losing protection eligibility.</li>

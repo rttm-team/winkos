@@ -1,11 +1,16 @@
 import React from 'react';
-import { Prospect, PositionGroup, evaluateProspect } from '../types';
+import { Prospect, PositionGroup, evaluateProspect, ViewMode } from '../types';
 import { ProspectCard } from './ProspectCard';
-import { Shield, Target, Flame, AlertCircle } from 'lucide-react';
+import { ProspectListItem } from './ProspectListItem';
+import { Shield, Target, Flame, AlertCircle, ChevronsUpDown, ChevronsDownUp } from 'lucide-react';
 
 interface PositionSectionProps {
   title: PositionGroup;
   prospects: Prospect[];
+  viewMode: ViewMode;
+  expandedProspectIds: Set<string>;
+  onToggleExpandProspect: (prospectId: string) => void;
+  onSetExpandedProspects?: (updater: (prev: Set<string>) => Set<string>) => void;
   onUpdateGP: (prospectId: string, delta: number) => void;
   onToggleProtection: (prospectId: string) => void;
   onTogglePromotion?: (prospectId: string) => void;
@@ -15,6 +20,10 @@ interface PositionSectionProps {
 export const PositionSection: React.FC<PositionSectionProps> = ({
   title,
   prospects,
+  viewMode,
+  expandedProspectIds,
+  onToggleExpandProspect,
+  onSetExpandedProspects,
   onUpdateGP,
   onToggleProtection,
   onTogglePromotion,
@@ -27,6 +36,22 @@ export const PositionSection: React.FC<PositionSectionProps> = ({
   // Calculate alerts in this position group
   const mandatoryCount = prospects.filter((p) => evaluateProspect(p).isMandatoryPromotion).length;
   const watchCount = prospects.filter((p) => evaluateProspect(p).isWatchlist).length;
+
+  // Check if all in this section are expanded
+  const allSectionExpanded = prospects.length > 0 && prospects.every((p) => expandedProspectIds.has(p.id));
+
+  const handleToggleSection = () => {
+    if (!onSetExpandedProspects) return;
+    onSetExpandedProspects((prev) => {
+      const next = new Set(prev);
+      if (allSectionExpanded) {
+        prospects.forEach((p) => next.delete(p.id));
+      } else {
+        prospects.forEach((p) => next.add(p.id));
+      }
+      return next;
+    });
+  };
 
   const getPositionIcon = () => {
     switch (title) {
@@ -70,8 +95,8 @@ export const PositionSection: React.FC<PositionSectionProps> = ({
           </div>
         </div>
 
-        {/* Section alerts pill */}
-        <div className="flex items-center gap-1.5 text-xs">
+        {/* Section Actions: Alerts Pill + Expand/Collapse Section Toggle */}
+        <div className="flex items-center gap-2 text-xs">
           {mandatoryCount > 0 && (
             <span className="inline-flex items-center gap-1 rounded-md bg-red-950/70 border border-red-800/60 px-2 py-0.5 font-bold text-red-300">
               <AlertCircle className="h-3 w-3 text-red-400" />
@@ -83,22 +108,59 @@ export const PositionSection: React.FC<PositionSectionProps> = ({
               <span>{watchCount} On Watch</span>
             </span>
           )}
+
+          {onSetExpandedProspects && (
+            <button
+              type="button"
+              onClick={handleToggleSection}
+              className="inline-flex items-center gap-1 rounded-lg border border-slate-700/80 bg-slate-800/90 hover:bg-slate-700 px-2.5 py-1 text-xs font-semibold text-slate-300 hover:text-white transition-colors ml-1"
+              title={allSectionExpanded ? `Collapse all ${title}` : `Expand all ${title}`}
+            >
+              {allSectionExpanded ? (
+                <ChevronsDownUp className="h-3.5 w-3.5 text-cyan-400" />
+              ) : (
+                <ChevronsUpDown className="h-3.5 w-3.5 text-cyan-400" />
+              )}
+              <span className="hidden sm:inline">
+                {allSectionExpanded ? 'Collapse All' : 'Expand All'}
+              </span>
+            </button>
+          )}
         </div>
       </div>
 
-      {/* Roster Cards Grid (Mobile First: 1 col on mobile, 2 col on tablet, 3 col on large desktop) */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {prospects.map((prospect) => (
-          <ProspectCard
-            key={prospect.id}
-            prospect={prospect}
-            onUpdateGP={onUpdateGP}
-            onToggleProtection={onToggleProtection}
-            onTogglePromotion={onTogglePromotion}
-            onSyncProspect={onSyncProspect}
-          />
-        ))}
-      </div>
+      {/* Roster Display: List View (default) or Card Grid View */}
+      {viewMode === 'list' ? (
+        <div className="space-y-2.5">
+          {prospects.map((prospect) => (
+            <ProspectListItem
+              key={prospect.id}
+              prospect={prospect}
+              isExpanded={expandedProspectIds.has(prospect.id)}
+              onToggleExpand={() => onToggleExpandProspect(prospect.id)}
+              onUpdateGP={onUpdateGP}
+              onToggleProtection={onToggleProtection}
+              onTogglePromotion={onTogglePromotion}
+              onSyncProspect={onSyncProspect}
+            />
+          ))}
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {prospects.map((prospect) => (
+            <ProspectCard
+              key={prospect.id}
+              prospect={prospect}
+              isExpanded={expandedProspectIds.has(prospect.id)}
+              onToggleExpand={() => onToggleExpandProspect(prospect.id)}
+              onUpdateGP={onUpdateGP}
+              onToggleProtection={onToggleProtection}
+              onTogglePromotion={onTogglePromotion}
+              onSyncProspect={onSyncProspect}
+            />
+          ))}
+        </div>
+      )}
     </section>
   );
 };

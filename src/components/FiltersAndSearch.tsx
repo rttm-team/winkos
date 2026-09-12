@@ -1,6 +1,17 @@
 import React from 'react';
-import { PositionFilter, StatusFilter } from '../types';
-import { Search, SlidersHorizontal, X, AlertTriangle, ShieldCheck, CheckCircle2, Layers } from 'lucide-react';
+import { PositionFilter, StatusFilter, ViewMode } from '../types';
+import {
+  Search,
+  SlidersHorizontal,
+  X,
+  AlertTriangle,
+  ShieldCheck,
+  Layers,
+  List,
+  LayoutGrid,
+  ChevronsUpDown,
+  ChevronsDownUp,
+} from 'lucide-react';
 
 interface FiltersAndSearchProps {
   positionFilter: PositionFilter;
@@ -20,6 +31,10 @@ interface FiltersAndSearchProps {
     developing: number;
   };
   onResetFilters: () => void;
+  viewMode: ViewMode;
+  setViewMode: (mode: ViewMode) => void;
+  allExpanded: boolean;
+  onToggleExpandAll: () => void;
 }
 
 export const FiltersAndSearch: React.FC<FiltersAndSearchProps> = ({
@@ -31,14 +46,18 @@ export const FiltersAndSearch: React.FC<FiltersAndSearchProps> = ({
   setSearchQuery,
   counts,
   onResetFilters,
+  viewMode,
+  setViewMode,
+  allExpanded,
+  onToggleExpandAll,
 }) => {
   const hasActiveFilters =
     positionFilter !== 'ALL' || statusFilter !== 'ALL' || searchQuery.trim() !== '';
 
   return (
     <div className="mb-6 space-y-3">
-      {/* Search Input & Action Bar */}
-      <div className="flex flex-col sm:flex-row gap-3">
+      {/* Search Input & Action Bar with View Mode and Expand/Collapse */}
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 sm:gap-3">
         {/* Search Field */}
         <div className="relative flex-1">
           <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-slate-400">
@@ -62,16 +81,70 @@ export const FiltersAndSearch: React.FC<FiltersAndSearchProps> = ({
           )}
         </div>
 
-        {/* Reset Filters button if any are applied */}
-        {hasActiveFilters && (
+        {/* View Switcher (List vs Card) & Expand/Collapse All */}
+        <div className="flex items-center gap-2 shrink-0 justify-between sm:justify-end">
+          {/* List vs Card Toggle */}
+          <div className="inline-flex items-center rounded-xl border border-slate-700/80 bg-slate-800/90 p-1 shadow-sm">
+            <button
+              type="button"
+              id="view-toggle-list"
+              onClick={() => setViewMode('list')}
+              className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold transition-all ${
+                viewMode === 'list'
+                  ? 'bg-cyan-500 text-slate-950 shadow-sm shadow-cyan-500/20'
+                  : 'text-slate-400 hover:text-slate-200'
+              }`}
+              title="Switch to List View (Default)"
+            >
+              <List className="h-3.5 w-3.5" />
+              <span>List View</span>
+            </button>
+
+            <button
+              type="button"
+              id="view-toggle-card"
+              onClick={() => setViewMode('card')}
+              className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold transition-all ${
+                viewMode === 'card'
+                  ? 'bg-cyan-500 text-slate-950 shadow-sm shadow-cyan-500/20'
+                  : 'text-slate-400 hover:text-slate-200'
+              }`}
+              title="Switch to Card Grid View"
+            >
+              <LayoutGrid className="h-3.5 w-3.5" />
+              <span>Cards</span>
+            </button>
+          </div>
+
+          {/* Expand / Collapse All Button */}
           <button
-            onClick={onResetFilters}
-            className="flex items-center justify-center gap-1.5 rounded-xl border border-slate-700 bg-slate-800/80 px-4 py-2 text-xs font-semibold text-slate-300 hover:bg-slate-700 hover:text-white transition-colors"
+            type="button"
+            id="toggle-expand-all-btn"
+            onClick={onToggleExpandAll}
+            className="inline-flex items-center gap-1.5 rounded-xl border border-slate-700/80 bg-slate-800/90 hover:bg-slate-700 px-3 py-1.5 text-xs font-semibold text-slate-300 hover:text-white transition-colors shadow-sm"
+            title={allExpanded ? 'Collapse all prospects' : 'Expand all prospects'}
           >
-            <X className="h-3.5 w-3.5" />
-            <span>Clear Filters</span>
+            {allExpanded ? (
+              <ChevronsDownUp className="h-3.5 w-3.5 text-cyan-400" />
+            ) : (
+              <ChevronsUpDown className="h-3.5 w-3.5 text-cyan-400" />
+            )}
+            <span>{allExpanded ? 'Collapse All' : 'Expand All'}</span>
           </button>
-        )}
+
+          {/* Reset Filters button if any are applied */}
+          {hasActiveFilters && (
+            <button
+              type="button"
+              onClick={onResetFilters}
+              className="flex items-center justify-center gap-1.5 rounded-xl border border-slate-700 bg-slate-800/80 px-3 py-1.5 text-xs font-semibold text-slate-300 hover:bg-slate-700 hover:text-white transition-colors"
+              title="Clear active filters"
+            >
+              <X className="h-3.5 w-3.5" />
+              <span className="hidden md:inline">Clear Filters</span>
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Filter Tabs: Position & Status */}

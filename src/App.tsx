@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useCallback } from 'react';
-import { GeneralManager, PositionFilter, StatusFilter, Prospect, evaluateProspect } from './types';
+import { GeneralManager, PositionFilter, StatusFilter, Prospect, evaluateProspect, ViewMode } from './types';
 import { INITIAL_GMS } from './data/mockData';
 import { Header } from './components/Header';
 import { WatchlistBanner } from './components/WatchlistBanner';
@@ -10,7 +10,6 @@ import { AddProspectModal } from './components/AddProspectModal';
 import { syncProspectWithNhlApi } from './services/nhlApi';
 import {
   UserPlus,
-  RotateCcw,
   Shield,
   Layers,
   Sparkles,
@@ -226,12 +225,6 @@ export default function App() {
     );
   };
 
-  // Reset to original data
-  const handleResetData = () => {
-    setGms(INITIAL_GMS);
-    setGlobalLastUpdated('');
-  };
-
   // Compute counts for active GM
   const counts = useMemo(() => {
     const all = activeGm.prospects.length;
@@ -329,9 +322,41 @@ export default function App() {
     [filteredProspects]
   );
 
+  // View Mode: 'list' (default) vs 'card'
+  const [viewMode, setViewMode] = useState<ViewMode>('list');
+  // Expanded prospect IDs set for accordion expand/collapse
+  const [expandedProspectIds, setExpandedProspectIds] = useState<Set<string>>(new Set());
+
+  const handleToggleExpandProspect = useCallback((prospectId: string) => {
+    setExpandedProspectIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(prospectId)) {
+        next.delete(prospectId);
+      } else {
+        next.add(prospectId);
+      }
+      return next;
+    });
+  }, []);
+
+  const allExpanded = useMemo(() => {
+    return (
+      filteredProspects.length > 0 &&
+      filteredProspects.every((p) => expandedProspectIds.has(p.id))
+    );
+  }, [filteredProspects, expandedProspectIds]);
+
+  const handleToggleExpandAll = useCallback(() => {
+    if (allExpanded) {
+      setExpandedProspectIds(new Set());
+    } else {
+      setExpandedProspectIds(new Set(filteredProspects.map((p) => p.id)));
+    }
+  }, [allExpanded, filteredProspects]);
+
   return (
     <div className="min-h-screen bg-[#0f172a] text-slate-100 font-sans antialiased selection:bg-cyan-500/30 selection:text-cyan-200">
-      {/* 1. GM Selector Header with Winkoin Balance & NHL API live status */}
+      {/* 1. GM Selector Header & NHL API live status */}
       <Header
         gms={gms}
         selectedGmId={selectedGmId}
@@ -409,15 +434,6 @@ export default function App() {
               <UserPlus className="h-4 w-4" />
               <span>Add Prospect</span>
             </button>
-
-            <button
-              onClick={handleResetData}
-              title="Reset roster simulation to original sample data"
-              className="flex items-center gap-1.5 rounded-xl border border-slate-700 bg-slate-800/80 hover:bg-slate-700 px-3 py-1.5 text-xs font-medium text-slate-300 hover:text-white transition-colors"
-            >
-              <RotateCcw className="h-3.5 w-3.5 text-slate-400" />
-              <span className="hidden sm:inline">Reset Simulation</span>
-            </button>
           </div>
         </div>
 
@@ -468,9 +484,13 @@ export default function App() {
             setStatusFilter('ALL');
             setSearchQuery('');
           }}
+          viewMode={viewMode}
+          setViewMode={setViewMode}
+          allExpanded={allExpanded}
+          onToggleExpandAll={handleToggleExpandAll}
         />
 
-        {/* 3. Prospect Roster Cards (Mobile First, Grouped by Position) */}
+        {/* 3. Prospect Roster (List View Default or Card Grid, Grouped by Position) */}
         {filteredProspects.length === 0 ? (
           <div className="my-12 rounded-2xl border border-slate-800 bg-[#1e293b]/60 p-8 text-center max-w-md mx-auto">
             <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-800 text-slate-400 mb-3 border border-slate-700">
@@ -498,6 +518,10 @@ export default function App() {
               <PositionSection
                 title="Forwards"
                 prospects={forwards}
+                viewMode={viewMode}
+                expandedProspectIds={expandedProspectIds}
+                onToggleExpandProspect={handleToggleExpandProspect}
+                onSetExpandedProspects={setExpandedProspectIds}
                 onUpdateGP={handleUpdateGP}
                 onToggleProtection={handleToggleProtection}
                 onTogglePromotion={handleTogglePromotion}
@@ -510,6 +534,10 @@ export default function App() {
               <PositionSection
                 title="Defensemen"
                 prospects={defensemen}
+                viewMode={viewMode}
+                expandedProspectIds={expandedProspectIds}
+                onToggleExpandProspect={handleToggleExpandProspect}
+                onSetExpandedProspects={setExpandedProspectIds}
                 onUpdateGP={handleUpdateGP}
                 onToggleProtection={handleToggleProtection}
                 onTogglePromotion={handleTogglePromotion}
@@ -522,6 +550,10 @@ export default function App() {
               <PositionSection
                 title="Goalies"
                 prospects={goalies}
+                viewMode={viewMode}
+                expandedProspectIds={expandedProspectIds}
+                onToggleExpandProspect={handleToggleExpandProspect}
+                onSetExpandedProspects={setExpandedProspectIds}
                 onUpdateGP={handleUpdateGP}
                 onToggleProtection={handleToggleProtection}
                 onTogglePromotion={handleTogglePromotion}

@@ -16,10 +16,14 @@ import {
   Clock,
   ExternalLink,
   Check,
+  ChevronDown,
+  ChevronUp,
 } from 'lucide-react';
 
 interface ProspectCardProps {
   prospect: Prospect;
+  isExpanded?: boolean;
+  onToggleExpand?: () => void;
   onUpdateGP: (prospectId: string, delta: number) => void;
   onToggleProtection: (prospectId: string) => void;
   onTogglePromotion?: (prospectId: string) => void;
@@ -28,11 +32,14 @@ interface ProspectCardProps {
 
 export const ProspectCard: React.FC<ProspectCardProps> = ({
   prospect,
+  isExpanded,
+  onToggleExpand,
   onUpdateGP,
   onToggleProtection,
   onTogglePromotion,
   onSyncProspect,
 }) => {
+  const cardExpanded = isExpanded !== undefined ? isExpanded : true;
   const ev = evaluateProspect(prospect);
   const isGoalie = prospect.position === 'G';
   const isSyncing = prospect.apiSyncStatus === 'syncing';
@@ -357,6 +364,19 @@ export const ProspectCard: React.FC<ProspectCardProps> = ({
                 <span>{prospect.promoted ? 'Demote' : 'Promote'}</span>
               </button>
             )}
+
+            {/* Expand / Collapse Details Button */}
+            {onToggleExpand && (
+              <button
+                type="button"
+                onClick={onToggleExpand}
+                className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-[11px] font-medium text-slate-400 hover:text-slate-200 bg-slate-800 border border-slate-700 hover:border-slate-600 transition-colors ml-auto"
+                title={cardExpanded ? 'Collapse details' : 'Expand details'}
+              >
+                <span>{cardExpanded ? 'Less' : 'Details'}</span>
+                {cardExpanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+              </button>
+            )}
           </div>
 
           {/* Total NHL Games Played Display */}
@@ -383,8 +403,11 @@ export const ProspectCard: React.FC<ProspectCardProps> = ({
             </div>
           </div>
 
-          {/* Rule Threshold Progress Bars */}
-          <div className="mt-4 space-y-3.5">
+          {/* Detailed Progress Bars and Controls (Collapsible) */}
+          {cardExpanded && (
+            <>
+              {/* Rule Threshold Progress Bars */}
+              <div className="mt-4 space-y-3.5">
             {/* Rule 1: Single-Season Games Progress */}
             <div>
               <div className="flex items-center justify-between text-xs mb-1.5">
@@ -524,37 +547,41 @@ export const ProspectCard: React.FC<ProspectCardProps> = ({
               "{prospect.statusNotes}"
             </p>
           )}
+            </>
+          )}
         </div>
 
         {/* Interactive Simulation Controls */}
-        <div className="mt-4 pt-3 border-t border-slate-800/80 flex items-center justify-between gap-2">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1">
-            <TrendingUp className="h-3 w-3 text-cyan-400" />
-            <span>Simulate GP:</span>
-          </span>
-
-          <div className="flex items-center gap-1.5">
-            <button
-              onClick={() => onUpdateGP(prospect.id, -1)}
-              disabled={prospect.currentSeasonGP <= 0}
-              className="flex h-7 w-7 items-center justify-center rounded-lg border border-slate-700 bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-white disabled:opacity-30 disabled:pointer-events-none transition-colors"
-              title="Decrease Season GP by 1"
-            >
-              <Minus className="h-3.5 w-3.5" />
-            </button>
-            <span className="w-8 text-center font-mono text-xs font-bold text-slate-200">
-              {prospect.currentSeasonGP}
+        {cardExpanded && (
+          <div className="mt-4 pt-3 border-t border-slate-800/80 flex items-center justify-between gap-2">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1">
+              <TrendingUp className="h-3 w-3 text-cyan-400" />
+              <span>Simulate GP:</span>
             </span>
-            <button
-              onClick={() => onUpdateGP(prospect.id, 1)}
-              className="flex h-7 items-center gap-1 px-2 rounded-lg border border-cyan-500/40 bg-cyan-500/10 text-cyan-300 hover:bg-cyan-500/20 hover:border-cyan-400 font-semibold text-xs transition-colors shadow-sm"
-              title="Add 1 GP to simulate next game and test promotion trigger"
-            >
-              <Plus className="h-3.5 w-3.5" />
-              <span>+1 GP</span>
-            </button>
+
+            <div className="flex items-center gap-1.5">
+              <button
+                onClick={() => onUpdateGP(prospect.id, -1)}
+                disabled={prospect.currentSeasonGP <= 0}
+                className="flex h-7 w-7 items-center justify-center rounded-lg border border-slate-700 bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-white disabled:opacity-30 disabled:pointer-events-none transition-colors"
+                title="Decrease Season GP by 1"
+              >
+                <Minus className="h-3.5 w-3.5" />
+              </button>
+              <span className="w-8 text-center font-mono text-xs font-bold text-slate-200">
+                {prospect.currentSeasonGP}
+              </span>
+              <button
+                onClick={() => onUpdateGP(prospect.id, 1)}
+                className="flex h-7 items-center gap-1 px-2 rounded-lg border border-cyan-500/40 bg-cyan-500/10 text-cyan-300 hover:bg-cyan-500/20 hover:border-cyan-400 font-semibold text-xs transition-colors shadow-sm"
+                title="Add 1 GP to simulate next game and test promotion trigger"
+              >
+                <Plus className="h-3.5 w-3.5" />
+                <span>+1 GP</span>
+              </button>
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );
