@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Prospect, evaluateProspect } from '../types';
+import { proxyImageUrl } from '../lib/utils';
 import {
   ShieldCheck,
   ShieldAlert,
@@ -231,7 +232,7 @@ export const ProspectCard: React.FC<ProspectCardProps> = ({
             <div className="flex items-start gap-3">
               {prospect.photoUrl && !imgError ? (
                 <img
-                  src={prospect.photoUrl}
+                  src={proxyImageUrl(prospect.photoUrl)}
                   alt={prospect.name}
                   referrerPolicy="no-referrer"
                   className="h-12 w-12 rounded-xl object-cover border border-slate-700 bg-slate-800 shrink-0"

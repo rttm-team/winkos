@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Prospect, evaluateProspect } from '../types';
+import { proxyImageUrl } from '../lib/utils';
 import {
   ShieldCheck,
   ShieldAlert,
@@ -150,7 +151,7 @@ export const ProspectListItem: React.FC<ProspectListItemProps> = ({
           <div className="relative shrink-0">
             {prospect.photoUrl && !imgError ? (
               <img
-                src={prospect.photoUrl}
+                src={proxyImageUrl(prospect.photoUrl)}
                 alt={prospect.name}
                 referrerPolicy="no-referrer"
                 className="h-10 w-10 sm:h-11 sm:w-11 rounded-xl object-cover border border-slate-700 bg-slate-800"
