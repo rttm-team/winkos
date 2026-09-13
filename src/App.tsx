@@ -11,8 +11,8 @@ import {
 } from './types';
 import { INITIAL_GMS } from './data/mockData';
 import { Header } from './components/Header';
+import { GmSwitcherBar } from './components/GmSwitcherBar';
 import WinkoHub from './components/WinkoHub';
-import { WatchlistBanner } from './components/WatchlistBanner';
 import { FiltersAndSearch } from './components/FiltersAndSearch';
 import { PositionSection } from './components/PositionSection';
 import { RulesModal } from './components/RulesModal';
@@ -425,6 +425,7 @@ export default function App() {
         prior_career_gp: updatedData.priorCareerGP,
         protected: updatedData.isProtected,
         status_notes: updatedData.statusNotes,
+        status: updatedData.status,
       };
 
       if (updatedData.seasons25PlusGP !== undefined) {
@@ -456,6 +457,13 @@ export default function App() {
         };
       })
     );
+  };
+
+  const handleToggleStatus = (prospectId: string) => {
+    const prospect = activeGm.prospects.find((p) => p.id === prospectId);
+    if (!prospect) return;
+    const newStatus = prospect.status === 'inactive' ? 'active' : 'inactive';
+    handleEditProspect(prospectId, { status: newStatus });
   };
 
   const handleUpdate25PlusSeasons = useCallback((prospectId: string, count: number) => {
@@ -666,46 +674,29 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-[#0f172a] text-slate-100 font-sans antialiased selection:bg-cyan-500/30 selection:text-cyan-200">
-      {/* 1. GM Selector Header & NHL API live status */}
       <Header
-        gms={gms}
-        selectedGmId={selectedGmId}
-        onSelectGm={(id) => {
-          setSelectedGmId(id);
-          // Reset filters on GM switch so user sees full roster
-          setPositionFilter('ALL');
-          setStatusFilter('ALL');
-          setSearchQuery('');
+        onNavigate={(target) => {
+          setView(target);
+          if (target === 'prospects' && !authedGmId) setView('hub'); // Force hub if not authed
         }}
         onOpenRules={() => setIsRulesModalOpen(true)}
-        mandatoryCount={counts.promoted}
-        watchlistCount={counts.actionRequired - counts.promoted}
-        protectedCount={counts.protected}
-        isSyncingAll={isSyncingAll}
-        globalLastUpdated={globalLastUpdated}
-        onSyncAll={handleSyncAllProspects}
+        activeView={view}
       />
 
-      <main className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
-        {/* 2. Promotion Watchlist Banner */}
-        <WatchlistBanner
-          prospects={activeGm.prospects}
-          onSelectProspect={(id) => {
-            const el = document.getElementById(`prospect-card-${id}`);
-            if (el) {
-              el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-              el.classList.add('ring-2', 'ring-cyan-400');
-              setTimeout(() => {
-                el.classList.remove('ring-2', 'ring-cyan-400');
-              }, 2000);
-            }
-          }}
-          onFilterActionRequired={() => {
-            setStatusFilter('ACTION_REQUIRED');
+      {view === 'prospects' && (
+        <GmSwitcherBar
+          gms={gms}
+          selectedGmId={selectedGmId}
+          onSelectGm={(id) => {
+            setSelectedGmId(id);
             setPositionFilter('ALL');
+            setStatusFilter('ALL');
+            setSearchQuery('');
           }}
         />
+      )}
 
+      <main className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
         {/* Action Toolbar above filters */}
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-2">
@@ -808,6 +799,7 @@ export default function App() {
                 onEdit={handleOpenEdit}
                 onDelete={handleDeleteProspect}
                 onUpdate25PlusSeasons={handleUpdate25PlusSeasons}
+                onToggleStatus={handleToggleStatus}
               />
             )}
 
@@ -827,6 +819,7 @@ export default function App() {
                 onEdit={handleOpenEdit}
                 onDelete={handleDeleteProspect}
                 onUpdate25PlusSeasons={handleUpdate25PlusSeasons}
+                onToggleStatus={handleToggleStatus}
               />
             )}
 
@@ -846,6 +839,7 @@ export default function App() {
                 onEdit={handleOpenEdit}
                 onDelete={handleDeleteProspect}
                 onUpdate25PlusSeasons={handleUpdate25PlusSeasons}
+                onToggleStatus={handleToggleStatus}
               />
             )}
           </div>

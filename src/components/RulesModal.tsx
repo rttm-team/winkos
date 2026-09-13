@@ -92,17 +92,6 @@ export const RulesModal: React.FC<RulesModalProps> = ({ isOpen, onClose }) => {
             </ul>
           </div>
 
-          {/* Watchlist Banner Policy */}
-          <div className="rounded-xl border border-amber-500/30 bg-amber-950/20 p-4">
-            <div className="flex items-center gap-2 text-amber-300 font-bold text-base mb-2">
-              <AlertTriangle className="h-4 w-4 stroke-[2.5]" />
-              <span>5-Game Watchlist Alert Policy</span>
-            </div>
-            <p className="text-xs text-slate-300">
-              Whenever a prospect is within <strong>5 games or fewer</strong> of either threshold (e.g., 35-39 games for skaters, 15-19 games for goalies), they enter the high-priority Promotion Watchlist banner. GMs must prepare roster slots or risk penalty.
-            </p>
-          </div>
-
           {/* 4 Seasons of 25+ GP Milestone */}
           <div className="rounded-xl border border-purple-500/30 bg-purple-950/20 p-4">
             <div className="flex items-center gap-2 text-purple-300 font-bold text-base mb-2">

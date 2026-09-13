@@ -29,6 +29,7 @@ interface ProspectCardProps {
   onEdit?: (prospect: Prospect) => void;
   onDelete?: (prospectId: string) => void;
   onUpdate25PlusSeasons?: (prospectId: string, count: number) => void;
+  onToggleStatus: (prospectId: string) => void;
 }
 
 export const ProspectCard: React.FC<ProspectCardProps> = ({
@@ -42,6 +43,7 @@ export const ProspectCard: React.FC<ProspectCardProps> = ({
   onEdit,
   onDelete,
   onUpdate25PlusSeasons,
+  onToggleStatus,
 }) => {
   const cardExpanded = isExpanded !== undefined ? isExpanded : true;
   const [imgError, setImgError] = useState(false);
@@ -330,6 +332,12 @@ export const ProspectCard: React.FC<ProspectCardProps> = ({
               </div>
             )}
 
+            {prospect.status === 'inactive' && (
+              <div className="inline-flex items-center gap-1.5 rounded-lg bg-slate-950 px-2.5 py-1 text-xs font-bold text-slate-400 border border-slate-700">
+                <span>Inactive</span>
+              </div>
+            )}
+
             {/* Compact 4-Season Milestone Indicator */}
             <SeasonThresholdMarkers
               size="sm"
@@ -353,6 +361,8 @@ export const ProspectCard: React.FC<ProspectCardProps> = ({
                   isProtected={prospect.isProtected}
                   isProtectionEligible={ev.isProtectionEligible}
                   isMandatoryPromotion={ev.isMandatoryPromotion}
+                  status={prospect.status}
+                  onToggleStatus={() => onToggleStatus(prospect.id)}
                   isSyncing={isSyncing}
                 />
               </div>
@@ -544,37 +554,7 @@ export const ProspectCard: React.FC<ProspectCardProps> = ({
           )}
         </div>
 
-        {/* Interactive Simulation Controls */}
-        {cardExpanded && (
-          <div className="mt-4 pt-3 border-t border-slate-800/80 flex items-center justify-between gap-2">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1">
-              <TrendingUp className="h-3 w-3 text-cyan-400" />
-              <span>Simulate GP:</span>
-            </span>
 
-            <div className="flex items-center gap-1.5">
-              <button
-                onClick={() => onUpdateGP(prospect.id, -1)}
-                disabled={prospect.currentSeasonGP <= 0}
-                className="flex h-7 w-7 items-center justify-center rounded-lg border border-slate-700 bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-white disabled:opacity-30 disabled:pointer-events-none transition-colors"
-                title="Decrease Season GP by 1"
-              >
-                <Minus className="h-3.5 w-3.5" />
-              </button>
-              <span className="w-8 text-center font-mono text-xs font-bold text-slate-200">
-                {prospect.currentSeasonGP}
-              </span>
-              <button
-                onClick={() => onUpdateGP(prospect.id, 1)}
-                className="flex h-7 items-center gap-1 px-2 rounded-lg border border-cyan-500/40 bg-cyan-500/10 text-cyan-300 hover:bg-cyan-500/20 hover:border-cyan-400 font-semibold text-xs transition-colors shadow-sm"
-                title="Add 1 GP to simulate next game and test promotion trigger"
-              >
-                <Plus className="h-3.5 w-3.5" />
-                <span>+1 GP</span>
-              </button>
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );

@@ -1,4 +1,5 @@
 export type Position = 'F' | 'D' | 'G';
+export type ProspectStatus = 'active' | 'inactive';
 
 export type PositionGroup = 'Forwards' | 'Defensemen' | 'Goalies';
 
@@ -48,6 +49,7 @@ export interface Prospect {
   photoUrl?: string;
   statusNotes?: string;
   nhlPlayerId?: string;
+  status?: ProspectStatus;
   apiSyncStatus?: 'idle' | 'syncing' | 'synced' | 'fallback' | 'error' | 'no_record';
   lastSyncedAt?: string;
   syncSource?: 'direct_api' | 'proxy_api' | 'sample_fallback';
@@ -285,6 +287,11 @@ export function sortProspects(
   rules: LeagueRules = DEFAULT_LEAGUE_RULES
 ): Prospect[] {
   return [...prospects].sort((a, b) => {
+    // Always put inactive last, regardless of sort option
+    const statusA = a.status === 'inactive' ? 1 : 0;
+    const statusB = b.status === 'inactive' ? 1 : 0;
+    if (statusA !== statusB) return statusA - statusB;
+
     switch (sortOption) {
       case 'urgency': {
         const evA = evaluateProspect(a, rules);

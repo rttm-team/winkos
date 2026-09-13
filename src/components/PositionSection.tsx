@@ -18,6 +18,7 @@ interface PositionSectionProps {
   onEdit?: (prospect: Prospect) => void;
   onDelete?: (prospectId: string) => void;
   onUpdate25PlusSeasons?: (prospectId: string, count: number) => void;
+  onToggleStatus: (prospectId: string) => void;
 }
 
 export const PositionSection: React.FC<PositionSectionProps> = ({
@@ -34,6 +35,7 @@ export const PositionSection: React.FC<PositionSectionProps> = ({
   onEdit,
   onDelete,
   onUpdate25PlusSeasons,
+  onToggleStatus,
 }) => {
   if (prospects.length === 0) {
     return null;
@@ -151,6 +153,7 @@ export const PositionSection: React.FC<PositionSectionProps> = ({
               onEdit={onEdit}
               onDelete={onDelete}
               onUpdate25PlusSeasons={onUpdate25PlusSeasons}
+              onToggleStatus={() => onToggleStatus(prospect.id)}
             />
           ))}
         </div>
@@ -169,6 +172,7 @@ export const PositionSection: React.FC<PositionSectionProps> = ({
               onEdit={onEdit}
               onDelete={onDelete}
               onUpdate25PlusSeasons={onUpdate25PlusSeasons}
+              onToggleStatus={() => onToggleStatus(prospect.id)}
             />
           ))}
         </div>

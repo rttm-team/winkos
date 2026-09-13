@@ -30,6 +30,7 @@ interface ProspectListItemProps {
   onEdit?: (prospect: Prospect) => void;
   onDelete?: (prospectId: string) => void;
   onUpdate25PlusSeasons?: (prospectId: string, count: number) => void;
+  onToggleStatus: (prospectId: string) => void;
 }
 
 export const ProspectListItem: React.FC<ProspectListItemProps> = ({
@@ -43,6 +44,7 @@ export const ProspectListItem: React.FC<ProspectListItemProps> = ({
   onEdit,
   onDelete,
   onUpdate25PlusSeasons,
+  onToggleStatus,
 }) => {
   const [imgError, setImgError] = useState(false);
   const ev = evaluateProspect(prospect);
@@ -220,6 +222,12 @@ export const ProspectListItem: React.FC<ProspectListItemProps> = ({
                 </span>
               )}
 
+              {prospect.status === 'inactive' && (
+                <span className="inline-flex items-center gap-1 rounded bg-slate-950 px-1.5 py-0.5 font-bold text-slate-400 border border-slate-700">
+                  Inactive
+                </span>
+              )}
+
               {isInDevelopment && (
                 <span className="inline-flex items-center gap-1 rounded bg-slate-800 px-1.5 py-0.5 font-medium text-slate-300 border border-slate-700">
                   <span className="h-1.5 w-1.5 rounded-full bg-cyan-400"></span>
@@ -317,6 +325,8 @@ export const ProspectListItem: React.FC<ProspectListItemProps> = ({
               isProtected={prospect.isProtected}
               isProtectionEligible={ev.isProtectionEligible}
               isMandatoryPromotion={ev.isMandatoryPromotion}
+              status={prospect.status}
+              onToggleStatus={() => onToggleStatus(prospect.id)}
               isSyncing={isSyncing}
             />
           )}
@@ -366,49 +376,6 @@ export const ProspectListItem: React.FC<ProspectListItemProps> = ({
               </div>
             </div>
 
-            {/* Simulation controls (- / + GP) */}
-            <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-[11px] font-medium text-slate-400">Test Simulation:</span>
-              <div className="inline-flex items-center rounded-lg bg-slate-800 border border-slate-700 p-0.5 shadow-inner">
-                <button
-                  type="button"
-                  onClick={() => onUpdateGP(prospect.id, -5)}
-                  disabled={safeSeasonGP < 5}
-                  className="rounded px-2 py-1 text-xs font-bold text-slate-300 hover:bg-slate-700 hover:text-white disabled:opacity-30 transition-colors"
-                  title="Subtract 5 simulated games"
-                >
-                  -5
-                </button>
-                <button
-                  type="button"
-                  onClick={() => onUpdateGP(prospect.id, -1)}
-                  disabled={safeSeasonGP <= 0}
-                  className="rounded px-2 py-1 text-xs font-bold text-slate-300 hover:bg-slate-700 hover:text-white disabled:opacity-30 transition-colors"
-                  title="Subtract 1 simulated game"
-                >
-                  <Minus className="h-3 w-3" />
-                </button>
-                <div className="px-2 font-mono text-xs font-bold text-cyan-400">
-                  {safeSeasonGP} GP
-                </div>
-                <button
-                  type="button"
-                  onClick={() => onUpdateGP(prospect.id, 1)}
-                  className="rounded px-2 py-1 text-xs font-bold text-slate-300 hover:bg-slate-700 hover:text-white transition-colors"
-                  title="Add 1 simulated game"
-                >
-                  <Plus className="h-3 w-3" />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => onUpdateGP(prospect.id, 5)}
-                  className="rounded px-2 py-1 text-xs font-bold text-slate-300 hover:bg-slate-700 hover:text-white transition-colors"
-                  title="Add 5 simulated games"
-                >
-                  +5
-                </button>
-              </div>
-            </div>
           </div>
 
           {/* Rule Threshold Progress Bars */}

@@ -10,6 +10,7 @@ import {
   ShieldCheck,
   ShieldAlert,
   ShieldOff,
+  Ban,
 } from 'lucide-react';
 
 interface PlayerActionOverflowMenuProps {
@@ -18,10 +19,12 @@ interface PlayerActionOverflowMenuProps {
   onDelete?: () => void;
   onTogglePromotion?: () => void;
   onToggleProtection?: () => void;
+  onToggleStatus?: () => void;
   isPromoted?: boolean;
   isProtected?: boolean;
   isProtectionEligible?: boolean;
   isMandatoryPromotion?: boolean;
+  status?: ProspectStatus;
   isSyncing?: boolean;
   buttonClassName?: string;
   align?: 'left' | 'right';
@@ -39,10 +42,12 @@ export const PlayerActionOverflowMenu: React.FC<PlayerActionOverflowMenuProps> =
   onDelete,
   onTogglePromotion,
   onToggleProtection,
+  onToggleStatus,
   isPromoted = false,
   isProtected = false,
   isProtectionEligible = true,
   isMandatoryPromotion = false,
+  status,
   isSyncing = false,
   buttonClassName = '',
   align = 'right',
@@ -240,6 +245,21 @@ export const PlayerActionOverflowMenu: React.FC<PlayerActionOverflowMenuProps> =
                   </button>
                 )}
               </>
+            )}
+
+            {onToggleStatus && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setIsOpen(false);
+                  onToggleStatus();
+                }}
+                className="flex w-full items-center gap-2.5 px-3 py-2 text-xs font-medium text-slate-300 hover:bg-slate-800 hover:text-slate-100 transition-colors cursor-pointer text-left"
+              >
+                <Ban className={`h-3.5 w-3.5 ${status === 'inactive' ? 'text-emerald-400' : 'text-slate-400'} shrink-0`} />
+                <span>{status === 'inactive' ? 'Mark Active' : 'Mark Inactive'}</span>
+              </button>
             )}
 
             {/* Divider between roster actions and management actions */}

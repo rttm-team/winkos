@@ -1,0 +1,95 @@
+import React, { useState } from 'react';
+import { ChevronDown } from 'lucide-react';
+import { GeneralManager } from '../types';
+
+interface GmSwitcherBarProps {
+  gms: GeneralManager[];
+  selectedGmId: string;
+  onSelectGm: (id: string) => void;
+}
+
+export const GmSwitcherBar: React.FC<GmSwitcherBarProps> = ({
+  gms,
+  selectedGmId,
+  onSelectGm,
+}) => {
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const selectedGm = gms.find((g) => g.id === selectedGmId) || gms[0];
+
+  return (
+    <div className="bg-slate-800 border-b border-slate-700">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-2">
+        <div className="relative">
+          <label htmlFor="gm-selector" className="sr-only">
+            Select General Manager
+          </label>
+          <button
+            id="gm-selector"
+            type="button"
+            onClick={() => setDropdownOpen(!dropdownOpen)}
+            className="flex items-center gap-2.5 rounded-xl border border-slate-700 bg-slate-900/90 px-3 py-1.5 text-left text-sm text-slate-200 hover:border-slate-600 transition-all focus:outline-none focus:ring-2 focus:ring-cyan-500/50 shadow-sm"
+          >
+            <div
+              className={`flex h-6 w-6 items-center justify-center rounded-lg bg-gradient-to-br ${selectedGm.avatarColor} text-[10px] font-bold text-white shadow-inner`}
+            >
+              {selectedGm.avatarInitials}
+            </div>
+            <div className="flex flex-col text-left">
+              <span className="text-[10px] font-medium uppercase tracking-wider text-slate-400">
+                General Manager
+              </span>
+              <span className="font-semibold text-slate-100 leading-tight text-xs">
+                {selectedGm.name}
+              </span>
+            </div>
+            <ChevronDown
+              className={`h-4 w-4 text-slate-400 transition-transform duration-200 ${
+                dropdownOpen ? 'rotate-180' : ''
+              }`}
+            />
+          </button>
+
+          {/* Dropdown Menu */}
+          {dropdownOpen && (
+            <>
+              <div
+                className="fixed inset-0 z-40"
+                onClick={() => setDropdownOpen(false)}
+              />
+              <div className="absolute left-0 mt-2 z-50 w-72 max-h-[50vh] overflow-y-auto rounded-xl border border-slate-700 bg-slate-800/95 p-1.5 shadow-2xl backdrop-blur-md scrollbar-thin scrollbar-thumb-slate-600">
+                <div className="px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-slate-400 border-b border-slate-700/60 mb-1">
+                  Switch General Manager
+                </div>
+                {gms.map((gm) => (
+                  <button
+                    key={gm.id}
+                    onClick={() => {
+                      onSelectGm(gm.id);
+                      setDropdownOpen(false);
+                    }}
+                    className={`w-full flex items-center justify-between rounded-lg px-3 py-2 text-left transition-colors ${
+                      gm.id === selectedGm.id
+                        ? 'bg-cyan-500/15 text-cyan-200 font-semibold'
+                        : 'text-slate-300 hover:bg-slate-700/60 hover:text-white'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <div
+                        className={`flex h-6 w-6 items-center justify-center rounded-md bg-gradient-to-br ${gm.avatarColor} text-[10px] font-bold text-white`}
+                      >
+                        {gm.avatarInitials}
+                      </div>
+                      <div>
+                        <div className="text-xs font-bold leading-none">{gm.name}</div>
+                      </div>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
