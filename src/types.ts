@@ -64,6 +64,9 @@ export interface GeneralManager {
   name: string;
   teamName: string;
   winkoinBalance?: number;
+  winkoins?: number;
+  is_commish?: boolean;
+  pin?: string;
   avatarColor: string;
   avatarInitials: string;
   prospects: Prospect[];
