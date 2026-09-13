@@ -540,8 +540,13 @@ export default function App() {
   if (isLoading) {
     return (
       <div className="min-h-screen bg-[#0f172a] text-slate-100 font-sans antialiased flex flex-col items-center justify-center space-y-4">
-        <Loader2 className="h-8 w-8 text-cyan-400 animate-spin" />
-        <p className="text-slate-400 font-medium">Connecting to Supabase...</p>
+        <img
+          src="/putin_spin.png"
+          alt="Loading..."
+          className="h-24 w-24 rounded-full object-cover border-4 border-cyan-500/80 shadow-2xl animate-spin"
+          style={{ animationDuration: '3s' }}
+        />
+        <p className="text-slate-400 font-semibold tracking-wider text-sm">LOADING WINKO'S HOCKEY POOL...</p>
       </div>
     );
   }
@@ -639,39 +644,6 @@ export default function App() {
           </div>
         </div>
 
-        {/* Real-time NHL API Sync Status Notification Bar */}
-        <div className="mb-4 rounded-xl border border-slate-800 bg-slate-900/60 p-3 flex flex-wrap items-center justify-between gap-2.5 text-xs">
-          <div className="flex items-center gap-2">
-            <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
-              <Activity className="h-3.5 w-3.5" />
-            </div>
-            <div className="text-slate-300">
-              <span className="font-semibold text-slate-200">Official NHL API Sync: </span>
-              <span className="text-slate-400">
-                Cards query <code className="text-[11px] text-cyan-300 font-mono bg-slate-800 px-1 py-0.5 rounded">api-web.nhle.com</code> for live games played & career totals. 40/65 skater and 20/30 goalie rules re-evaluate automatically.
-              </span>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2">
-            {isSyncingAll ? (
-              <span className="inline-flex items-center gap-1.5 rounded-md bg-cyan-950/80 px-2 py-0.5 text-[11px] font-semibold text-cyan-300 border border-cyan-700/60 animate-pulse">
-                <Loader2 className="h-3 w-3 animate-spin text-cyan-400" />
-                <span>Syncing with NHL API...</span>
-              </span>
-            ) : globalLastUpdated ? (
-              <span className="inline-flex items-center gap-1.5 rounded-md bg-slate-800 px-2 py-0.5 text-[11px] font-medium text-slate-300 border border-slate-700">
-                <CheckCircle2 className="h-3 w-3 text-emerald-400" />
-                <span>Last Updated: <strong className="text-white font-mono">{globalLastUpdated}</strong></span>
-              </span>
-            ) : (
-              <span className="inline-flex items-center gap-1.5 rounded-md bg-slate-800 px-2 py-0.5 text-[11px] font-medium text-slate-400 border border-slate-700">
-                <span>Auto-syncing on card load</span>
-              </span>
-            )}
-          </div>
-        </div>
-
         {/* 4. Filters & Search */}
         <FiltersAndSearch
           positionFilter={positionFilter}
@@ -688,8 +660,6 @@ export default function App() {
           }}
           viewMode={viewMode}
           setViewMode={setViewMode}
-          allExpanded={allExpanded}
-          onToggleExpandAll={handleToggleExpandAll}
         />
 
         {/* 3. Prospect Roster (List View Default or Card Grid, Grouped by Position) */}

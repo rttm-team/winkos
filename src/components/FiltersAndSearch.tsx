@@ -9,8 +9,6 @@ import {
   Layers,
   List,
   LayoutGrid,
-  ChevronsUpDown,
-  ChevronsDownUp,
 } from 'lucide-react';
 
 interface FiltersAndSearchProps {
@@ -34,8 +32,6 @@ interface FiltersAndSearchProps {
   onResetFilters: () => void;
   viewMode: ViewMode;
   setViewMode: (mode: ViewMode) => void;
-  allExpanded: boolean;
-  onToggleExpandAll: () => void;
 }
 
 export const FiltersAndSearch: React.FC<FiltersAndSearchProps> = ({
@@ -49,19 +45,17 @@ export const FiltersAndSearch: React.FC<FiltersAndSearchProps> = ({
   onResetFilters,
   viewMode,
   setViewMode,
-  allExpanded,
-  onToggleExpandAll,
 }) => {
   const hasActiveFilters =
     positionFilter !== 'ALL' || statusFilter !== 'ALL' || searchQuery.trim() !== '';
 
   return (
-    <div className="mb-6 space-y-3">
+    <div className="mb-8 rounded-2xl border border-slate-800 bg-slate-900/80 p-4 sm:p-6 shadow-xl backdrop-blur-md space-y-4">
       {/* Search Input & Action Bar with View Mode and Expand/Collapse */}
-      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 sm:gap-3">
+      <div className="flex flex-col md:flex-row items-stretch md:items-center gap-3">
         {/* Search Field */}
         <div className="relative flex-1">
-          <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-slate-400">
+          <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4 text-slate-400">
             <Search className="h-4 w-4" />
           </div>
           <input
@@ -70,12 +64,12 @@ export const FiltersAndSearch: React.FC<FiltersAndSearchProps> = ({
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search prospect name, NHL team (BUF, MIN...), draft year..."
-            className="w-full rounded-xl border border-slate-700/80 bg-slate-800/80 py-2.5 pl-10 pr-10 text-sm text-slate-100 placeholder-slate-400 focus:border-cyan-500 focus:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-cyan-500/20 transition-all shadow-inner"
+            className="w-full rounded-xl border border-slate-700/80 bg-slate-800/90 py-3 pl-11 pr-11 text-sm text-slate-100 placeholder-slate-400 focus:border-cyan-500 focus:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-cyan-500/20 transition-all shadow-inner"
           />
           {searchQuery && (
             <button
               onClick={() => setSearchQuery('')}
-              className="absolute inset-y-0 right-0 flex items-center pr-3 text-slate-400 hover:text-slate-200"
+              className="absolute inset-y-0 right-0 flex items-center pr-3.5 text-slate-400 hover:text-slate-200"
             >
               <X className="h-4 w-4" />
             </button>
@@ -83,14 +77,14 @@ export const FiltersAndSearch: React.FC<FiltersAndSearchProps> = ({
         </div>
 
         {/* View Switcher (List vs Card) & Expand/Collapse All */}
-        <div className="flex items-center gap-2 shrink-0 justify-between sm:justify-end">
+        <div className="flex items-center gap-2.5 shrink-0 justify-between md:justify-end">
           {/* List vs Card Toggle */}
           <div className="inline-flex items-center rounded-xl border border-slate-700/80 bg-slate-800/90 p-1 shadow-sm">
             <button
               type="button"
               id="view-toggle-list"
               onClick={() => setViewMode('list')}
-              className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold transition-all ${
+              className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-bold transition-all ${
                 viewMode === 'list'
                   ? 'bg-cyan-500 text-slate-950 shadow-sm shadow-cyan-500/20'
                   : 'text-slate-400 hover:text-slate-200'
@@ -105,7 +99,7 @@ export const FiltersAndSearch: React.FC<FiltersAndSearchProps> = ({
               type="button"
               id="view-toggle-card"
               onClick={() => setViewMode('card')}
-              className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold transition-all ${
+              className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-bold transition-all ${
                 viewMode === 'card'
                   ? 'bg-cyan-500 text-slate-950 shadow-sm shadow-cyan-500/20'
                   : 'text-slate-400 hover:text-slate-200'
@@ -117,163 +111,74 @@ export const FiltersAndSearch: React.FC<FiltersAndSearchProps> = ({
             </button>
           </div>
 
-          {/* Expand / Collapse All Button */}
-          <button
-            type="button"
-            id="toggle-expand-all-btn"
-            onClick={onToggleExpandAll}
-            className="inline-flex items-center gap-1.5 rounded-xl border border-slate-700/80 bg-slate-800/90 hover:bg-slate-700 px-3 py-1.5 text-xs font-semibold text-slate-300 hover:text-white transition-colors shadow-sm"
-            title={allExpanded ? 'Collapse all prospects' : 'Expand all prospects'}
-          >
-            {allExpanded ? (
-              <ChevronsDownUp className="h-3.5 w-3.5 text-cyan-400" />
-            ) : (
-              <ChevronsUpDown className="h-3.5 w-3.5 text-cyan-400" />
-            )}
-            <span>{allExpanded ? 'Collapse All' : 'Expand All'}</span>
-          </button>
-
           {/* Reset Filters button if any are applied */}
           {hasActiveFilters && (
             <button
               type="button"
               onClick={onResetFilters}
-              className="flex items-center justify-center gap-1.5 rounded-xl border border-slate-700 bg-slate-800/80 px-3 py-1.5 text-xs font-semibold text-slate-300 hover:bg-slate-700 hover:text-white transition-colors"
+              className="flex items-center justify-center gap-1.5 rounded-xl border border-slate-700 bg-slate-800/80 px-3 py-2 text-xs font-semibold text-slate-300 hover:bg-slate-700 hover:text-white transition-colors"
               title="Clear active filters"
             >
               <X className="h-3.5 w-3.5" />
-              <span className="hidden md:inline">Clear Filters</span>
+              <span className="hidden lg:inline">Clear Filters</span>
             </button>
           )}
         </div>
       </div>
 
-      {/* Filter Tabs: Position & Status */}
-      <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-3 pt-1">
-        {/* Position Filter (All, F, D, G) */}
-        <div className="flex flex-wrap items-center gap-1.5 w-full sm:w-auto">
-          <span className="text-xs font-semibold uppercase tracking-wider text-slate-400 mr-1.5 flex items-center gap-1">
-            <Layers className="h-3.5 w-3.5 text-cyan-400" />
-            <span>Position:</span>
-          </span>
+      {/* Filter Selects & Controls */}
+      <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3 pt-2 border-t border-slate-800/80">
+        <div className="flex flex-wrap items-center gap-3">
+          {/* Position Dropdown */}
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-semibold uppercase tracking-wider text-slate-400 flex items-center gap-1">
+              <Layers className="h-3.5 w-3.5 text-cyan-400" />
+              <span>Position:</span>
+            </span>
+            <select
+              value={positionFilter}
+              onChange={(e) => setPositionFilter(e.target.value as PositionFilter)}
+              className="rounded-xl border border-slate-700/80 bg-slate-800/90 px-3 py-2 text-xs font-bold text-slate-100 focus:border-cyan-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/20"
+            >
+              <option value="ALL">All Positions ({counts.all})</option>
+              <option value="F">Forwards ({counts.f})</option>
+              <option value="D">Defensemen ({counts.d})</option>
+              <option value="G">Goalies ({counts.g})</option>
+            </select>
+          </div>
 
-          <button
-            onClick={() => setPositionFilter('ALL')}
-            className={`rounded-lg px-3 py-1.5 text-xs font-bold transition-all ${
-              positionFilter === 'ALL'
-                ? 'bg-cyan-500 text-slate-950 shadow-md shadow-cyan-500/25'
-                : 'bg-slate-800/80 text-slate-300 hover:bg-slate-700 hover:text-white border border-slate-700/60'
-            }`}
-          >
-            All <span className="text-[10px] opacity-80 font-mono ml-0.5">({counts.all})</span>
-          </button>
-
-          <button
-            onClick={() => setPositionFilter('F')}
-            className={`rounded-lg px-3 py-1.5 text-xs font-bold transition-all ${
-              positionFilter === 'F'
-                ? 'bg-cyan-500 text-slate-950 shadow-md shadow-cyan-500/25'
-                : 'bg-slate-800/80 text-slate-300 hover:bg-slate-700 hover:text-white border border-slate-700/60'
-            }`}
-          >
-            Forwards <span className="text-[10px] opacity-80 font-mono ml-0.5">({counts.f})</span>
-          </button>
-
-          <button
-            onClick={() => setPositionFilter('D')}
-            className={`rounded-lg px-3 py-1.5 text-xs font-bold transition-all ${
-              positionFilter === 'D'
-                ? 'bg-cyan-500 text-slate-950 shadow-md shadow-cyan-500/25'
-                : 'bg-slate-800/80 text-slate-300 hover:bg-slate-700 hover:text-white border border-slate-700/60'
-            }`}
-          >
-            Defensemen <span className="text-[10px] opacity-80 font-mono ml-0.5">({counts.d})</span>
-          </button>
-
-          <button
-            onClick={() => setPositionFilter('G')}
-            className={`rounded-lg px-3 py-1.5 text-xs font-bold transition-all ${
-              positionFilter === 'G'
-                ? 'bg-cyan-500 text-slate-950 shadow-md shadow-cyan-500/25'
-                : 'bg-slate-800/80 text-slate-300 hover:bg-slate-700 hover:text-white border border-slate-700/60'
-            }`}
-          >
-            Goalies <span className="text-[10px] opacity-80 font-mono ml-0.5">({counts.g})</span>
-          </button>
+          {/* Status Dropdown */}
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-semibold uppercase tracking-wider text-slate-400 flex items-center gap-1">
+              <SlidersHorizontal className="h-3.5 w-3.5 text-amber-400" />
+              <span>Status:</span>
+            </span>
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value as StatusFilter)}
+              className="rounded-xl border border-slate-700/80 bg-slate-800/90 px-3 py-2 text-xs font-bold text-slate-100 focus:border-cyan-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/20"
+            >
+              <option value="ALL">All Status</option>
+              <option value="ACTION_REQUIRED">Action Required ({counts.actionRequired})</option>
+              <option value="WATCHLIST">Watchlist ({counts.watchlist})</option>
+              <option value="PROMOTED">Promoted ({counts.promoted})</option>
+              <option value="PROTECTION_WATCH">Protection Watch ({counts.protectionWatch})</option>
+            </select>
+          </div>
         </div>
 
-        {/* Status Filter (Action Required / Promoted / Protected) */}
-        <div className="flex flex-wrap items-center gap-1.5 w-full sm:w-auto">
-          <span className="text-xs font-semibold uppercase tracking-wider text-slate-400 mr-1.5 flex items-center gap-1">
-            <SlidersHorizontal className="h-3.5 w-3.5 text-amber-400" />
-            <span>Status:</span>
-          </span>
-
+        {/* Reset Filters button if any active */}
+        {hasActiveFilters && (
           <button
-            onClick={() => setStatusFilter('ALL')}
-            className={`rounded-lg px-2.5 py-1.5 text-xs font-semibold transition-all ${
-              statusFilter === 'ALL'
-                ? 'bg-slate-200 text-slate-900 font-bold'
-                : 'bg-slate-800/80 text-slate-300 hover:bg-slate-700 border border-slate-700/60'
-            }`}
+            type="button"
+            onClick={onResetFilters}
+            className="flex items-center justify-center gap-1.5 rounded-xl border border-slate-700 bg-slate-800/80 px-3 py-2 text-xs font-semibold text-slate-300 hover:bg-slate-700 hover:text-white transition-colors w-full lg:w-auto"
+            title="Clear active filters"
           >
-            All Status
+            <X className="h-3.5 w-3.5" />
+            <span>Clear Filters</span>
           </button>
-
-          <button
-            onClick={() => setStatusFilter('ACTION_REQUIRED')}
-            className={`inline-flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-bold transition-all ${
-              statusFilter === 'ACTION_REQUIRED'
-                ? 'bg-red-500 text-white shadow-md shadow-red-500/25'
-                : 'bg-red-950/40 text-red-300 hover:bg-red-950/60 border border-red-800/40'
-            }`}
-            title="Threshold crossed - Promotion required now"
-          >
-            <AlertTriangle className="h-3.5 w-3.5 stroke-[2.5]" />
-            <span>Action Required</span>
-            <span className="font-mono text-[10px] ml-0.5">({counts.actionRequired})</span>
-          </button>
-
-          <button
-            onClick={() => setStatusFilter('WATCHLIST')}
-            className={`inline-flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-bold transition-all ${
-              statusFilter === 'WATCHLIST'
-                ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/25'
-                : 'bg-amber-950/40 text-amber-300 hover:bg-amber-950/60 border border-amber-800/40'
-            }`}
-            title="Approaching threshold (within 5 GP) - No action required yet"
-          >
-            <span>Watchlist (Approaching)</span>
-            <span className="font-mono text-[10px] ml-0.5">({counts.watchlist})</span>
-          </button>
-
-          <button
-            onClick={() => setStatusFilter('PROMOTED')}
-            className={`inline-flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-bold transition-all ${
-              statusFilter === 'PROMOTED'
-                ? 'bg-emerald-500 text-slate-950 shadow-md shadow-emerald-500/25'
-                : 'bg-emerald-950/40 text-emerald-300 hover:bg-emerald-950/60 border border-emerald-800/40'
-            }`}
-            title="Graduated to active roster"
-          >
-            <span>Promoted</span>
-            <span className="font-mono text-[10px] ml-0.5">({counts.promoted})</span>
-          </button>
-
-          <button
-            onClick={() => setStatusFilter('PROTECTION_WATCH')}
-            className={`inline-flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-bold transition-all ${
-              statusFilter === 'PROTECTION_WATCH'
-                ? 'bg-cyan-500 text-slate-950 shadow-md shadow-cyan-500/25'
-                : 'bg-cyan-950/40 text-cyan-300 hover:bg-cyan-950/60 border border-cyan-800/40'
-            }`}
-            title="Approaching protection game limit (within 15 GP) - Protection expiration imminent"
-          >
-            <ShieldCheck className="h-3.5 w-3.5" />
-            <span>Protection Watch</span>
-            <span className="font-mono text-[10px] ml-0.5">({counts.protectionWatch})</span>
-          </button>
-        </div>
+        )}
       </div>
     </div>
   );

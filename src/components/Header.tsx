@@ -200,59 +200,6 @@ export const Header: React.FC<HeaderProps> = ({
             </div>
           </div>
         </div>
-
-        {/* Quick Summary Pill Strip for active GM + Real-time Sync status */}
-        <div className="flex items-center justify-between gap-2 pb-2.5 overflow-x-auto text-xs scrollbar-none">
-          <div className="flex items-center gap-2">
-            <div className="flex items-center gap-1.5 rounded-md bg-slate-800/80 px-2.5 py-1 text-slate-300 border border-slate-700/60 whitespace-nowrap">
-              <Trophy className="h-3.5 w-3.5 text-cyan-400" />
-              <span className="text-slate-400">Team:</span>
-              <span className="font-semibold text-slate-200">{selectedGm.teamName}</span>
-            </div>
-
-            <div className="flex items-center gap-1.5 rounded-md bg-slate-800/80 px-2.5 py-1 text-slate-300 border border-slate-700/60 whitespace-nowrap">
-              <span className="text-slate-400">Prospects:</span>
-              <span className="font-bold text-slate-100">{selectedGm.prospects.length}</span>
-            </div>
-
-            {mandatoryCount > 0 && (
-              <div className="flex items-center gap-1.5 rounded-md bg-red-950/70 border border-red-800/60 px-2.5 py-1 text-red-300 whitespace-nowrap animate-pulse">
-                <AlertCircle className="h-3.5 w-3.5 text-red-400" />
-                <span>Mandatory Promotion:</span>
-                <span className="font-black text-red-200">{mandatoryCount}</span>
-              </div>
-            )}
-
-            {watchlistCount > 0 && (
-              <div className="flex items-center gap-1.5 rounded-md bg-amber-950/60 border border-amber-800/60 px-2.5 py-1 text-amber-300 whitespace-nowrap">
-                <Sparkles className="h-3.5 w-3.5 text-amber-400" />
-                <span>On Watch (≤5 GP):</span>
-                <span className="font-bold text-amber-200">{watchlistCount}</span>
-              </div>
-            )}
-
-            <div className="flex items-center gap-1.5 rounded-md bg-emerald-950/50 border border-emerald-800/50 px-2.5 py-1 text-emerald-300 whitespace-nowrap">
-              <ShieldCheck className="h-3.5 w-3.5 text-emerald-400" />
-              <span>Protected:</span>
-              <span className="font-bold text-emerald-200">{protectedCount}</span>
-            </div>
-          </div>
-
-          {/* Sync status and timestamp badge in header */}
-          <div className="flex items-center gap-2 whitespace-nowrap shrink-0">
-            {isSyncingAll ? (
-              <div className="flex items-center gap-1.5 rounded-md bg-cyan-950/80 border border-cyan-700/70 px-2.5 py-1 text-xs font-semibold text-cyan-300 animate-pulse">
-                <Loader2 className="h-3.5 w-3.5 animate-spin text-cyan-400" />
-                <span>Syncing with NHL API...</span>
-              </div>
-            ) : globalLastUpdated ? (
-              <div className="flex items-center gap-1.5 rounded-md bg-slate-800/90 border border-slate-700/80 px-2.5 py-1 text-xs text-slate-300">
-                <Clock className="h-3.5 w-3.5 text-cyan-400" />
-                <span>Last Updated: <strong className="text-slate-100 font-mono">{globalLastUpdated}</strong></span>
-              </div>
-            ) : null}
-          </div>
-        </div>
       </div>
     </header>
   );
