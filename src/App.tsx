@@ -11,6 +11,7 @@ import {
 } from './types';
 import { INITIAL_GMS } from './data/mockData';
 import { Header } from './components/Header';
+import WinkoHub from './components/WinkoHub';
 import { WatchlistBanner } from './components/WatchlistBanner';
 import { FiltersAndSearch } from './components/FiltersAndSearch';
 import { PositionSection } from './components/PositionSection';
@@ -34,6 +35,7 @@ import {
 export default function App() {
   const [gms, setGms] = useState<GeneralManager[]>(INITIAL_GMS);
   const [selectedGmId, setSelectedGmId] = useState<string>('gm-adam');
+  const [view, setView] = useState<'hub' | 'prospects' | 'arcade'>('hub');
   const [positionFilter, setPositionFilter] = useState<PositionFilter>('ALL');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('ALL');
   const [sortOption, setSortOption] = useState<ProspectSortOption>('urgency');
@@ -609,6 +611,17 @@ export default function App() {
         <h2 className="text-xl font-bold text-slate-300">No Teams Found</h2>
         <p className="text-slate-500 max-w-sm text-center">Your Supabase database is connected but no GMs were found in the "gms" table.</p>
       </div>
+    );
+  }
+
+  if (view === 'hub') {
+    return (
+      <WinkoHub
+        gms={gms}
+        activeGm={activeGm}
+        onSelectGm={(id: string) => setSelectedGmId(id)}
+        onNavigate={(target: 'prospects' | 'arcade') => setView(target)}
+      />
     );
   }
 
