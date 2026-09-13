@@ -12,6 +12,7 @@ import {
   Trophy,
   Dice5,
   Lock,
+  Sparkles,
   Crown,
   ShieldCheck,
 } from 'lucide-react';
@@ -37,8 +38,8 @@ export default function WinkoHub({
   // Fall back to the first GM if no active GM was provided.
   const currentGm = activeGm || gms[0] || null;
 
-  // Assume the arcade's daily game is live for demo purposes.
-  const isArcadeLive = true;
+  // The arcade isn't launched yet — show a "coming soon" treatment.
+  const isArcadeComingSoon = true;
 
   // Close the dropdown when clicking outside of it.
   useEffect(() => {
@@ -258,7 +259,12 @@ export default function WinkoHub({
 
             {/* Status badge */}
             <div className="relative mt-6">
-              {isArcadeLive ? (
+              {isArcadeComingSoon ? (
+                <span className="inline-flex items-center gap-2 rounded-lg border border-amber-400/30 bg-amber-400/10 px-3 py-1.5 text-sm font-bold text-amber-300">
+                  <Sparkles className="h-4 w-4" />
+                  Coming Soon
+                </span>
+              ) : (
                 <span className="inline-flex items-center gap-2 rounded-lg border border-emerald-400/30 bg-emerald-400/10 px-3 py-1.5 text-sm font-bold text-emerald-300">
                   <span className="relative flex h-2 w-2">
                     <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
@@ -266,11 +272,6 @@ export default function WinkoHub({
                   </span>
                   Today&apos;s Game is Live!
                   <Dice5 className="h-4 w-4" />
-                </span>
-              ) : (
-                <span className="inline-flex items-center gap-2 rounded-lg border border-slate-700 bg-slate-800/60 px-3 py-1.5 text-sm font-bold text-slate-400">
-                  <Lock className="h-4 w-4" />
-                  Locker Room Closed
                 </span>
               )}
             </div>
@@ -310,12 +311,16 @@ export default function WinkoHub({
             <div className="relative mt-auto pt-6">
               <button
                 type="button"
-                onClick={() => onNavigate('arcade')}
-                className="flex w-full items-center justify-center gap-2 rounded-xl bg-amber-400 px-4 py-3 text-sm font-bold text-slate-950 transition hover:bg-amber-300"
+                disabled
+                aria-disabled="true"
+                className="flex w-full cursor-not-allowed items-center justify-center gap-2 rounded-xl border border-slate-700 bg-slate-800/60 px-4 py-3 text-sm font-bold text-slate-400"
               >
-                Enter Arcade
-                <ArrowRight className="h-4 w-4" />
+                <Lock className="h-4 w-4" />
+                Arcade Coming Soon
               </button>
+              <p className="mt-2 text-center text-xs text-slate-500">
+                Daily mini-games drop soon — keep stacking Winkoins.
+              </p>
             </div>
           </section>
         </main>
