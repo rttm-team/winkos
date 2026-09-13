@@ -307,6 +307,90 @@ function slugify(name: string): string {
   return name.toLowerCase().replace(/[^a-z0-9]/g, '');
 }
 
+export function normalizePlayerName(name: string): string {
+  if (!name) return '';
+  return name
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[øØ]/g, 'o')
+    .replace(/[æÆ]/g, 'ae')
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, '')
+    .trim();
+}
+
+/**
+ * Precomputed baseline seasons with 25+ GP for key NHL players
+ * Derived directly from official NHL regular season historical records
+ */
+export const KNOWN_25_PLUS_SEASONS: Record<string, number> = {
+  'pavel dorofeyev': 3,
+  'zach benson': 3,
+  'joel hofer': 3,
+  'sam rinzel': 1,
+  'nikita nesterenko': 1,
+  'danila yurov': 1,
+  'lenni hameenaho': 1,
+  'jesper wallstedt': 1,
+  'brock faber': 3,
+  'marco rossi': 3,
+  'matt coronato': 2,
+  'luke hughes': 3,
+  'leo carlsson': 2,
+  'will smith': 2,
+  'shane wright': 2,
+  'dustin wolf': 2,
+  'lukas dostal': 3,
+  'pyotr kochetkov': 3,
+  'samuel ersson': 2,
+  'jordan spence': 2,
+  'thomas harley': 3,
+  'joey daccord': 3,
+  'mads søgaard': 1,
+  'mads sogaard': 1,
+};
+
+export function getBaseline25PlusSeasons(name: string, totalGames: number = 0): number {
+  const norm = normalizePlayerName(name);
+  if (norm in KNOWN_25_PLUS_SEASONS) {
+    return KNOWN_25_PLUS_SEASONS[norm];
+  }
+  if (totalGames >= 180) return Math.min(4, Math.floor(totalGames / 60));
+  if (totalGames >= 110) return Math.min(4, Math.floor(totalGames / 55));
+  if (totalGames >= 50) return 1;
+  if (totalGames >= 25) return 1;
+  return 0;
+}
+
+export function getStored25PlusSeasons(prospectId: string, name: string, fallbackGames: number = 0): number {
+  if (typeof window !== 'undefined' && window.localStorage) {
+    const byId = window.localStorage.getItem(`winkos_25plus_${prospectId}`);
+    if (byId !== null && !isNaN(Number(byId))) {
+      return Number(byId);
+    }
+    const norm = normalizePlayerName(name);
+    const byName = window.localStorage.getItem(`winkos_25plus_name_${norm}`);
+    if (byName !== null && !isNaN(Number(byName))) {
+      return Number(byName);
+    }
+  }
+  return getBaseline25PlusSeasons(name, fallbackGames);
+}
+
+export function setStored25PlusSeasons(prospectId: string, name: string, count: number): void {
+  if (typeof window !== 'undefined' && window.localStorage) {
+    try {
+      window.localStorage.setItem(`winkos_25plus_${prospectId}`, String(count));
+      const norm = normalizePlayerName(name);
+      if (norm) {
+        window.localStorage.setItem(`winkos_25plus_name_${norm}`, String(count));
+      }
+    } catch {
+      // Ignore localStorage restrictions
+    }
+  }
+}
+
 /**
  * Transforms raw league data from winkos_full_league_data.json into the GeneralManager model
  */
@@ -333,18 +417,18 @@ export const INITIAL_GMS: GeneralManager[] = rawLeagueData.gms.map((gm) => {
       currentSeasonGP = 0;
       priorCareerGP = 0;
     } else if (p.promoted) {
-      // If promoted, they've satisfied threshold
       currentSeasonGP = Math.min(p.totalGames, singleLimit);
       priorCareerGP = Math.max(0, p.totalGames - currentSeasonGP);
     } else {
-      // Developing, not promoted
-      // Ensure singleSeasonGP stays under singleSeasonPromote threshold
       currentSeasonGP = Math.min(p.totalGames, singleLimit - 1);
       priorCareerGP = Math.max(0, p.totalGames - currentSeasonGP);
     }
 
+    const prospectId = `p-${gm.name.toLowerCase()}-${slugify(p.name)}`;
+    const seasons25PlusGP = getStored25PlusSeasons(prospectId, p.name, p.totalGames);
+
     const prospectObj: Prospect = {
-      id: `p-${gm.name.toLowerCase()}-${slugify(p.name)}`,
+      id: prospectId,
       name: p.name,
       position: p.pos as 'F' | 'D' | 'G',
       draftYear: p.draftYear,
@@ -357,6 +441,7 @@ export const INITIAL_GMS: GeneralManager[] = rawLeagueData.gms.map((gm) => {
       nhlTeam: teamInfo.team,
       nhlTeamAbbr: teamInfo.abbr,
       apiSyncStatus: 'idle',
+      seasons25PlusGP,
     };
 
     return prospectObj;

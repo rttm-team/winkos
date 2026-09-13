@@ -26,6 +26,7 @@ export const EditProspectModal: React.FC<EditProspectModalProps> = ({
   const [draftPick, setDraftPick] = useState<number>(1);
   const [currentSeasonGP, setCurrentSeasonGP] = useState<number>(0);
   const [priorCareerGP, setPriorCareerGP] = useState<number>(0);
+  const [seasons25PlusGP, setSeasons25PlusGP] = useState<number>(0);
   const [isProtected, setIsProtected] = useState<boolean>(false);
   const [statusNotes, setStatusNotes] = useState('');
 
@@ -40,6 +41,7 @@ export const EditProspectModal: React.FC<EditProspectModalProps> = ({
       setDraftPick(prospect.draftPick || 1);
       setCurrentSeasonGP(prospect.currentSeasonGP || 0);
       setPriorCareerGP(prospect.priorCareerGP || 0);
+      setSeasons25PlusGP(prospect.seasons25PlusGP || 0);
       setIsProtected(prospect.isProtected || false);
       setStatusNotes(prospect.statusNotes || '');
     }
@@ -61,6 +63,7 @@ export const EditProspectModal: React.FC<EditProspectModalProps> = ({
       draftPick: Number(draftPick) || 1,
       currentSeasonGP: Number(currentSeasonGP) || 0,
       priorCareerGP: Number(priorCareerGP) || 0,
+      seasons25PlusGP: Number(seasons25PlusGP) || 0,
       isProtected,
       statusNotes: statusNotes.trim() || undefined,
     });
@@ -191,6 +194,49 @@ export const EditProspectModal: React.FC<EditProspectModalProps> = ({
                 className="w-full rounded-xl border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-white focus:border-cyan-500 focus:outline-none"
               />
             </div>
+          </div>
+
+          {/* 4 Seasons of 25+ GP Milestone Tracker */}
+          <div className="rounded-xl border border-slate-800 bg-slate-950/60 p-3.5 space-y-2">
+            <div className="flex items-center justify-between">
+              <label className="block text-xs font-bold uppercase tracking-wider text-slate-300">
+                Seasons with 25+ NHL GP
+              </label>
+              <span className="font-mono text-xs font-bold text-cyan-400">
+                {seasons25PlusGP} / 4 Seasons
+              </span>
+            </div>
+
+            <div className="flex items-center gap-2">
+              {[0, 1, 2, 3, 4].map((count) => {
+                const isSelected = seasons25PlusGP === count;
+                return (
+                  <button
+                    key={count}
+                    type="button"
+                    onClick={() => setSeasons25PlusGP(count)}
+                    className={`flex-1 flex flex-col items-center justify-center py-1.5 rounded-lg border text-xs font-mono font-bold transition-all ${
+                      isSelected
+                        ? count >= 4
+                          ? 'border-red-500 bg-red-500/20 text-red-300 ring-1 ring-red-500/50'
+                          : count === 3
+                          ? 'border-amber-500 bg-amber-500/20 text-amber-300 ring-1 ring-amber-500/50'
+                          : 'border-cyan-500 bg-cyan-500/20 text-cyan-300 ring-1 ring-cyan-500/50'
+                        : 'border-slate-700 bg-slate-800/80 text-slate-400 hover:border-slate-600 hover:text-slate-200'
+                    }`}
+                  >
+                    <span>{count}</span>
+                    <span className="text-[9px] font-sans font-normal opacity-70">
+                      {count === 4 ? 'Promote' : count === 0 ? 'None' : `${count} yr`}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+
+            <p className="text-[11px] text-slate-400 leading-tight">
+              Tracks seasons with 25+ GP (0 to 4). When 4 seasons are reached before 200 total GP, the player status changes to prompt for promotion.
+            </p>
           </div>
 
           <div className="flex items-center gap-2 pt-1">

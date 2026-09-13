@@ -1,7 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 import { GeneralManager, Prospect } from '../types';
 import { NHL_TEAMS_MAP, LEAGUE_RULES } from '../data/mockData';
-import { getCachedProspectFromLeagueData } from '../services/nhlApi';
+import { getCachedProspectFromLeagueData, getStored25PlusSeasons } from '../services/nhlApi';
 
 const SUPABASE_URL = "https://wltqsayrupcvcrodsjmn.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_z3uOEmQzAfN8Pz4F2w5cbw_dgdIYbGJ";
@@ -72,6 +72,7 @@ export const mapProspectRow = (row: any): Prospect => {
     syncBadge: row.sync_badge ?? row.syncBadge,
     hasEmptyStats: row.has_empty_stats ?? row.hasEmptyStats,
     matchFound: row.match_found ?? row.matchFound,
+    seasons25PlusGP: row.seasons_25_plus_gp ?? row.seasons25PlusGP ?? getStored25PlusSeasons(String(row.id), name, totalGames),
   };
 };
 

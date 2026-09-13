@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Prospect, evaluateProspect } from '../types';
 import { proxyImageUrl } from '../lib/utils';
+import { Season25GPMarkers, SeasonThresholdMarkers } from './Season25GPMarkers';
+import { PlayerActionOverflowMenu } from './PlayerActionOverflowMenu';
 import {
   ShieldCheck,
   ShieldAlert,
@@ -10,15 +12,11 @@ import {
   Minus,
   Sparkles,
   Loader2,
-  RefreshCw,
   Clock,
   Check,
   ChevronDown,
   ChevronRight,
   TrendingUp,
-  ExternalLink,
-  Edit3,
-  Trash2,
 } from 'lucide-react';
 
 interface ProspectListItemProps {
@@ -31,6 +29,7 @@ interface ProspectListItemProps {
   onSyncProspect?: (prospectId: string) => void;
   onEdit?: (prospect: Prospect) => void;
   onDelete?: (prospectId: string) => void;
+  onUpdate25PlusSeasons?: (prospectId: string, count: number) => void;
 }
 
 export const ProspectListItem: React.FC<ProspectListItemProps> = ({
@@ -43,6 +42,7 @@ export const ProspectListItem: React.FC<ProspectListItemProps> = ({
   onSyncProspect,
   onEdit,
   onDelete,
+  onUpdate25PlusSeasons,
 }) => {
   const [imgError, setImgError] = useState(false);
   const ev = evaluateProspect(prospect);
@@ -289,101 +289,37 @@ export const ProspectListItem: React.FC<ProspectListItemProps> = ({
               />
             </div>
           </div>
+
+          {/* 4-Season 25+ GP Milestone Indicator */}
+          <div className="hidden sm:block">
+            <SeasonThresholdMarkers
+              size="sm"
+              count={ev.seasons25PlusCount}
+              max={ev.seasons25PlusTarget}
+              totalGP={safeTotalGP}
+              isPromoted={prospect.promoted}
+              interactive={false}
+            />
+          </div>
         </div>
 
-        {/* Right: Quick Action Buttons */}
+        {/* Right: Actions */}
         <div className="flex items-center gap-1.5 shrink-0 self-end lg:self-center pl-11 lg:pl-0">
-          {/* Protection Toggle */}
-          <button
-            type="button"
-            onClick={() => onToggleProtection(prospect.id)}
-            className={`inline-flex items-center gap-1 rounded-lg px-2.5 py-1 text-xs font-semibold transition-all border ${
-              prospect.isProtected
-                ? 'bg-cyan-500/20 text-cyan-300 border-cyan-500/40 hover:bg-cyan-500/30'
-                : 'bg-slate-800 text-slate-400 border-slate-700 hover:text-slate-200 hover:border-slate-600'
-            }`}
-            title="Toggle protected status"
-          >
-            {prospect.isProtected ? (
-              <>
-                <ShieldCheck className="h-3.5 w-3.5 text-cyan-400" />
-                <span className="hidden sm:inline">Protected</span>
-              </>
-            ) : (
-              <>
-                <ShieldAlert className="h-3.5 w-3.5 text-slate-500" />
-                <span className="hidden sm:inline">Protect</span>
-              </>
-            )}
-          </button>
-
-          {/* Promotion Toggle */}
-          {onTogglePromotion && (
-            <button
-              type="button"
-              onClick={() => onTogglePromotion(prospect.id)}
-              className={`inline-flex items-center gap-1 rounded-lg px-2.5 py-1 text-xs font-bold border transition-colors ${
-                prospect.promoted
-                  ? 'bg-slate-800 text-slate-300 border-slate-700 hover:bg-slate-700'
-                  : ev.isMandatoryPromotion
-                  ? 'bg-red-600 hover:bg-red-500 text-white border-red-500 shadow-sm shadow-red-600/30'
-                  : 'bg-emerald-950/40 text-emerald-300 border-emerald-700/40 hover:bg-emerald-900/50'
-              }`}
-              title={prospect.promoted ? 'Return player to prospect pool' : 'Promote to active fantasy roster'}
-            >
-              <Check className="h-3 w-3" />
-              <span>{prospect.promoted ? 'Demote' : 'Promote'}</span>
-            </button>
+          {/* Action Overflow Menu (Promote, Protect, Refresh, Edit, Delete) */}
+          {(onSyncProspect || onEdit || onDelete || onTogglePromotion || onToggleProtection) && (
+            <PlayerActionOverflowMenu
+              onSync={onSyncProspect ? () => onSyncProspect(prospect.id) : undefined}
+              onEdit={onEdit ? () => onEdit(prospect) : undefined}
+              onDelete={onDelete ? () => onDelete(prospect.id) : undefined}
+              onTogglePromotion={onTogglePromotion ? () => onTogglePromotion(prospect.id) : undefined}
+              onToggleProtection={onToggleProtection ? () => onToggleProtection(prospect.id) : undefined}
+              isPromoted={prospect.promoted}
+              isProtected={prospect.isProtected}
+              isProtectionEligible={ev.isProtectionEligible}
+              isMandatoryPromotion={ev.isMandatoryPromotion}
+              isSyncing={isSyncing}
+            />
           )}
-
-          {/* Manual Sync */}
-          {onSyncProspect && (
-            <button
-              type="button"
-              onClick={() => onSyncProspect(prospect.id)}
-              disabled={isSyncing}
-              className="p-1.5 rounded-lg bg-slate-800 border border-slate-700 text-slate-400 hover:text-cyan-300 hover:border-slate-600 transition-colors disabled:opacity-40"
-              title="Sync with NHL API"
-            >
-              <RefreshCw className={`h-3.5 w-3.5 ${isSyncing ? 'animate-spin text-cyan-400' : ''}`} />
-            </button>
-          )}
-
-          {/* Edit Button */}
-          {onEdit && (
-            <button
-              type="button"
-              onClick={() => onEdit(prospect)}
-              className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium text-amber-400 hover:text-amber-300 bg-amber-500/10 border border-amber-500/30 hover:bg-amber-500/20 transition-colors"
-              title="Edit prospect details"
-            >
-              <Edit3 className="h-3.5 w-3.5" />
-              <span className="hidden sm:inline">Edit</span>
-            </button>
-          )}
-
-          {/* Delete Button */}
-          {onDelete && (
-            <button
-              type="button"
-              onClick={() => onDelete(prospect.id)}
-              className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium text-red-400 hover:text-red-300 bg-red-500/10 border border-red-500/30 hover:bg-red-500/20 transition-colors"
-              title="Delete prospect from pool"
-            >
-              <Trash2 className="h-3.5 w-3.5" />
-              <span className="hidden sm:inline">Delete</span>
-            </button>
-          )}
-
-          {/* Expand Details Trigger */}
-          <button
-            type="button"
-            onClick={onToggleExpand}
-            className="flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium text-slate-400 hover:text-slate-200 hover:bg-slate-800/80 transition-colors border border-transparent hover:border-slate-700"
-          >
-            <span>{isExpanded ? 'Less' : 'Details'}</span>
-            {isExpanded ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronRight className="h-3.5 w-3.5" />}
-          </button>
         </div>
       </div>
 
@@ -597,6 +533,20 @@ export const ProspectListItem: React.FC<ProspectListItemProps> = ({
               </div>
             </div>
           )}
+
+          {/* Rule 4: 4 Seasons of 25+ GP Milestone Tracker */}
+          <div className="rounded-xl bg-[#1e293b] p-3.5 border border-slate-800">
+            <Season25GPMarkers
+              count={ev.seasons25PlusCount}
+              max={ev.seasons25PlusTarget}
+              totalGP={safeTotalGP}
+              isPromoted={prospect.promoted}
+              showSubtext={true}
+              showStepper={true}
+              interactive={true}
+              onCountChange={(newCount) => onUpdate25PlusSeasons?.(prospect.id, newCount)}
+            />
+          </div>
 
           {/* Notes or Status Report */}
           {prospect.statusNotes && (

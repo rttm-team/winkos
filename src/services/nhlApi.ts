@@ -15,6 +15,8 @@ export interface NhlPlayerStatsResult {
   statusBadge?: 'In Development' | 'No NHL Record' | 'NHL API Synced' | 'Verified Snapshot' | 'NHL API Proxy';
   statusMessage?: string;
   error?: string;
+  seasons25PlusGP?: number;
+  seasons25PlusHistory?: Array<{ season: string; gp: number; hit: boolean }>;
 }
 
 // Cached league prospects lookup by normalized name from winkos_full_league_data.json
@@ -102,7 +104,7 @@ export const KNOWN_NHL_PLAYER_IDS: Record<string, string> = {
   'thomas harley': '8481548',
   'shane wright': '8483430',
   'leo carlsson': '8484147',
-  'pavel dorofeyev': '8481559',
+  'pavel dorofeyev': '8481604',
   'jordan spence': '8481585',
   'frank nazar': '8483436',
   'denton mateychuk': '8483438',
@@ -126,6 +128,20 @@ export const KNOWN_NHL_PLAYER_IDS: Record<string, string> = {
   'mads søgaard': '8481544',
   'leevi meriläinen': '8482447',
   'aatu räty': '8482691',
+};
+
+import {
+  KNOWN_25_PLUS_SEASONS,
+  getBaseline25PlusSeasons,
+  getStored25PlusSeasons,
+  setStored25PlusSeasons,
+} from '../data/mockData';
+
+export {
+  KNOWN_25_PLUS_SEASONS,
+  getBaseline25PlusSeasons,
+  getStored25PlusSeasons,
+  setStored25PlusSeasons,
 };
 
 /**
@@ -408,6 +424,8 @@ export function parseNhlLandingStats(landingData: any): {
   headshotUrl?: string;
   teamAbbr?: string;
   hasNhlStats: boolean;
+  seasons25PlusGP: number;
+  seasons25PlusHistory: Array<{ season: string; gp: number; hit: boolean }>;
 } {
   if (!landingData || typeof landingData !== 'object') {
     return {
@@ -415,12 +433,16 @@ export function parseNhlLandingStats(landingData: any): {
       careerTotalGP: 0,
       priorCareerGP: 0,
       hasNhlStats: false,
+      seasons25PlusGP: 0,
+      seasons25PlusHistory: [],
     };
   }
 
   let currentSeasonGP = 0;
   let careerTotalGP = 0;
   let hasNhlStats = false;
+  let seasons25PlusGP = 0;
+  const seasons25PlusHistory: Array<{ season: string; gp: number; hit: boolean }> = [];
 
   // 1. Try featuredStats for regular season
   if (landingData.featuredStats?.regularSeason) {
@@ -441,7 +463,7 @@ export function parseNhlLandingStats(landingData: any): {
     if (careerTotalGP > 0) hasNhlStats = true;
   }
 
-  // 3. Inspect seasonTotals array for NHL regular season games
+  // 3. Inspect seasonTotals array for NHL regular season games & 25+ GP seasons
   if (Array.isArray(landingData.seasonTotals)) {
     const nhlRegularSeasons = landingData.seasonTotals.filter(
       (s: any) => s.leagueAbbrev === 'NHL' && (s.gameTypeId === 2 || !s.gameTypeId)
@@ -459,6 +481,22 @@ export function parseNhlLandingStats(landingData: any): {
         }
       }
 
+      // Group games played per season (in case traded mid-season across teams)
+      const seasonMap = new Map<string, number>();
+      for (const s of nhlRegularSeasons) {
+        const seasonKey = String(s.season || 'Unknown');
+        const gp = typeof s.gamesPlayed === 'number' ? s.gamesPlayed : 0;
+        seasonMap.set(seasonKey, (seasonMap.get(seasonKey) || 0) + gp);
+      }
+
+      for (const [seasonKey, gp] of seasonMap.entries()) {
+        const hit = gp >= 25;
+        if (hit) {
+          seasons25PlusGP++;
+        }
+        seasons25PlusHistory.push({ season: seasonKey, gp, hit });
+      }
+
       // If currentSeasonGP was 0, check the latest NHL season entry
       if (currentSeasonGP === 0 && calculatedTotalGP > 0) {
         const latestSeason = nhlRegularSeasons[nhlRegularSeasons.length - 1];
@@ -466,6 +504,9 @@ export function parseNhlLandingStats(landingData: any): {
       }
     }
   }
+
+  // Cap at 4 for milestone tracking
+  const cappedSeasons25Plus = Math.min(4, seasons25PlusGP);
 
   // Calculate priorCareerGP
   const priorCareerGP = Math.max(0, careerTotalGP - currentSeasonGP);
@@ -477,6 +518,8 @@ export function parseNhlLandingStats(landingData: any): {
     headshotUrl: landingData.headshot,
     teamAbbr: landingData.currentTeamAbbrev || landingData.teamCommonName?.default,
     hasNhlStats,
+    seasons25PlusGP: cappedSeasons25Plus,
+    seasons25PlusHistory,
   };
 }
 
@@ -522,6 +565,7 @@ export async function syncProspectWithNhlApi(prospect: Prospect): Promise<NhlPla
     // Display subtle badge 'No NHL Record' or 'In Development'.
     if (!searchResult) {
       const { currentSeasonGP, priorCareerGP, totalGP } = getSafeGamesPlayed(cachedTotal);
+      const fallback25 = getStored25PlusSeasons(prospect.id, prospect.name, totalGP);
       return {
         playerId: '',
         currentSeasonGP,
@@ -538,6 +582,7 @@ export async function syncProspectWithNhlApi(prospect: Prospect): Promise<NhlPla
           totalGP === 0
             ? 'In Development (No NHL Record, 0 GP)'
             : `Cached League Data: ${totalGP} GP (No live NHL profile)`,
+        seasons25PlusGP: fallback25,
       };
     }
 
@@ -547,6 +592,7 @@ export async function syncProspectWithNhlApi(prospect: Prospect): Promise<NhlPla
     const landingResult = await fetchNhlPlayerLanding(playerId);
     if (!landingResult || !landingResult.data) {
       const { currentSeasonGP, priorCareerGP, totalGP } = getSafeGamesPlayed(cachedTotal);
+      const fallback25 = getStored25PlusSeasons(prospect.id, prospect.name, totalGP);
       return {
         playerId,
         currentSeasonGP,
@@ -560,6 +606,7 @@ export async function syncProspectWithNhlApi(prospect: Prospect): Promise<NhlPla
         hasEmptyStats: true,
         statusBadge: totalGP === 0 ? 'In Development' : 'No NHL Record',
         statusMessage: 'Official NHL profile located; statistics unavailable',
+        seasons25PlusGP: fallback25,
       };
     }
 
@@ -570,6 +617,7 @@ export async function syncProspectWithNhlApi(prospect: Prospect): Promise<NhlPla
     // Display subtle badge 'In Development'.
     if (!parsed.hasNhlStats || (parsed.careerTotalGP === 0 && parsed.currentSeasonGP === 0)) {
       const { currentSeasonGP, priorCareerGP, totalGP } = getSafeGamesPlayed(cachedTotal);
+      const fallback25 = getStored25PlusSeasons(prospect.id, prospect.name, totalGP);
       return {
         playerId,
         currentSeasonGP,
@@ -586,6 +634,7 @@ export async function syncProspectWithNhlApi(prospect: Prospect): Promise<NhlPla
           totalGP === 0
             ? 'In Development (Official NHL profile, 0 GP)'
             : `Official NHL profile located (using cached ${totalGP} GP)`,
+        seasons25PlusGP: fallback25,
       };
     }
 
@@ -602,10 +651,13 @@ export async function syncProspectWithNhlApi(prospect: Prospect): Promise<NhlPla
       matchFound: true,
       hasEmptyStats: false,
       statusBadge: landingResult.source === 'proxy_api' ? 'NHL API Proxy' : 'NHL API Synced',
+      seasons25PlusGP: parsed.seasons25PlusGP,
+      seasons25PlusHistory: parsed.seasons25PlusHistory,
     };
   } catch (err: any) {
     // Graceful fallback keeping cached stats from winkos_full_league_data.json or 0
     const { currentSeasonGP, priorCareerGP, totalGP } = getSafeGamesPlayed(cachedTotal);
+    const fallback25 = getStored25PlusSeasons(prospect.id, prospect.name, totalGP);
     return {
       playerId: prospect.nhlPlayerId || '',
       currentSeasonGP,
@@ -619,6 +671,7 @@ export async function syncProspectWithNhlApi(prospect: Prospect): Promise<NhlPla
       hasEmptyStats: true,
       statusBadge: totalGP === 0 ? 'In Development' : 'No NHL Record',
       error: err?.message || 'Network timeout or API restriction',
+      seasons25PlusGP: fallback25,
     };
   }
 }

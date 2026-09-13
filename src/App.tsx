@@ -1,5 +1,14 @@
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
-import { GeneralManager, PositionFilter, StatusFilter, Prospect, evaluateProspect, ViewMode } from './types';
+import {
+  GeneralManager,
+  PositionFilter,
+  StatusFilter,
+  Prospect,
+  evaluateProspect,
+  ViewMode,
+  ProspectSortOption,
+  sortProspects,
+} from './types';
 import { INITIAL_GMS } from './data/mockData';
 import { Header } from './components/Header';
 import { WatchlistBanner } from './components/WatchlistBanner';
@@ -8,7 +17,7 @@ import { PositionSection } from './components/PositionSection';
 import { RulesModal } from './components/RulesModal';
 import { AddProspectModal } from './components/AddProspectModal';
 import { EditProspectModal } from './components/EditProspectModal';
-import { syncProspectWithNhlApi } from './services/nhlApi';
+import { syncProspectWithNhlApi, setStored25PlusSeasons } from './services/nhlApi';
 import { supabase, fetchLeagueData, mapProspectRow } from './lib/supabase';
 import {
   UserPlus,
@@ -27,6 +36,7 @@ export default function App() {
   const [selectedGmId, setSelectedGmId] = useState<string>('gm-adam');
   const [positionFilter, setPositionFilter] = useState<PositionFilter>('ALL');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('ALL');
+  const [sortOption, setSortOption] = useState<ProspectSortOption>('urgency');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [isRulesModalOpen, setIsRulesModalOpen] = useState<boolean>(false);
   const [isAddModalOpen, setIsAddModalOpen] = useState<boolean>(false);
@@ -199,6 +209,12 @@ export default function App() {
     // 2. Fetch fresh stats via NHL API service
     const result = await syncProspectWithNhlApi(currentProspect);
 
+    // Save 25+ GP count to local storage cache if available
+    const seasonsCount = result.seasons25PlusGP !== undefined 
+      ? result.seasons25PlusGP 
+      : (currentProspect.seasons25PlusGP ?? 0);
+    setStored25PlusSeasons(prospectId, currentProspect.name, seasonsCount);
+
     // 3. Update state with fresh data and auto re-evaluate rules
     setGms((prevGms) =>
       prevGms.map((gm) => ({
@@ -221,6 +237,8 @@ export default function App() {
             matchFound: result.matchFound,
             statusNotes: result.statusMessage || p.statusNotes,
             syncErrorMessage: result.error,
+            seasons25PlusGP: seasonsCount,
+            seasons25PlusHistory: result.seasons25PlusHistory ?? p.seasons25PlusHistory,
           };
         }),
       }))
@@ -248,6 +266,14 @@ export default function App() {
         second: '2-digit',
       });
 
+      // Save each prospect's 25+ count to cache
+      for (const resObj of results) {
+        const p = activeGm.prospects.find(item => item.id === resObj.prospectId);
+        if (p && resObj.result.seasons25PlusGP !== undefined) {
+          setStored25PlusSeasons(p.id, p.name, resObj.result.seasons25PlusGP);
+        }
+      }
+
       setGms((prevGms) =>
         prevGms.map((gm) => {
           if (gm.id !== activeGm.id) return gm;
@@ -257,6 +283,9 @@ export default function App() {
               const resObj = results.find((r) => r.prospectId === p.id);
               if (!resObj) return p;
               const { result } = resObj;
+              const seasonsCount = result.seasons25PlusGP !== undefined 
+                ? result.seasons25PlusGP 
+                : (p.seasons25PlusGP ?? 0);
               return {
                 ...p,
                 totalGames: result.totalGP,
@@ -273,6 +302,8 @@ export default function App() {
                 matchFound: result.matchFound,
                 statusNotes: result.statusMessage || p.statusNotes,
                 syncErrorMessage: result.error,
+                seasons25PlusGP: seasonsCount,
+                seasons25PlusHistory: result.seasons25PlusHistory ?? p.seasons25PlusHistory,
               };
             }),
           };
@@ -342,24 +373,34 @@ export default function App() {
   };
 
   const handleEditProspect = async (prospectId: string, updatedData: Partial<Prospect>) => {
-    const { error } = await supabase.from('prospects').update({
-      player_name: updatedData.name,
-      position: updatedData.position,
-      draft_year: updatedData.draftYear,
-      draft_round: updatedData.draftRound,
-      draft_pick: updatedData.draftPick,
-      nhl_team: updatedData.nhlTeam,
-      nhl_team_abbr: updatedData.nhlTeamAbbr,
-      total_games: updatedData.totalGames,
-      current_season_gp: updatedData.currentSeasonGP,
-      prior_career_gp: updatedData.priorCareerGP,
-      protected: updatedData.isProtected,
-      status_notes: updatedData.statusNotes,
-    }).eq('id', prospectId);
+    try {
+      const updatePayload: Record<string, any> = {
+        player_name: updatedData.name,
+        position: updatedData.position,
+        draft_year: updatedData.draftYear,
+        draft_round: updatedData.draftRound,
+        draft_pick: updatedData.draftPick,
+        nhl_team: updatedData.nhlTeam,
+        nhl_team_abbr: updatedData.nhlTeamAbbr,
+        total_games: updatedData.totalGames,
+        current_season_gp: updatedData.currentSeasonGP,
+        prior_career_gp: updatedData.priorCareerGP,
+        protected: updatedData.isProtected,
+        status_notes: updatedData.statusNotes,
+      };
 
-    if (error) {
-      console.error("Error editing prospect:", error);
-      return;
+      if (updatedData.seasons25PlusGP !== undefined) {
+        updatePayload.seasons_25_plus_gp = updatedData.seasons25PlusGP;
+      }
+
+      const { error } = await supabase.from('prospects').update(updatePayload).eq('id', prospectId);
+      if (error) {
+        console.warn("Retrying update without seasons_25_plus_gp if column not present:", error);
+        delete updatePayload.seasons_25_plus_gp;
+        await supabase.from('prospects').update(updatePayload).eq('id', prospectId);
+      }
+    } catch (err) {
+      console.error("Error editing prospect:", err);
     }
 
     setGms((prevGms) =>
@@ -378,6 +419,14 @@ export default function App() {
       })
     );
   };
+
+  const handleUpdate25PlusSeasons = useCallback((prospectId: string, count: number) => {
+    const target = activeGm.prospects.find((p) => p.id === prospectId);
+    if (target) {
+      setStored25PlusSeasons(prospectId, target.name, count);
+    }
+    handleEditProspect(prospectId, { seasons25PlusGP: count });
+  }, [activeGm]);
 
   const handleDeleteProspect = async (prospectId: string) => {
     if (!window.confirm("Are you sure you want to delete this prospect from the pool?")) return;
@@ -448,9 +497,9 @@ export default function App() {
     };
   }, [activeGm.prospects]);
 
-  // Filtered prospects
+  // Filtered and sorted prospects
   const filteredProspects = useMemo(() => {
-    return activeGm.prospects.filter((p) => {
+    const filtered = activeGm.prospects.filter((p) => {
       // Position filter
       if (positionFilter !== 'ALL' && p.position !== positionFilter) {
         return false;
@@ -489,7 +538,9 @@ export default function App() {
 
       return true;
     });
-  }, [activeGm.prospects, positionFilter, statusFilter, searchQuery]);
+
+    return sortProspects(filtered, sortOption);
+  }, [activeGm.prospects, positionFilter, statusFilter, searchQuery, sortOption]);
 
   // Group by position (Forwards, Defensemen, Goalies)
   const forwards = useMemo(
@@ -650,12 +701,15 @@ export default function App() {
           setPositionFilter={setPositionFilter}
           statusFilter={statusFilter}
           setStatusFilter={setStatusFilter}
+          sortOption={sortOption}
+          setSortOption={setSortOption}
           searchQuery={searchQuery}
           setSearchQuery={setSearchQuery}
           counts={counts}
           onResetFilters={() => {
             setPositionFilter('ALL');
             setStatusFilter('ALL');
+            setSortOption('urgency');
             setSearchQuery('');
           }}
           viewMode={viewMode}
@@ -676,6 +730,7 @@ export default function App() {
               onClick={() => {
                 setPositionFilter('ALL');
                 setStatusFilter('ALL');
+                setSortOption('urgency');
                 setSearchQuery('');
               }}
               className="mt-4 inline-flex items-center gap-1.5 rounded-xl bg-cyan-500 px-4 py-2 text-xs font-bold text-slate-950 hover:bg-cyan-400 transition-colors"
@@ -700,6 +755,7 @@ export default function App() {
                 onSyncProspect={handleSyncProspect}
                 onEdit={handleOpenEdit}
                 onDelete={handleDeleteProspect}
+                onUpdate25PlusSeasons={handleUpdate25PlusSeasons}
               />
             )}
 
@@ -718,6 +774,7 @@ export default function App() {
                 onSyncProspect={handleSyncProspect}
                 onEdit={handleOpenEdit}
                 onDelete={handleDeleteProspect}
+                onUpdate25PlusSeasons={handleUpdate25PlusSeasons}
               />
             )}
 
@@ -736,6 +793,7 @@ export default function App() {
                 onSyncProspect={handleSyncProspect}
                 onEdit={handleOpenEdit}
                 onDelete={handleDeleteProspect}
+                onUpdate25PlusSeasons={handleUpdate25PlusSeasons}
               />
             )}
           </div>

@@ -1,5 +1,5 @@
 import React from 'react';
-import { PositionFilter, StatusFilter, ViewMode } from '../types';
+import { PositionFilter, StatusFilter, ViewMode, ProspectSortOption } from '../types';
 import {
   Search,
   SlidersHorizontal,
@@ -9,6 +9,7 @@ import {
   Layers,
   List,
   LayoutGrid,
+  ArrowUpDown,
 } from 'lucide-react';
 
 interface FiltersAndSearchProps {
@@ -16,6 +17,8 @@ interface FiltersAndSearchProps {
   setPositionFilter: (pos: PositionFilter) => void;
   statusFilter: StatusFilter;
   setStatusFilter: (status: StatusFilter) => void;
+  sortOption: ProspectSortOption;
+  setSortOption: (sort: ProspectSortOption) => void;
   searchQuery: string;
   setSearchQuery: (query: string) => void;
   counts: {
@@ -39,6 +42,8 @@ export const FiltersAndSearch: React.FC<FiltersAndSearchProps> = ({
   setPositionFilter,
   statusFilter,
   setStatusFilter,
+  sortOption,
+  setSortOption,
   searchQuery,
   setSearchQuery,
   counts,
@@ -47,7 +52,10 @@ export const FiltersAndSearch: React.FC<FiltersAndSearchProps> = ({
   setViewMode,
 }) => {
   const hasActiveFilters =
-    positionFilter !== 'ALL' || statusFilter !== 'ALL' || searchQuery.trim() !== '';
+    positionFilter !== 'ALL' ||
+    statusFilter !== 'ALL' ||
+    searchQuery.trim() !== '' ||
+    sortOption !== 'urgency';
 
   return (
     <div className="mb-8 rounded-2xl border border-slate-800 bg-slate-900/80 p-4 sm:p-6 shadow-xl backdrop-blur-md space-y-4">
@@ -163,6 +171,28 @@ export const FiltersAndSearch: React.FC<FiltersAndSearchProps> = ({
               <option value="WATCHLIST">Watchlist ({counts.watchlist})</option>
               <option value="PROMOTED">Promoted ({counts.promoted})</option>
               <option value="PROTECTION_WATCH">Protection Watch ({counts.protectionWatch})</option>
+            </select>
+          </div>
+
+          {/* Sort Dropdown */}
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-semibold uppercase tracking-wider text-slate-400 flex items-center gap-1">
+              <ArrowUpDown className="h-3.5 w-3.5 text-emerald-400" />
+              <span>Sort:</span>
+            </span>
+            <select
+              id="prospect-sort-select"
+              value={sortOption}
+              onChange={(e) => setSortOption(e.target.value as ProspectSortOption)}
+              className="rounded-xl border border-slate-700/80 bg-slate-800/90 px-3 py-2 text-xs font-bold text-slate-100 focus:border-cyan-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/20 cursor-pointer"
+            >
+              <option value="urgency">Urgency / Action Priority</option>
+              <option value="seasonGPDesc">Season GP (High to Low)</option>
+              <option value="careerGPDesc">Career GP (High to Low)</option>
+              <option value="seasons25PlusDesc">25+ GP Seasons (3/4 → 0/4)</option>
+              <option value="nameAsc">Name (A → Z)</option>
+              <option value="nameDesc">Name (Z → A)</option>
+              <option value="draftYearDesc">Draft Class (Newest First)</option>
             </select>
           </div>
         </div>

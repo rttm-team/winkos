@@ -17,6 +17,7 @@ interface PositionSectionProps {
   onSyncProspect?: (prospectId: string) => void;
   onEdit?: (prospect: Prospect) => void;
   onDelete?: (prospectId: string) => void;
+  onUpdate25PlusSeasons?: (prospectId: string, count: number) => void;
 }
 
 export const PositionSection: React.FC<PositionSectionProps> = ({
@@ -32,6 +33,7 @@ export const PositionSection: React.FC<PositionSectionProps> = ({
   onSyncProspect,
   onEdit,
   onDelete,
+  onUpdate25PlusSeasons,
 }) => {
   if (prospects.length === 0) {
     return null;
@@ -148,6 +150,7 @@ export const PositionSection: React.FC<PositionSectionProps> = ({
               onSyncProspect={onSyncProspect}
               onEdit={onEdit}
               onDelete={onDelete}
+              onUpdate25PlusSeasons={onUpdate25PlusSeasons}
             />
           ))}
         </div>
@@ -165,6 +168,7 @@ export const PositionSection: React.FC<PositionSectionProps> = ({
               onSyncProspect={onSyncProspect}
               onEdit={onEdit}
               onDelete={onDelete}
+              onUpdate25PlusSeasons={onUpdate25PlusSeasons}
             />
           ))}
         </div>

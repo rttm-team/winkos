@@ -103,6 +103,17 @@ export const RulesModal: React.FC<RulesModalProps> = ({ isOpen, onClose }) => {
             </p>
           </div>
 
+          {/* 4 Seasons of 25+ GP Milestone */}
+          <div className="rounded-xl border border-purple-500/30 bg-purple-950/20 p-4">
+            <div className="flex items-center gap-2 text-purple-300 font-bold text-base mb-2">
+              <Sparkles className="h-4 w-4" />
+              <span>4 Seasons of 25+ GP Milestone</span>
+            </div>
+            <p className="text-xs text-slate-300 leading-relaxed">
+              In addition to single-season and cumulative thresholds, player careers are tracked with <strong>4 markers</strong> (counting from 0 to 4). Each marker represents a season where the player reached <strong>25+ GP</strong>. When <strong>4 seasons of 25+ GP</strong> are hit before reaching 200 career GP, the player's status changes to prompt mandatory promotion.
+            </p>
+          </div>
+
           {/* Roster Protection Rules */}
           <div className="rounded-xl border border-slate-700 bg-slate-800/60 p-4">
             <div className="flex items-center gap-2 text-cyan-400 font-bold text-base mb-2">
