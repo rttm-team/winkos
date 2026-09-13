@@ -35,6 +35,7 @@ import {
 export default function App() {
   const [gms, setGms] = useState<GeneralManager[]>(INITIAL_GMS);
   const [selectedGmId, setSelectedGmId] = useState<string>('gm-adam');
+  const [authedGmId, setAuthedGmId] = useState<string | null>(null);
   const [view, setView] = useState<'hub' | 'prospects' | 'arcade'>('hub');
   const [positionFilter, setPositionFilter] = useState<PositionFilter>('ALL');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('ALL');
@@ -100,6 +101,41 @@ export default function App() {
   const activeGm = useMemo(() => {
     return gms.find((g) => g.id === selectedGmId) || gms[0];
   }, [gms, selectedGmId]);
+
+  // The GM currently authenticated via PIN (null until they unlock)
+  const authedGm = useMemo(
+    () => (authedGmId ? gms.find((g) => g.id === authedGmId) ?? null : null),
+    [gms, authedGmId]
+  );
+
+  // Validate a GM's PIN, unlock the hub, and persist the session locally.
+  const handleAuthenticate = useCallback(
+    (gmId: string, pin: string): boolean => {
+      const gm = gms.find((g) => g.id === gmId);
+      if (!gm) return false;
+      if (String(gm.pin ?? '') !== String(pin ?? '')) return false;
+      setAuthedGmId(gm.id);
+      setSelectedGmId(gm.id);
+      try {
+        localStorage.setItem('winkos_active_gm', gm.id);
+      } catch {
+        /* localStorage may be unavailable (private mode) */
+      }
+      return true;
+    },
+    [gms]
+  );
+
+  // Clear the session and return to the locked hub.
+  const handleLogout = useCallback(() => {
+    setAuthedGmId(null);
+    setView('hub');
+    try {
+      localStorage.removeItem('winkos_active_gm');
+    } catch {
+      /* no-op */
+    }
+  }, []);
 
   // Handle GP update simulation (+1 or -1)
   const handleUpdateGP = async (prospectId: string, delta: number) => {
@@ -614,12 +650,15 @@ export default function App() {
     );
   }
 
-  if (view === 'hub') {
+  // Show the hub whenever we're on the hub view OR nobody is authenticated yet.
+  // WinkoHub renders the PIN gate when activeGm is null and the unlocked hub otherwise.
+  if (view === 'hub' || !authedGm) {
     return (
       <WinkoHub
         gms={gms}
-        activeGm={activeGm}
-        onSelectGm={(id: string) => setSelectedGmId(id)}
+        activeGm={authedGm}
+        onAuthenticate={handleAuthenticate}
+        onLogout={handleLogout}
         onNavigate={(target: 'prospects' | 'arcade') => setView(target)}
       />
     );
