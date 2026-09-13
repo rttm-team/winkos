@@ -18,6 +18,7 @@ import { PositionSection } from './components/PositionSection';
 import { RulesModal } from './components/RulesModal';
 import { AddProspectModal } from './components/AddProspectModal';
 import { EditProspectModal } from './components/EditProspectModal';
+import ArcadeComingSoon from './components/ArcadeComingSoon';
 import { syncProspectWithNhlApi, setStored25PlusSeasons } from './services/nhlApi';
 import { supabase, fetchLeagueData, mapProspectRow } from './lib/supabase';
 import {
@@ -683,20 +684,23 @@ export default function App() {
         activeView={view}
       />
 
-      {view === 'prospects' && (
-        <GmSwitcherBar
-          gms={gms}
-          selectedGmId={selectedGmId}
-          onSelectGm={(id) => {
-            setSelectedGmId(id);
-            setPositionFilter('ALL');
-            setStatusFilter('ALL');
-            setSearchQuery('');
-          }}
-        />
-      )}
+      {view === 'arcade' && <ArcadeComingSoon onBack={() => setView('hub')} />}
+      {view !== 'arcade' && (
+        <>
+          {view === 'prospects' && (
+            <GmSwitcherBar
+              gms={gms}
+              selectedGmId={selectedGmId}
+              onSelectGm={(id) => {
+                setSelectedGmId(id);
+                setPositionFilter('ALL');
+                setStatusFilter('ALL');
+                setSearchQuery('');
+              }}
+            />
+          )}
 
-      <main className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+          <main className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
         {/* Action Toolbar above filters */}
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-2">
@@ -870,6 +874,8 @@ export default function App() {
           </button>
         </div>
       </main>
+      </>
+      )}
 
       {/* Modals */}
       <RulesModal

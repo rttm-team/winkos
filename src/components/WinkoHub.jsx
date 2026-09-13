@@ -18,6 +18,7 @@ import {
   X,
   Delete,
 } from 'lucide-react';
+import { evaluateProspect } from '../types';
 
 /**
  * WinkoHub - Landing page + PIN auth gate for Winko's Hockey Pool.
@@ -312,6 +313,42 @@ function LockedTile({ title, subtitle, icon: Icon, accent = 'sky', badge, childr
 
 function UnlockedView({ activeGm, leaderboard, isArcadeComingSoon, onNavigate }) {
   const firstName = activeGm?.name ? activeGm.name.split(' ')[0] : '';
+  
+  const stats = useMemo(() => {
+    const prospects = activeGm?.prospects || [];
+    const skaters = prospects.filter(p => p.position === 'F' || p.position === 'D');
+    const goalies = prospects.filter(p => p.position === 'G');
+
+    const evaluate = (list) => {
+      let trackedCount = 0;
+      let totalProgress = 0;
+      list.forEach(p => {
+        const ev = evaluateProspect(p);
+        // Tracked if promoted, mandatory promotion, or watchlist
+        if (p.promoted || ev.isMandatoryPromotion || ev.isWatchlist) {
+          trackedCount++;
+        }
+        // Use cumulative progress as a proxy for progress bar
+        totalProgress += ev.cumulativeProgress;
+      });
+      return {
+        count: list.length,
+        tracked: trackedCount,
+        progress: list.length > 0 ? Math.round(totalProgress / list.length) : 0
+      };
+    };
+
+    const skaterStats = evaluate(skaters);
+    const goalieStats = evaluate(goalies);
+
+    return {
+      skaterPercent: skaterStats.progress,
+      skaterCaption: `${skaterStats.tracked} / ${skaterStats.count} tracked to threshold`,
+      goaliePercent: goalieStats.progress,
+      goalieCaption: `${goalieStats.tracked} / ${goalieStats.count} tracked to threshold`,
+    };
+  }, [activeGm]);
+
   return (
     <>
       {/* Hero */}
@@ -349,15 +386,15 @@ function UnlockedView({ activeGm, leaderboard, isArcadeComingSoon, onNavigate })
           <div className="relative mt-6 space-y-4">
             <ProgressRow
               label="Skater Promotions"
-              value={72}
+              value={stats.skaterPercent}
               accent="sky"
-              caption="18 / 25 tracked to threshold"
+              caption={stats.skaterCaption}
             />
             <ProgressRow
               label="Goalie Promotions"
-              value={45}
+              value={stats.goaliePercent}
               accent="amber"
-              caption="9 / 20 tracked to threshold"
+              caption={stats.goalieCaption}
             />
           </div>
 
@@ -424,12 +461,11 @@ function UnlockedView({ activeGm, leaderboard, isArcadeComingSoon, onNavigate })
           <div className="relative mt-auto pt-6">
             <button
               type="button"
-              disabled
-              aria-disabled="true"
-              className="flex w-full cursor-not-allowed items-center justify-center gap-2 rounded-xl border border-slate-700 bg-slate-800/60 px-4 py-3 text-sm font-bold text-slate-400"
+              onClick={() => onNavigate('arcade')}
+              className="flex w-full items-center justify-center gap-2 rounded-xl bg-amber-500 px-4 py-3 text-sm font-bold text-slate-950 transition hover:bg-amber-400"
             >
-              <Lock className="h-4 w-4" />
-              Arcade Coming Soon
+              <Dice5 className="h-4 w-4" />
+              Open Arcade
             </button>
             <p className="mt-2 text-center text-xs text-slate-500">
               Daily mini-games drop soon — keep stacking Winkoins.
