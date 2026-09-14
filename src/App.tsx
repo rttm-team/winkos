@@ -110,10 +110,14 @@ export default function App() {
     [gms, authedGmId]
   );
 
-  // Determine whether current GM has Admin access based on is_commish flag in the database
+  // Determine whether current user / GM has Admin access based on authenticated GM or active GM is_commish flag
   const isAdmin = useMemo(() => {
-    return Boolean(activeGm.is_commish || activeGm.name.toLowerCase() === 'adam');
-  }, [activeGm]);
+    return Boolean(
+      (authedGm && (authedGm.is_commish || authedGm.name.toLowerCase() === 'adam')) ||
+      activeGm.is_commish ||
+      activeGm.name.toLowerCase() === 'adam'
+    );
+  }, [authedGm, activeGm]);
 
   // Validate a GM's PIN, unlock the hub, and persist the session locally.
   const handleAuthenticate = useCallback(
