@@ -128,8 +128,8 @@ export const KNOWN_NHL_PLAYER_IDS: Record<string, string> = {
   'mads søgaard': '8481544',
   'leevi meriläinen': '8482447',
   'aatu räty': '8482691',
-  'vitali kravtsov': '8480838',
-  'vitaliy kravtsov': '8480838',
+  'vitali kravtsov': '8480833',
+  'vitaliy kravtsov': '8480833',
 };
 
 import {
@@ -613,7 +613,7 @@ export function parseNhlLandingStats(landingData: any): {
  */
 export async function syncProspectWithNhlApi(prospect: Prospect): Promise<NhlPlayerStatsResult> {
   const timestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-  const directNhlId = prospect.nhlPlayerId;
+  const directNhlId = prospect.nhl_id || prospect.nhlId || prospect.nhlPlayerId;
 
   // If player is Trashed (or inactive), stop tracking games played immediately
   if (prospect.status === 'trashed' || prospect.status === 'inactive') {
@@ -654,7 +654,7 @@ export async function syncProspectWithNhlApi(prospect: Prospect): Promise<NhlPla
     return { currentSeasonGP, priorCareerGP, totalGP };
   };
 
-  // If nhl_id is missing/null, search for it on demand
+  // If directNhlId exists, skip searchNhlPlayerId entirely and fetch directly using fetchNhlPlayerLanding
   let resolvedId = directNhlId;
   if (!resolvedId) {
     try {

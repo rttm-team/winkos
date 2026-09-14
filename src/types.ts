@@ -50,6 +50,8 @@ export interface Prospect {
   photoUrl?: string;
   statusNotes?: string;
   nhlPlayerId?: string;
+  nhl_id?: string;
+  nhlId?: string;
   status?: ProspectStatus;
   apiSyncStatus?: 'idle' | 'syncing' | 'synced' | 'fallback' | 'error' | 'no_record';
   lastSyncedAt?: string;

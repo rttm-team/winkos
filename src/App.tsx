@@ -278,9 +278,11 @@ export default function App() {
         ...gm,
         prospects: gm.prospects.map((p) => {
           if (p.id !== prospectId) return p;
+          const displayGP = result.totalGP ?? p.total_games ?? p.totalGames ?? 0;
           return {
             ...p,
-            totalGames: result.totalGP,
+            totalGames: displayGP,
+            total_games: displayGP,
             currentSeasonGP: result.currentSeasonGP,
             priorCareerGP: result.priorCareerGP,
             nhlPlayerId: result.playerId || p.nhlPlayerId,
@@ -343,9 +345,11 @@ export default function App() {
               const seasonsCount = result.seasons25PlusGP !== undefined 
                 ? result.seasons25PlusGP 
                 : (p.seasons25PlusGP ?? 0);
+              const displayGP = result.totalGP ?? p.total_games ?? p.totalGames ?? 0;
               return {
                 ...p,
-                totalGames: result.totalGP,
+                totalGames: displayGP,
+                total_games: displayGP,
                 currentSeasonGP: result.currentSeasonGP,
                 priorCareerGP: result.priorCareerGP,
                 nhlPlayerId: result.playerId || p.nhlPlayerId,
@@ -441,45 +445,50 @@ export default function App() {
     }
     const isTrashed = updatedData.status === 'trashed' || updatedData.status === 'inactive';
 
-    // 1. Optimistically update local React state FIRST for instant UI and counter response
+    // 1. Optimistically update local React state FIRST for instant UI and counter response across all GMs
     setGms((prevGms) =>
-      prevGms.map((gm) => {
-        if (gm.id !== activeGm.id) return gm;
-        return {
-          ...gm,
-          prospects: gm.prospects.map((p) => {
-            if (p.id !== prospectId) return p;
-            return {
-              ...p,
-              ...updatedData,
-            };
-          }),
-        };
-      })
+      prevGms.map((gm) => ({
+        ...gm,
+        prospects: gm.prospects.map((p) => {
+          if (p.id !== prospectId) return p;
+          const newTotalGames = updatedData.totalGames !== undefined ? updatedData.totalGames : p.totalGames;
+          return {
+            ...p,
+            ...updatedData,
+            totalGames: newTotalGames,
+            total_games: newTotalGames,
+          };
+        }),
+      }))
     );
 
     // Save status to local storage cache for instant persistence
     if (updatedData.status !== undefined) {
-      const targetProspect = activeGm.prospects.find((p) => p.id === prospectId);
-      setStoredProspectStatus(prospectId, targetProspect?.name || '', isTrashed ? 'trashed' : 'active');
+      let targetName = '';
+      for (const gm of gms) {
+        const found = gm.prospects.find(p => p.id === prospectId);
+        if (found) { targetName = found.name; break; }
+      }
+      setStoredProspectStatus(prospectId, targetName, isTrashed ? 'trashed' : 'active');
     }
 
     // 2. Persist to Supabase asynchronously with fallback handling
     try {
-      const updatePayload: Record<string, any> = {
-        player_name: updatedData.name,
-        position: updatedData.position,
-        draft_year: updatedData.draftYear,
-        draft_round: updatedData.draftRound,
-        draft_pick: updatedData.draftPick,
-        nhl_team: updatedData.nhlTeam,
-        nhl_team_abbr: updatedData.nhlTeamAbbr,
-        total_games: updatedData.totalGames,
-        current_season_gp: updatedData.currentSeasonGP,
-        prior_career_gp: updatedData.priorCareerGP,
-        protected: updatedData.isProtected,
-        status_notes: updatedData.statusNotes,
-      };
+      const updatePayload: Record<string, any> = {};
+      if (updatedData.name !== undefined) updatePayload.player_name = updatedData.name;
+      if (updatedData.position !== undefined) updatePayload.position = updatedData.position;
+      if (updatedData.draftYear !== undefined) updatePayload.draft_year = updatedData.draftYear;
+      if (updatedData.draftRound !== undefined) updatePayload.draft_round = updatedData.draftRound;
+      if (updatedData.draftPick !== undefined) updatePayload.draft_pick = updatedData.draftPick;
+      if (updatedData.nhlTeam !== undefined) updatePayload.nhl_team = updatedData.nhlTeam;
+      if (updatedData.nhlTeamAbbr !== undefined) updatePayload.nhl_team_abbr = updatedData.nhlTeamAbbr;
+      if (updatedData.totalGames !== undefined) {
+        updatePayload.total_games = updatedData.totalGames;
+      }
+      if (updatedData.currentSeasonGP !== undefined) updatePayload.current_season_gp = updatedData.currentSeasonGP;
+      if (updatedData.priorCareerGP !== undefined) updatePayload.prior_career_gp = updatedData.priorCareerGP;
+      if (updatedData.isProtected !== undefined) updatePayload.protected = updatedData.isProtected;
+      if (updatedData.statusNotes !== undefined) updatePayload.status_notes = updatedData.statusNotes;
 
       if (updatedData.status !== undefined) {
         updatePayload.is_inactive = isTrashed;
@@ -490,7 +499,8 @@ export default function App() {
         updatePayload.seasons_25_plus_gp = updatedData.seasons25PlusGP;
       }
 
-      const { error } = await supabase.from('prospects').update(updatePayload).eq('id', prospectId);
+      console.log("Updating Supabase prospect id:", prospectId, updatePayload);
+      const { data, error } = await supabase.from('prospects').update(updatePayload).eq('id', prospectId).select();
       if (error) {
         console.warn("Retrying update with fallback columns:", error);
         const retryPayload = { ...updatePayload };
@@ -502,7 +512,14 @@ export default function App() {
         if (error.message?.includes('seasons_25_plus_gp')) {
           delete retryPayload.seasons_25_plus_gp;
         }
-        await supabase.from('prospects').update(retryPayload).eq('id', prospectId);
+        const retryRes = await supabase.from('prospects').update(retryPayload).eq('id', prospectId).select();
+        if (retryRes.error) {
+          console.error("Supabase update failed on retry:", retryRes.error);
+        } else {
+          console.log("Supabase update succeeded on retry:", retryRes.data);
+        }
+      } else {
+        console.log("Supabase update succeeded:", data);
       }
     } catch (err) {
       console.error("Error editing prospect in Supabase:", err);
