@@ -606,8 +606,20 @@ export async function syncProspectWithNhlApi(prospect: Prospect): Promise<NhlPla
     return { currentSeasonGP, priorCareerGP, totalGP };
   };
 
-  // If nhl_id is missing/null, gracefully return Supabase total_games without throwing or searching
-  if (!directNhlId) {
+  // If nhl_id is missing/null, search for it on demand
+  let resolvedId = directNhlId;
+  if (!resolvedId) {
+    try {
+      const searchRes = await searchNhlPlayerId(prospect.name);
+      if (searchRes && searchRes.playerId) {
+        resolvedId = searchRes.playerId;
+      }
+    } catch {
+      // Ignore search error
+    }
+  }
+
+  if (!resolvedId) {
     const { currentSeasonGP, priorCareerGP, totalGP } = getSafeGamesPlayed(cachedTotal);
     const fallback25 = getStored25PlusSeasons(prospect.id, prospect.name, totalGP);
     return {
@@ -628,12 +640,12 @@ export async function syncProspectWithNhlApi(prospect: Prospect): Promise<NhlPla
   }
 
   try {
-    const landingResult = await fetchNhlPlayerLanding(directNhlId);
+    const landingResult = await fetchNhlPlayerLanding(resolvedId);
     if (!landingResult || !landingResult.data) {
       const { currentSeasonGP, priorCareerGP, totalGP } = getSafeGamesPlayed(cachedTotal);
       const fallback25 = getStored25PlusSeasons(prospect.id, prospect.name, totalGP);
       return {
-        playerId: directNhlId,
+        playerId: resolvedId,
         currentSeasonGP,
         priorCareerGP,
         totalGP,
@@ -654,7 +666,7 @@ export async function syncProspectWithNhlApi(prospect: Prospect): Promise<NhlPla
       const { currentSeasonGP, priorCareerGP, totalGP } = getSafeGamesPlayed(cachedTotal);
       const fallback25 = getStored25PlusSeasons(prospect.id, prospect.name, totalGP);
       return {
-        playerId: directNhlId,
+        playerId: resolvedId,
         currentSeasonGP,
         priorCareerGP,
         totalGP,
@@ -671,7 +683,7 @@ export async function syncProspectWithNhlApi(prospect: Prospect): Promise<NhlPla
     }
 
     return {
-      playerId: directNhlId,
+      playerId: resolvedId,
       currentSeasonGP: parsed.currentSeasonGP,
       priorCareerGP: parsed.priorCareerGP,
       totalGP: parsed.careerTotalGP,
@@ -689,7 +701,7 @@ export async function syncProspectWithNhlApi(prospect: Prospect): Promise<NhlPla
     const { currentSeasonGP, priorCareerGP, totalGP } = getSafeGamesPlayed(cachedTotal);
     const fallback25 = getStored25PlusSeasons(prospect.id, prospect.name, totalGP);
     return {
-      playerId: directNhlId,
+      playerId: resolvedId,
       currentSeasonGP,
       priorCareerGP,
       totalGP,
