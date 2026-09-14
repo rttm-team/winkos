@@ -76,7 +76,7 @@ export const mapProspectRow = (row: any): Prospect => {
     syncBadge: row.sync_badge ?? row.syncBadge,
     hasEmptyStats: row.has_empty_stats ?? row.hasEmptyStats,
     matchFound: row.match_found ?? row.matchFound,
-    seasons25PlusGP: row.seasons_25_plus_gp ?? row.seasons25PlusGP ?? getStored25PlusSeasons(String(row.id), name, totalGames),
+    seasons25PlusGP: row.qualifying_seasons ?? row.seasons_25_plus_gp ?? row.seasons25PlusGP ?? getStored25PlusSeasons(String(row.id), name, totalGames),
     season_breakdown: typeof row.season_breakdown === 'string' ? JSON.parse(row.season_breakdown) : row.season_breakdown,
   };
 };
