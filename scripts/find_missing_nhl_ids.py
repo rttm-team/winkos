@@ -17,12 +17,29 @@ HEADERS = {
 def normalize_text(text):
     if not text:
         return ""
-    # Handle Scandinavian special characters
     text = str(text).replace('ø', 'o').replace('Ø', 'O').replace('æ', 'ae').replace('Æ', 'AE')
     nfkd = unicodedata.normalize('NFKD', text)
     clean = "".join([c for c in nfkd if not unicodedata.combining(c)])
     clean = clean.lower().replace('-', ' ').replace("'", "").replace('.', '')
     return " ".join(clean.split())
+
+def extract_candidates_from_result(p):
+    candidates = []
+    if "name" in p and isinstance(p["name"], str):
+        candidates.append(p["name"])
+    
+    first = p.get("firstName", "")
+    if isinstance(first, dict):
+        first = first.get("default", "")
+    last = p.get("lastName", "")
+    if isinstance(last, dict):
+        last = last.get("default", "")
+        
+    if first or last:
+        candidates.append(f"{first} {last}")
+        candidates.append(f"{last} {first}")
+        
+    return list(set(candidates)), normalize_text(first), normalize_text(last)
 
 def search_nhl_player_id(player_name):
     if not player_name:
@@ -33,19 +50,27 @@ def search_nhl_player_id(player_name):
     if not parts:
         return None
     
-    # Searching by LAST NAME first is key because the NHL API search endpoint
-    # works best with single-word queries (e.g. "Nesterenko" vs "Nikita Nesterenko")
-    search_terms = []
-    if len(parts) > 1:
-        search_terms.append(parts[-1])  # Last name first
-        search_terms.append(parts[0])   # First name second
-    search_terms.append(target_norm)    # Full name last
+    first_name_target = parts[0]
+    last_name_target = parts[-1]
     
-    for term in search_terms:
+    # Generate search queries: Full name, last name, and hyphenated components
+    search_queries = [player_name, last_name_target]
+    if '-' in player_name:
+        for p in player_name.split('-'):
+            if len(p.strip()) > 2:
+                search_queries.append(p.strip())
+    
+    seen_queries = set()
+    for query in search_queries:
+        clean_q = query.strip()
+        if not clean_q or clean_q in seen_queries:
+            continue
+        seen_queries.add(clean_q)
+        
         try:
             res = requests.get(
                 "https://api-web.nhle.com/v1/search/player",
-                params={"query": term},
+                params={"query": clean_q},
                 timeout=5
             )
             if res.status_code != 200:
@@ -55,36 +80,30 @@ def search_nhl_player_id(player_name):
             if not isinstance(results, list):
                 continue
                 
+            # Pass 1: Exact Normalized Match
             for p in results:
                 p_id = p.get("playerId") or p.get("id")
                 if not p_id:
                     continue
-                
-                name_candidates = []
-                
-                # Extract 'name' string if present
-                if "name" in p and isinstance(p["name"], str):
-                    name_candidates.append(p["name"])
-                
-                # Extract firstName / lastName
-                first = p.get("firstName", "")
-                if isinstance(first, dict):
-                    first = first.get("default", "")
-                last = p.get("lastName", "")
-                if isinstance(last, dict):
-                    last = last.get("default", "")
-                
-                if first or last:
-                    name_candidates.append(f"{first} {last}")
-                    name_candidates.append(f"{last} {first}")
-                    name_candidates.append(f"{last}, {first}")
-                
-                # Check candidate matches against normalized target
-                for cand in name_candidates:
+                candidates, _, _ = extract_candidates_from_result(p)
+                for cand in candidates:
                     if normalize_text(cand) == target_norm:
                         return str(p_id)
-                        
-        except Exception:
+            
+            # Pass 2: Token overlap (First Name & Last Name both present)
+            for p in results:
+                p_id = p.get("playerId") or p.get("id")
+                if not p_id:
+                    continue
+                candidates, f_norm, l_norm = extract_candidates_from_result(p)
+                for cand in candidates:
+                    cand_norm = normalize_text(cand)
+                    if first_name_target in cand_norm and last_name_target in cand_norm:
+                        return str(p_id)
+                if f_norm == first_name_target and l_norm == last_name_target:
+                    return str(p_id)
+
+        except Exception as e:
             pass
             
     return None
