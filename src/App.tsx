@@ -19,7 +19,6 @@ import { PositionSection } from './components/PositionSection';
 import { RulesModal } from './components/RulesModal';
 import { AddProspectModal } from './components/AddProspectModal';
 import { EditProspectModal } from './components/EditProspectModal';
-import { AdminPinModal } from './components/AdminPinModal';
 import ArcadeComingSoon from './components/ArcadeComingSoon';
 import { syncProspectWithNhlApi, setStored25PlusSeasons } from './services/nhlApi';
 import { supabase, fetchLeagueData, mapProspectRow } from './lib/supabase';
@@ -111,56 +110,10 @@ export default function App() {
     [gms, authedGmId]
   );
 
-  // Explicit Admin Mode override (persisted in session)
-  const [isAdminUnlocked, setIsAdminUnlocked] = useState<boolean>(() => {
-    try {
-      return localStorage.getItem('winkos_admin_unlocked') === 'true';
-    } catch {
-      return false;
-    }
-  });
-
-  const [isAdminPinModalOpen, setIsAdminPinModalOpen] = useState<boolean>(false);
-
-  // Determine whether current session has Admin access:
-  // - If user unlocked Admin Mode via PIN
-  // - Or if authenticated GM is Adam / Commish
-  // - Or fallback if currently viewing Adam's roster without auth restriction
+  // Determine whether current GM has Admin access based on is_commish flag in the database
   const isAdmin = useMemo(() => {
-    if (isAdminUnlocked) return true;
-    if (authedGm) {
-      return Boolean(authedGm.is_commish || authedGm.name.toLowerCase() === 'adam');
-    }
     return Boolean(activeGm.is_commish || activeGm.name.toLowerCase() === 'adam');
-  }, [isAdminUnlocked, authedGm, activeGm]);
-
-  const handleUnlockAdmin = useCallback((pin: string): boolean => {
-    const adamGm = gms.find((g) => g.name.toLowerCase() === 'adam');
-    const validPin = String(adamGm?.pin || '1234');
-    if (String(pin).trim() === validPin || String(pin).trim() === '1234') {
-      setIsAdminUnlocked(true);
-      try {
-        localStorage.setItem('winkos_admin_unlocked', 'true');
-      } catch {
-        /* no-op */
-      }
-      return true;
-    }
-    return false;
-  }, [gms]);
-
-  const handleToggleAdminMode = useCallback(() => {
-    if (isAdminUnlocked) {
-      setIsAdminUnlocked(false);
-      try {
-        localStorage.removeItem('winkos_admin_unlocked');
-      } catch {
-        /* no-op */
-      }
-    } else {
-      setIsAdminPinModalOpen(true);
-    }
-  }, [isAdminUnlocked]);
+  }, [activeGm]);
 
   // Validate a GM's PIN, unlock the hub, and persist the session locally.
   const handleAuthenticate = useCallback(
@@ -170,14 +123,6 @@ export default function App() {
       if (String(gm.pin ?? '') !== String(pin ?? '')) return false;
       setAuthedGmId(gm.id);
       setSelectedGmId(gm.id);
-      if (gm.is_commish || gm.name.toLowerCase() === 'adam') {
-        setIsAdminUnlocked(true);
-        try {
-          localStorage.setItem('winkos_admin_unlocked', 'true');
-        } catch {
-          /* no-op */
-        }
-      }
       try {
         localStorage.setItem('winkos_active_gm', gm.id);
       } catch {
@@ -191,11 +136,9 @@ export default function App() {
   // Clear the session and return to the locked hub.
   const handleLogout = useCallback(() => {
     setAuthedGmId(null);
-    setIsAdminUnlocked(false);
     setView('hub');
     try {
       localStorage.removeItem('winkos_active_gm');
-      localStorage.removeItem('winkos_admin_unlocked');
     } catch {
       /* no-op */
     }
@@ -235,7 +178,7 @@ export default function App() {
   // Handle toggle promotion to active roster
   const handleTogglePromotion = async (prospectId: string) => {
     if (!isAdmin) {
-      setIsAdminPinModalOpen(true);
+      alert('Only the Commissioner can perform this action.');
       return;
     }
     const prospect = activeGm.prospects.find((p) => p.id === prospectId);
@@ -271,7 +214,7 @@ export default function App() {
   // Handle toggle protection
   const handleToggleProtection = async (prospectId: string) => {
     if (!isAdmin) {
-      setIsAdminPinModalOpen(true);
+      alert('Only the Commissioner can perform this action.');
       return;
     }
     const prospect = activeGm.prospects.find((p) => p.id === prospectId);
@@ -479,7 +422,7 @@ export default function App() {
 
   const handleOpenEdit = (prospect: Prospect) => {
     if (!isAdmin) {
-      setIsAdminPinModalOpen(true);
+      alert('Only the Commissioner can perform this action.');
       return;
     }
     setEditingProspect(prospect);
@@ -489,7 +432,7 @@ export default function App() {
   const handleEditProspect = async (prospectId: string, updatedData: Partial<Prospect>) => {
     const isStatusOnly = Object.keys(updatedData).every(k => k === 'status');
     if (!isStatusOnly && !isAdmin) {
-      setIsAdminPinModalOpen(true);
+      alert('Only the Commissioner can perform this action.');
       return;
     }
     const isTrashed = updatedData.status === 'trashed' || updatedData.status === 'inactive';
@@ -572,7 +515,7 @@ export default function App() {
 
   const handleUpdate25PlusSeasons = useCallback((prospectId: string, count: number) => {
     if (!isAdmin) {
-      setIsAdminPinModalOpen(true);
+      alert('Only the Commissioner can perform this action.');
       return;
     }
     const target = activeGm.prospects.find((p) => p.id === prospectId);
@@ -584,7 +527,7 @@ export default function App() {
 
   const handleDeleteProspect = async (prospectId: string) => {
     if (!isAdmin) {
-      setIsAdminPinModalOpen(true);
+      alert('Only the Commissioner can perform this action.');
       return;
     }
     if (!window.confirm("Are you sure you want to delete this prospect from the pool?")) return;
@@ -840,9 +783,6 @@ export default function App() {
             <GmSwitcherBar
               gms={gms}
               selectedGmId={selectedGmId}
-              isAdmin={isAdmin}
-              onPromptAdminUnlock={() => setIsAdminPinModalOpen(true)}
-              onToggleAdminMode={handleToggleAdminMode}
               onSelectGm={(id) => {
                 setSelectedGmId(id);
                 setPositionFilter('ALL');
@@ -1051,12 +991,6 @@ export default function App() {
         onEdit={handleEditProspect}
         prospect={editingProspect}
         gmName={activeGm.name}
-      />
-
-      <AdminPinModal
-        isOpen={isAdminPinModalOpen}
-        onClose={() => setIsAdminPinModalOpen(false)}
-        onUnlock={handleUnlockAdmin}
       />
     </div>
   );

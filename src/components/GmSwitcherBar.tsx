@@ -6,18 +6,12 @@ interface GmSwitcherBarProps {
   gms: GeneralManager[];
   selectedGmId: string;
   onSelectGm: (id: string) => void;
-  isAdmin?: boolean;
-  onPromptAdminUnlock?: () => void;
-  onToggleAdminMode?: () => void;
 }
 
 export const GmSwitcherBar: React.FC<GmSwitcherBarProps> = ({
   gms,
   selectedGmId,
   onSelectGm,
-  isAdmin = false,
-  onPromptAdminUnlock,
-  onToggleAdminMode,
 }) => {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const selectedGm = gms.find((g) => g.id === selectedGmId) || gms[0];
@@ -25,7 +19,7 @@ export const GmSwitcherBar: React.FC<GmSwitcherBarProps> = ({
   return (
     <div className="bg-slate-800 border-b border-slate-700">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-2">
-        <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center justify-between">
           {/* GM Selector Dropdown */}
           <div className="relative">
             <label htmlFor="gm-selector" className="sr-only">
@@ -106,55 +100,6 @@ export const GmSwitcherBar: React.FC<GmSwitcherBarProps> = ({
                   })}
                 </div>
               </>
-            )}
-          </div>
-
-          {/* Admin / GM View Status Indicator */}
-          <div className="flex items-center gap-2">
-            {isAdmin ? (
-              <div className="flex items-center gap-2">
-                <span
-                  className="flex items-center gap-1.5 rounded-xl border border-amber-500/40 bg-amber-500/10 px-2.5 py-1.5 text-xs font-bold text-amber-300 shadow-sm"
-                  title="Admin Access: You can Edit, Delete, Promote, and change Protection across all rosters."
-                >
-                  <Crown className="h-3.5 w-3.5 text-amber-400" />
-                  <span>Admin Access (Full)</span>
-                </span>
-                {onToggleAdminMode && (
-                  <button
-                    type="button"
-                    onClick={onToggleAdminMode}
-                    className="text-[11px] text-slate-400 hover:text-slate-200 underline decoration-slate-600 transition-colors cursor-pointer"
-                    title="Switch to GM View to test standard permissions"
-                  >
-                    Switch to GM View
-                  </button>
-                )}
-              </div>
-            ) : (
-              <div className="flex items-center gap-2">
-                <span
-                  className="flex items-center gap-1.5 rounded-xl border border-slate-700 bg-slate-900/90 px-2.5 py-1.5 text-xs font-medium text-slate-300 shadow-sm"
-                  title="GM View: Restricted to 'Trash 'em' and 'Refresh NHL Stats'. Only Admins can Edit, Delete, Promote, or change Protection."
-                >
-                  <Shield className="h-3.5 w-3.5 text-slate-400" />
-                  <span>GM View</span>
-                  <span className="hidden sm:inline text-[10px] text-slate-400 font-normal">
-                    (Trash & Refresh Only)
-                  </span>
-                </span>
-                {onPromptAdminUnlock && (
-                  <button
-                    type="button"
-                    onClick={onPromptAdminUnlock}
-                    className="flex items-center gap-1 rounded-xl border border-amber-500/30 bg-amber-500/10 px-2.5 py-1.5 text-xs font-bold text-amber-300 hover:bg-amber-500/20 hover:border-amber-400 transition-colors cursor-pointer shadow-sm"
-                    title="Unlock Admin permissions with Commissioner PIN"
-                  >
-                    <Key className="h-3.5 w-3.5" />
-                    <span>Admin Unlock</span>
-                  </button>
-                )}
-              </div>
             )}
           </div>
         </div>
