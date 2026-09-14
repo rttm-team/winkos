@@ -7,7 +7,7 @@ SUPABASE_URL = os.environ.get("SUPABASE_URL", "https://wltqsayrupcvcrodsjmn.supa
 SUPABASE_KEY = os.environ.get("SUPABASE_SERVICE_ROLE_KEY") or os.environ.get("SUPABASE_ANON_KEY", "sb_publishable_z3uOEmQzAfN8Pz4F2w5cbw_dgdIYbGJ")
 
 if not SUPABASE_URL or not SUPABASE_KEY:
-    print("❌ Error: Missing SUPABASE_URL or SUPABASE_KEY credentials.")
+    print("❌ Error: Missing SUPABASE_URL or SUPABASE_KEY environment variables.")
     exit(1)
 
 HEADERS = {
@@ -32,7 +32,7 @@ def sync_player_stats(prospect):
     name = prospect.get("player_name", "Unknown Player")
     position = prospect.get("position", "F")
     
-    # Direct fetch to official NHL API
+    # Direct fetch to official NHL API landing endpoint
     api_url = f"https://api-web.nhle.com/v1/player/{nhl_id}/landing"
     
     try:
@@ -54,10 +54,11 @@ def sync_player_stats(prospect):
         is_goalie = (position == "G")
         qualifying_threshold = 15 if is_goalie else 25
         
-        # Aggregate GP by season (regular season only)
+        # Aggregate GP by season (ONLY NHL Regular Season)
         seasons_map = {}
         for st in season_totals:
-            if st.get("gameTypeId") == 2:  # 2 = Regular Season
+            # Filter strictly for NHL Regular Season (gameTypeId == 2 AND leagueAbbrev == 'NHL')
+            if st.get("gameTypeId") == 2 and st.get("leagueAbbrev") == "NHL":
                 s_id = str(st.get("season"))
                 gp = st.get("gamesPlayed", 0)
                 seasons_map[s_id] = seasons_map.get(s_id, 0) + gp
@@ -109,7 +110,7 @@ def main():
     
     for prospect in prospects:
         sync_player_stats(prospect)
-        time.sleep(0.15)  # Polite delay to avoid API rate limits
+        time.sleep(0.3)  # Rate limit safety delay
         
     print("🎉 Sync completed successfully!")
 
