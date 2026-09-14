@@ -307,6 +307,23 @@ export async function searchNhlPlayerId(
       // Ignore
     }
 
+    // 0b. Public CORS proxy fallback for static hosting (Vercel, etc.)
+    try {
+      const targetUrl = `https://api-web.nhle.com/v1/search/player?query=${encodeURIComponent(q)}`;
+      const corsProxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(targetUrl)}`;
+      const res = await fetch(corsProxyUrl, { headers: { Accept: 'application/json' } });
+      if (res.ok) {
+        const text = await res.text();
+        const data = JSON.parse(text);
+        const match = findExactMatchingPlayer(data, prospectName);
+        if (match) {
+          return { playerId: match.playerId, source: 'proxy_api', matchedName: match.matchedName };
+        }
+      }
+    } catch {
+      // Ignore
+    }
+
     // 1. Primary user-requested endpoint: https://api-web.nhle.com/v1/search/player?query=${q}
     try {
       const primaryUrl = `https://api-web.nhle.com/v1/search/player?query=${encodeURIComponent(q)}`;
@@ -405,6 +422,24 @@ export async function fetchNhlPlayerLanding(
 
     if (res.ok) {
       const data = await res.json();
+      return { data, source: 'proxy_api' };
+    }
+  } catch {
+    // Ignore
+  }
+
+  // 0b. Public CORS proxy fallback for static hosting (Vercel, etc.)
+  try {
+    const targetUrl = `https://api-web.nhle.com/v1/player/${playerId}/landing`;
+    const corsProxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(targetUrl)}`;
+    const res = await fetch(corsProxyUrl, {
+      method: 'GET',
+      headers: { Accept: 'application/json' },
+    });
+
+    if (res.ok) {
+      const text = await res.text();
+      const data = JSON.parse(text);
       return { data, source: 'proxy_api' };
     }
   } catch {
