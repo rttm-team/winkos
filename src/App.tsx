@@ -28,7 +28,6 @@ import {
   Layers,
   Sparkles,
   Info,
-  RefreshCw,
   Loader2,
   CheckCircle2,
   Activity,
@@ -854,25 +853,6 @@ export default function App() {
           </div>
 
           <div className="flex items-center gap-2">
-            <button
-              onClick={handleSyncAllProspects}
-              disabled={isSyncingAll}
-              className="flex items-center gap-1.5 rounded-xl border border-cyan-500/40 bg-cyan-500/10 hover:bg-cyan-500/20 px-3.5 py-1.5 text-xs font-bold text-cyan-300 transition-colors shadow-sm disabled:opacity-50"
-              title="Sync all prospects with official NHL stats"
-            >
-              {isSyncingAll ? (
-                <>
-                  <Loader2 className="h-3.5 w-3.5 animate-spin text-cyan-400" />
-                  <span>Syncing NHL API...</span>
-                </>
-              ) : (
-                <>
-                  <RefreshCw className="h-3.5 w-3.5 text-cyan-400" />
-                  <span>Sync NHL Stats</span>
-                </>
-              )}
-            </button>
-
             <button
               onClick={() => setIsAddModalOpen(true)}
               className="flex items-center gap-1.5 rounded-xl bg-cyan-500 hover:bg-cyan-400 px-3.5 py-1.5 text-xs font-bold text-slate-950 transition-colors shadow-sm shadow-cyan-500/20"

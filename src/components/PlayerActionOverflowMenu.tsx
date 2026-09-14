@@ -2,7 +2,6 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import {
   MoreVertical,
-  RefreshCw,
   Edit3,
   Trash2,
   ArrowUpCircle,
@@ -288,32 +287,6 @@ export const PlayerActionOverflowMenu: React.FC<PlayerActionOverflowMenuProps> =
             {hasRosterActions && (hasManagementActions || (isAdmin && onDelete)) && (
               <div className="my-1 border-t border-slate-800" />
             )}
-
-            {/* Refresh NHL Stats - Available to ALL GMs */}
-            {onSync && (() => {
-              const isTrashed = status === 'trashed' || status === 'inactive';
-              return (
-                <button
-                  type="button"
-                  disabled={isSyncing || isTrashed}
-                  onClick={(e) => {
-                    if (isTrashed) return;
-                    e.stopPropagation();
-                    setIsOpen(false);
-                    onSync();
-                  }}
-                  className={`flex w-full items-center gap-2.5 px-3 py-2 text-xs font-medium transition-colors text-left ${
-                    isTrashed
-                      ? 'text-slate-500 cursor-not-allowed opacity-60'
-                      : 'text-slate-300 hover:bg-slate-800 hover:text-cyan-300 disabled:opacity-50 cursor-pointer'
-                  }`}
-                  title={isTrashed ? 'Tracking paused for trashed prospect. Restore player to track live games.' : 'Refresh NHL stats'}
-                >
-                  <RefreshCw className={`h-3.5 w-3.5 ${isTrashed ? 'text-slate-500' : 'text-cyan-400'} shrink-0 ${isSyncing ? 'animate-spin' : ''}`} />
-                  <span>{isSyncing ? 'Syncing...' : isTrashed ? 'Tracking Paused (Trashed)' : 'Refresh NHL Stats'}</span>
-                </button>
-              );
-            })()}
 
             {/* Edit Prospect - Admins Only */}
             {isAdmin && onEdit && (
