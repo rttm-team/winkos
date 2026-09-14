@@ -1,0 +1,29 @@
+name: Nightly NHL Stats & Promotion Sync
+
+on:
+  schedule:
+    # Runs automatically every night at 3:00 AM EST (08:00 UTC)
+    - cron: '0 8 * * *'
+  workflow_dispatch: # Enables the manual "Run workflow" button in GitHub Actions UI
+
+jobs:
+  sync-stats:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install requests
+
+      - name: Run NHL Sync Script
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: python scripts/nhl_sync.py
