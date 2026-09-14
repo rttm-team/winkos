@@ -291,6 +291,22 @@ export async function searchNhlPlayerId(
   }
 
   for (const q of queriesToTry) {
+    // 0. Server-side proxy /api/nhl-proxy (reliable in live production deployment)
+    try {
+      const targetUrl = `https://api-web.nhle.com/v1/search/player?query=${encodeURIComponent(q)}`;
+      const proxyServerUrl = `/api/nhl-proxy?url=${encodeURIComponent(targetUrl)}`;
+      const res = await fetch(proxyServerUrl, { headers: { Accept: 'application/json' } });
+      if (res.ok) {
+        const data = await res.json();
+        const match = findExactMatchingPlayer(data, prospectName);
+        if (match) {
+          return { playerId: match.playerId, source: 'proxy_api', matchedName: match.matchedName };
+        }
+      }
+    } catch {
+      // Ignore
+    }
+
     // 1. Primary user-requested endpoint: https://api-web.nhle.com/v1/search/player?query=${q}
     try {
       const primaryUrl = `https://api-web.nhle.com/v1/search/player?query=${encodeURIComponent(q)}`;
@@ -378,6 +394,23 @@ export async function searchNhlPlayerId(
 export async function fetchNhlPlayerLanding(
   playerId: string
 ): Promise<{ data: any; source: 'direct_api' | 'proxy_api' } | null> {
+  // 0. Server-side proxy /api/nhl-proxy (reliable in live production deployment)
+  try {
+    const targetUrl = `https://api-web.nhle.com/v1/player/${playerId}/landing`;
+    const proxyServerUrl = `/api/nhl-proxy?url=${encodeURIComponent(targetUrl)}`;
+    const res = await fetch(proxyServerUrl, {
+      method: 'GET',
+      headers: { Accept: 'application/json' },
+    });
+
+    if (res.ok) {
+      const data = await res.json();
+      return { data, source: 'proxy_api' };
+    }
+  } catch {
+    // Ignore
+  }
+
   // Direct fetch to official NHL API
   try {
     const directUrl = `https://api-web.nhle.com/v1/player/${playerId}/landing`;
