@@ -32,10 +32,19 @@ export const Season25GPMarkers: React.FC<Season25GPMarkersProps & { prospect?: a
   // Use prospect.season_breakdown if available, otherwise fallback to count
   let effectiveCount = count;
   if (prospect?.season_breakdown) {
-    const breakdown = typeof prospect.season_breakdown === 'string' 
-      ? JSON.parse(prospect.season_breakdown) 
-      : prospect.season_breakdown;
-    effectiveCount = breakdown.filter((s: any) => s.qualifies).length;
+    let breakdown = prospect.season_breakdown;
+    if (typeof breakdown === 'string') {
+      try {
+        breakdown = JSON.parse(breakdown);
+      } catch (e) {
+        console.error("Failed to parse season breakdown", e);
+        breakdown = [];
+      }
+    }
+    
+    if (Array.isArray(breakdown)) {
+      effectiveCount = breakdown.filter((s: any) => s.qualifies).length;
+    }
   }
   
   const safeCount = Math.min(max, Math.max(0, effectiveCount));
@@ -301,10 +310,19 @@ export const SeasonThresholdMarkers: React.FC<Season25GPMarkersProps & { prospec
 }) => {
   let effectiveCount = count;
   if (prospect?.season_breakdown) {
-    const breakdown = typeof prospect.season_breakdown === 'string' 
-      ? JSON.parse(prospect.season_breakdown) 
-      : prospect.season_breakdown;
-    effectiveCount = breakdown.filter((s: any) => s.qualifies).length;
+    let breakdown = prospect.season_breakdown;
+    if (typeof breakdown === 'string') {
+      try {
+        breakdown = JSON.parse(breakdown);
+      } catch (e) {
+        console.error("Failed to parse season breakdown in SeasonThresholdMarkers", e);
+        breakdown = [];
+      }
+    }
+    
+    if (Array.isArray(breakdown)) {
+      effectiveCount = breakdown.filter((s: any) => s.qualifies).length;
+    }
   }
   const safeCount = Math.min(max, Math.max(0, effectiveCount));
   const isReached = safeCount >= max;
