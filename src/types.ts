@@ -62,6 +62,7 @@ export interface Prospect {
   matchFound?: boolean;
   seasons25PlusGP?: number; // count from 0 to 4 of seasons with 25+ GP
   seasons25PlusHistory?: Array<{ season: string; gp: number; hit: boolean }>;
+  season_breakdown?: Array<{ season: string; gp: number; qualifies: boolean }>;
 }
 
 export interface GeneralManager {

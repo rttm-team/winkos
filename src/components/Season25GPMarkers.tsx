@@ -15,7 +15,7 @@ interface Season25GPMarkersProps {
   className?: string;
 }
 
-export const Season25GPMarkers: React.FC<Season25GPMarkersProps> = ({
+export const Season25GPMarkers: React.FC<Season25GPMarkersProps & { prospect?: any }> = ({
   count = 0,
   max = 4,
   totalGP = 0,
@@ -27,8 +27,18 @@ export const Season25GPMarkers: React.FC<Season25GPMarkersProps> = ({
   showStepper = false,
   onCountChange,
   className = '',
+  prospect,
 }) => {
-  const safeCount = Math.min(max, Math.max(0, count));
+  // Use prospect.season_breakdown if available, otherwise fallback to count
+  let effectiveCount = count;
+  if (prospect?.season_breakdown) {
+    const breakdown = typeof prospect.season_breakdown === 'string' 
+      ? JSON.parse(prospect.season_breakdown) 
+      : prospect.season_breakdown;
+    effectiveCount = breakdown.filter((s: any) => s.qualifies).length;
+  }
+  
+  const safeCount = Math.min(max, Math.max(0, effectiveCount));
   const isReached = safeCount >= max;
   const isWatchlist = safeCount === max - 1 && !isReached;
   const isUnder200GP = totalGP < 200;
@@ -283,12 +293,20 @@ export const Season25GPMarkers: React.FC<Season25GPMarkersProps> = ({
   );
 };
 
-export const SeasonThresholdMarkers: React.FC<Season25GPMarkersProps> = ({
+export const SeasonThresholdMarkers: React.FC<Season25GPMarkersProps & { prospect?: any }> = ({
   count = 0,
   max = 4,
   className = '',
+  prospect,
 }) => {
-  const safeCount = Math.min(max, Math.max(0, count));
+  let effectiveCount = count;
+  if (prospect?.season_breakdown) {
+    const breakdown = typeof prospect.season_breakdown === 'string' 
+      ? JSON.parse(prospect.season_breakdown) 
+      : prospect.season_breakdown;
+    effectiveCount = breakdown.filter((s: any) => s.qualifies).length;
+  }
+  const safeCount = Math.min(max, Math.max(0, effectiveCount));
   const isReached = safeCount >= max;
   const isWatchlist = safeCount === max - 1;
 

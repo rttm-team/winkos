@@ -369,6 +369,7 @@ export const ProspectCard: React.FC<ProspectCardProps> = ({
               totalGP={safeTotalGP}
               isPromoted={prospect.promoted}
               interactive={false}
+              prospect={prospect}
             />
 
             {/* Overflow Action Menu & Quick Restore Button */}

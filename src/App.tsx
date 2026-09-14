@@ -298,10 +298,22 @@ export default function App() {
             syncErrorMessage: result.error,
             seasons25PlusGP: seasonsCount,
             seasons25PlusHistory: result.seasons25PlusHistory ?? p.seasons25PlusHistory,
+            season_breakdown: result.season_breakdown ?? p.season_breakdown,
           };
         }),
       }))
     );
+
+    // Persist new fields to Supabase
+    if (result.matchFound) {
+      await supabase.from('prospects')
+        .update({
+          seasons_25_plus_gp: seasonsCount,
+          season_breakdown: JSON.stringify(result.season_breakdown),
+          // Add threshold calculation results here too if needed
+        })
+        .eq('id', prospectId);
+    }
 
     setGlobalLastUpdated(result.timestamp);
   }, [activeGm.prospects]);
@@ -365,11 +377,24 @@ export default function App() {
                 syncErrorMessage: result.error,
                 seasons25PlusGP: seasonsCount,
                 seasons25PlusHistory: result.seasons25PlusHistory ?? p.seasons25PlusHistory,
+                season_breakdown: result.season_breakdown ?? p.season_breakdown,
               };
             }),
           };
         })
       );
+
+      // Persist new fields to Supabase
+      for (const resObj of results) {
+        if (resObj.result.matchFound) {
+          await supabase.from('prospects')
+            .update({
+              seasons_25_plus_gp: resObj.result.seasons25PlusGP,
+              season_breakdown: JSON.stringify(resObj.result.season_breakdown),
+            })
+            .eq('id', resObj.prospectId);
+        }
+      }
 
       setGlobalLastUpdated(timestamp);
     } finally {

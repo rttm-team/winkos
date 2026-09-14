@@ -17,6 +17,7 @@ export interface NhlPlayerStatsResult {
   error?: string;
   seasons25PlusGP?: number;
   seasons25PlusHistory?: Array<{ season: string; gp: number; hit: boolean }>;
+  season_breakdown?: Array<{ season: string; gp: number; qualifies: boolean }>;
 }
 
 // Cached league prospects lookup by normalized name from winkos_full_league_data.json
@@ -506,6 +507,7 @@ export function parseNhlLandingStats(landingData: any): {
   hasNhlStats: boolean;
   seasons25PlusGP: number;
   seasons25PlusHistory: Array<{ season: string; gp: number; hit: boolean }>;
+  season_breakdown: Array<{ season: string; gp: number; qualifies: boolean }>;
 } {
   if (!landingData || typeof landingData !== 'object') {
     return {
@@ -515,14 +517,22 @@ export function parseNhlLandingStats(landingData: any): {
       hasNhlStats: false,
       seasons25PlusGP: 0,
       seasons25PlusHistory: [],
+      season_breakdown: [],
     };
   }
 
   let currentSeasonGP = 0;
   let careerTotalGP = 0;
   let hasNhlStats = false;
-  let seasons25PlusGP = 0;
-  const seasons25PlusHistory: Array<{ season: string; gp: number; hit: boolean }> = [];
+  let qualifying_seasons = 0;
+  const season_breakdown: Array<{ season: string; gp: number; qualifies: boolean }> = [];
+  
+  // Need to know if skater or goalie for threshold
+  // Landing data doesn't explicitly have position easily, but let's assume skater (F/D) for now if we don't have it
+  // Actually, we can check landingData.position
+  const position = landingData.position; 
+  const isGoalie = position === 'G';
+  const threshold = isGoalie ? 15 : 25;
 
   // 1. Try featuredStats for regular season
   if (landingData.featuredStats?.regularSeason) {
@@ -543,7 +553,7 @@ export function parseNhlLandingStats(landingData: any): {
     if (careerTotalGP > 0) hasNhlStats = true;
   }
 
-  // 3. Inspect seasonTotals array for NHL regular season games & 25+ GP seasons
+  // 3. Inspect seasonTotals array for NHL regular season games & GP threshold seasons
   if (Array.isArray(landingData.seasonTotals)) {
     const nhlRegularSeasons = landingData.seasonTotals.filter(
       (s: any) => s.leagueAbbrev === 'NHL' && (s.gameTypeId === 2 || !s.gameTypeId)
@@ -561,7 +571,7 @@ export function parseNhlLandingStats(landingData: any): {
         }
       }
 
-      // Group games played per season (in case traded mid-season across teams)
+      // Group games played per season
       const seasonMap = new Map<string, number>();
       for (const s of nhlRegularSeasons) {
         const seasonKey = String(s.season || 'Unknown');
@@ -570,11 +580,11 @@ export function parseNhlLandingStats(landingData: any): {
       }
 
       for (const [seasonKey, gp] of seasonMap.entries()) {
-        const hit = gp >= 25;
-        if (hit) {
-          seasons25PlusGP++;
+        const qualifies = gp >= threshold;
+        if (qualifies) {
+          qualifying_seasons++;
         }
-        seasons25PlusHistory.push({ season: seasonKey, gp, hit });
+        season_breakdown.push({ season: seasonKey, gp, qualifies });
       }
 
       // If currentSeasonGP was 0, check the latest NHL season entry
@@ -584,9 +594,6 @@ export function parseNhlLandingStats(landingData: any): {
       }
     }
   }
-
-  // Cap at 4 for milestone tracking
-  const cappedSeasons25Plus = Math.min(4, seasons25PlusGP);
 
   // Calculate priorCareerGP
   const priorCareerGP = Math.max(0, careerTotalGP - currentSeasonGP);
@@ -598,8 +605,9 @@ export function parseNhlLandingStats(landingData: any): {
     headshotUrl: landingData.headshot,
     teamAbbr: landingData.currentTeamAbbrev || landingData.teamCommonName?.default,
     hasNhlStats,
-    seasons25PlusGP: cappedSeasons25Plus,
-    seasons25PlusHistory,
+    seasons25PlusGP: qualifying_seasons,
+    seasons25PlusHistory: season_breakdown.map(s => ({ season: s.season, gp: s.gp, hit: s.qualifies })),
+    season_breakdown,
   };
 }
 
@@ -745,6 +753,7 @@ export async function syncProspectWithNhlApi(prospect: Prospect): Promise<NhlPla
       statusBadge: landingResult.source === 'proxy_api' ? 'NHL API Proxy' : 'NHL API Synced',
       seasons25PlusGP: parsed.seasons25PlusGP,
       seasons25PlusHistory: parsed.seasons25PlusHistory,
+      season_breakdown: parsed.season_breakdown,
     };
   } catch (err: any) {
     const { currentSeasonGP, priorCareerGP, totalGP } = getSafeGamesPlayed(cachedTotal);
