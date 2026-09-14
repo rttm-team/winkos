@@ -638,9 +638,8 @@ export async function syncProspectWithNhlApi(prospect: Prospect): Promise<NhlPla
   }
 
   const cachedRecord = getCachedProspectFromLeagueData(prospect.name);
-  const cachedTotal = (Number.isFinite(prospect.totalGames) && prospect.totalGames > 0)
-    ? prospect.totalGames
-    : (cachedRecord && Number.isFinite(cachedRecord.totalGames) ? cachedRecord.totalGames : 0);
+  const supabaseBaseline = prospect.total_games ?? prospect.totalGames ?? (cachedRecord && Number.isFinite(cachedRecord.totalGames) ? cachedRecord.totalGames : 0);
+  const cachedTotal = Number.isFinite(supabaseBaseline) ? supabaseBaseline : 0;
   const isGoalie = (cachedRecord?.pos || prospect.position) === 'G';
   const singleLimit = isGoalie ? 20 : 40;
 

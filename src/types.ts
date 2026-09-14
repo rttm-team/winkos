@@ -40,6 +40,7 @@ export interface Prospect {
   nhlTeam: string;
   nhlTeamAbbr: string;
   totalGames: number;
+  total_games?: number;
   currentSeasonGP: number;
   priorCareerGP: number; // total NHL GP = priorCareerGP + currentSeasonGP
   promoted: boolean;

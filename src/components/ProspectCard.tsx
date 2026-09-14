@@ -58,9 +58,10 @@ export const ProspectCard: React.FC<ProspectCardProps> = ({
   // Safeguarded GP metrics and limits ensuring clean display of 0 / 40 (Skaters) or 0 / 20 (Goalies) without NaN
   const safeSeasonGP = Number.isFinite(prospect.currentSeasonGP) ? Math.max(0, prospect.currentSeasonGP) : 0;
   const safeSeasonLimit = isGoalie ? 20 : 40;
-  const safeTotalGP = Number.isFinite(ev.totalGP)
+  const gp = prospect.total_games ?? prospect.totalGames ?? 0;
+  const safeTotalGP = Number.isFinite(ev.totalGP) && ev.totalGP > 0
     ? Math.max(0, ev.totalGP)
-    : (Number.isFinite(prospect.totalGames) ? Math.max(0, prospect.totalGames) : 0);
+    : Math.max(0, gp);
   const safeCumulativeLimit = isGoalie ? 30 : 65;
   const safeProtectionLimit = isGoalie ? 140 : 200;
 

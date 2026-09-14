@@ -58,6 +58,7 @@ export const mapProspectRow = (row: any): Prospect => {
     nhlTeam: row.nhl_team ?? row.nhlTeam ?? teamInfo.team,
     nhlTeamAbbr: row.nhl_team_abbr ?? row.nhlTeamAbbr ?? teamInfo.abbr,
     totalGames: totalGames,
+    total_games: totalGames,
     currentSeasonGP: currentSeasonGP,
     priorCareerGP: priorCareerGP,
     promoted: isPromoted,
