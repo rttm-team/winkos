@@ -500,7 +500,10 @@ export default function App() {
     // 2. Persist to Supabase asynchronously with fallback handling
     try {
       const updatePayload: Record<string, any> = {};
-      if (updatedData.name !== undefined) updatePayload.player_name = updatedData.name;
+      if (updatedData.name !== undefined) {
+        updatePayload.player_name = updatedData.name;
+        updatePayload.name = updatedData.name;
+      }
       if (updatedData.position !== undefined) updatePayload.position = updatedData.position;
       if (updatedData.draftYear !== undefined) updatePayload.draft_year = updatedData.draftYear;
       if (updatedData.draftRound !== undefined) updatePayload.draft_round = updatedData.draftRound;
