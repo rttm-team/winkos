@@ -2,13 +2,9 @@ import os
 import time
 import requests
 
-# 1. Supabase Credentials (from Environment Variables, with default fallbacks)
+# Supabase Credentials from Environment Variables
 SUPABASE_URL = os.environ.get("SUPABASE_URL", "https://wltqsayrupcvcrodsjmn.supabase.co")
 SUPABASE_KEY = os.environ.get("SUPABASE_SERVICE_ROLE_KEY") or os.environ.get("SUPABASE_ANON_KEY", "sb_publishable_z3uOEmQzAfN8Pz4F2w5cbw_dgdIYbGJ")
-
-if not SUPABASE_URL or not SUPABASE_KEY:
-    print("❌ Error: Missing SUPABASE_URL or SUPABASE_KEY environment variables.")
-    exit(1)
 
 HEADERS = {
     "apikey": SUPABASE_KEY,
@@ -32,7 +28,6 @@ def sync_player_stats(prospect):
     name = prospect.get("player_name", "Unknown Player")
     position = prospect.get("position", "F")
     
-    # Direct fetch to official NHL API landing endpoint
     api_url = f"https://api-web.nhle.com/v1/player/{nhl_id}/landing"
     
     try:
@@ -45,7 +40,6 @@ def sync_player_stats(prospect):
         career_totals = data.get("careerTotals", {}).get("regularSeason", {})
         total_gp = career_totals.get("gamesPlayed", 0)
         
-        # Parse season totals for multi-season rules
         season_totals = data.get("seasonTotals", [])
         max_single_season_gp = 0
         qualifying_seasons = 0
@@ -57,7 +51,6 @@ def sync_player_stats(prospect):
         # Aggregate GP by season (ONLY NHL Regular Season)
         seasons_map = {}
         for st in season_totals:
-            # Filter strictly for NHL Regular Season (gameTypeId == 2 AND leagueAbbrev == 'NHL')
             if st.get("gameTypeId") == 2 and st.get("leagueAbbrev") == "NHL":
                 s_id = str(st.get("season"))
                 gp = st.get("gamesPlayed", 0)
@@ -81,13 +74,13 @@ def sync_player_stats(prospect):
         should_promote = (max_single_season_gp >= single_season_promo_limit) or (total_gp >= career_promo_limit)
         loses_protection = (total_gp >= protection_gp_limit) or (qualifying_seasons >= 4)
         
-        # Prepare payload for Supabase
+        # Prepare payload for Supabase - STRICTLY enforce boolean values
         update_payload = {
             "total_games": total_gp,
             "max_single_season_gp": max_single_season_gp,
             "qualifying_seasons": qualifying_seasons,
             "season_breakdown": season_breakdown,
-            "promoted": True if should_promote else prospect.get("promoted", False),
+            "promoted": bool(should_promote),
             "protected": False if loses_protection else prospect.get("protected", True)
         }
         
@@ -96,7 +89,7 @@ def sync_player_stats(prospect):
         patch_res = requests.patch(update_url, headers=HEADERS, json=update_payload)
         
         if patch_res.status_code in (200, 204):
-            print(f"✅ Synced {name}: {total_gp} GP (Max Season: {max_single_season_gp}, Qual Seasons: {qualifying_seasons})")
+            print(f"✅ Synced {name}: {total_gp} GP (Max Season: {max_single_season_gp}, Qual Seasons: {qualifying_seasons}, Promoted: {should_promote})")
         else:
             print(f"❌ Failed to update Supabase for {name}: {patch_res.text}")
             
@@ -110,7 +103,7 @@ def main():
     
     for prospect in prospects:
         sync_player_stats(prospect)
-        time.sleep(0.3)  # Rate limit safety delay
+        time.sleep(0.3)
         
     print("🎉 Sync completed successfully!")
 
