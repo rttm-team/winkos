@@ -128,6 +128,8 @@ export const KNOWN_NHL_PLAYER_IDS: Record<string, string> = {
   'mads søgaard': '8481544',
   'leevi meriläinen': '8482447',
   'aatu räty': '8482691',
+  'vitali kravtsov': '8480838',
+  'vitaliy kravtsov': '8480838',
 };
 
 import {
@@ -281,6 +283,15 @@ export function findExactMatchingPlayer(
 export async function searchNhlPlayerId(
   prospectName: string
 ): Promise<{ playerId: string; source: 'direct_api' | 'proxy_api' | 'sample_fallback'; matchedName: string } | null> {
+  const norm = normalizeNameForComparison(prospectName);
+  if (norm && KNOWN_NHL_PLAYER_IDS[norm]) {
+    return {
+      playerId: KNOWN_NHL_PLAYER_IDS[norm],
+      source: 'direct_api',
+      matchedName: prospectName,
+    };
+  }
+
   const sanitized = sanitizeSearchQuery(prospectName);
   const rawClean = prospectName.trim();
 
