@@ -567,6 +567,7 @@ export function parseNhlLandingStats(landingData: any): {
  */
 export async function syncProspectWithNhlApi(prospect: Prospect): Promise<NhlPlayerStatsResult> {
   const timestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  const directNhlId = prospect.nhlPlayerId;
 
   // If player is Trashed (or inactive), stop tracking games played immediately
   if (prospect.status === 'trashed' || prospect.status === 'inactive') {
@@ -574,7 +575,7 @@ export async function syncProspectWithNhlApi(prospect: Prospect): Promise<NhlPla
     const priorCareerGP = Number.isFinite(prospect.priorCareerGP) ? Math.max(0, prospect.priorCareerGP) : 0;
     const totalGP = currentSeasonGP + priorCareerGP;
     return {
-      playerId: prospect.nhlPlayerId || '',
+      playerId: directNhlId || '',
       currentSeasonGP,
       priorCareerGP,
       totalGP,
@@ -582,7 +583,7 @@ export async function syncProspectWithNhlApi(prospect: Prospect): Promise<NhlPla
       nhlTeamAbbr: prospect.nhlTeamAbbr,
       source: 'sample_fallback',
       timestamp,
-      matchFound: Boolean(prospect.nhlPlayerId),
+      matchFound: Boolean(directNhlId),
       hasEmptyStats: totalGP === 0,
       statusBadge: 'In Development',
       statusMessage: 'Tracking stopped (Trashed prospect)',
@@ -590,66 +591,49 @@ export async function syncProspectWithNhlApi(prospect: Prospect): Promise<NhlPla
     };
   }
 
-  // Look up cached prospect record from winkos_full_league_data.json
-  const cachedRecord = getCachedProspectFromLeagueData(prospect.name);
-  const cachedTotal = cachedRecord !== null && Number.isFinite(cachedRecord.totalGames)
-    ? cachedRecord.totalGames
-    : (Number.isFinite(prospect.totalGames) ? prospect.totalGames : 0);
-
-  const isGoalie = (cachedRecord?.pos || prospect.position) === 'G';
+  const cachedTotal = Number.isFinite(prospect.totalGames) ? prospect.totalGames : 0;
+  const isGoalie = prospect.position === 'G';
   const singleLimit = isGoalie ? 20 : 40;
 
-  // Helper to safely distribute games played
   const getSafeGamesPlayed = (totalGP: number) => {
     if (totalGP <= 0) return { currentSeasonGP: 0, priorCareerGP: 0, totalGP: 0 };
     if (Number.isFinite(prospect.currentSeasonGP) && Number.isFinite(prospect.priorCareerGP) && (prospect.currentSeasonGP + prospect.priorCareerGP === totalGP)) {
       return { currentSeasonGP: prospect.currentSeasonGP, priorCareerGP: prospect.priorCareerGP, totalGP };
     }
-    const isPromoted = cachedRecord?.promoted || prospect.promoted;
+    const isPromoted = prospect.promoted;
     const currentSeasonGP = isPromoted ? Math.min(totalGP, singleLimit) : Math.min(totalGP, singleLimit - 1);
     const priorCareerGP = Math.max(0, totalGP - currentSeasonGP);
     return { currentSeasonGP, priorCareerGP, totalGP };
   };
 
+  // If nhl_id is missing/null, gracefully return Supabase total_games without throwing or searching
+  if (!directNhlId) {
+    const { currentSeasonGP, priorCareerGP, totalGP } = getSafeGamesPlayed(cachedTotal);
+    const fallback25 = getStored25PlusSeasons(prospect.id, prospect.name, totalGP);
+    return {
+      playerId: '',
+      currentSeasonGP,
+      priorCareerGP,
+      totalGP,
+      headshotUrl: prospect.photoUrl,
+      nhlTeamAbbr: prospect.nhlTeamAbbr,
+      source: 'sample_fallback',
+      timestamp,
+      matchFound: false,
+      hasEmptyStats: true,
+      statusBadge: 'No NHL Record',
+      statusMessage: 'Unlinked Prospect (Using Supabase stats)',
+      seasons25PlusGP: fallback25,
+    };
+  }
+
   try {
-    // 1. Search Player ID with strict exact matching
-    const searchResult = await searchNhlPlayerId(prospect.name);
-
-    // Requirement 1 & 2: If no exact match is found in the search results:
-    // Set gamesPlayed to cached value in winkos_full_league_data.json if present, otherwise default to 0.
-    // Display subtle badge 'No NHL Record' or 'In Development'.
-    if (!searchResult) {
-      const { currentSeasonGP, priorCareerGP, totalGP } = getSafeGamesPlayed(cachedTotal);
-      const fallback25 = getStored25PlusSeasons(prospect.id, prospect.name, totalGP);
-      return {
-        playerId: '',
-        currentSeasonGP,
-        priorCareerGP,
-        totalGP,
-        headshotUrl: prospect.photoUrl,
-        nhlTeamAbbr: prospect.nhlTeamAbbr,
-        source: 'sample_fallback',
-        timestamp,
-        matchFound: false,
-        hasEmptyStats: true,
-        statusBadge: totalGP === 0 ? 'In Development' : 'No NHL Record',
-        statusMessage:
-          totalGP === 0
-            ? 'In Development (No NHL Record, 0 GP)'
-            : `Cached League Data: ${totalGP} GP (No live NHL profile)`,
-        seasons25PlusGP: fallback25,
-      };
-    }
-
-    const { playerId, source } = searchResult;
-
-    // 2. Fetch Player Landing Stats
-    const landingResult = await fetchNhlPlayerLanding(playerId);
+    const landingResult = await fetchNhlPlayerLanding(directNhlId);
     if (!landingResult || !landingResult.data) {
       const { currentSeasonGP, priorCareerGP, totalGP } = getSafeGamesPlayed(cachedTotal);
       const fallback25 = getStored25PlusSeasons(prospect.id, prospect.name, totalGP);
       return {
-        playerId,
+        playerId: directNhlId,
         currentSeasonGP,
         priorCareerGP,
         totalGP,
@@ -666,15 +650,11 @@ export async function syncProspectWithNhlApi(prospect: Prospect): Promise<NhlPla
     }
 
     const parsed = parseNhlLandingStats(landingResult.data);
-
-    // Requirement 1 & 2: If landing page stats are null/empty:
-    // Set gamesPlayed to cached value in winkos_full_league_data.json if present, otherwise default to 0.
-    // Display subtle badge 'In Development'.
     if (!parsed.hasNhlStats || (parsed.careerTotalGP === 0 && parsed.currentSeasonGP === 0)) {
       const { currentSeasonGP, priorCareerGP, totalGP } = getSafeGamesPlayed(cachedTotal);
       const fallback25 = getStored25PlusSeasons(prospect.id, prospect.name, totalGP);
       return {
-        playerId,
+        playerId: directNhlId,
         currentSeasonGP,
         priorCareerGP,
         totalGP,
@@ -685,17 +665,13 @@ export async function syncProspectWithNhlApi(prospect: Prospect): Promise<NhlPla
         matchFound: true,
         hasEmptyStats: true,
         statusBadge: 'In Development',
-        statusMessage:
-          totalGP === 0
-            ? 'In Development (Official NHL profile, 0 GP)'
-            : `Official NHL profile located (using cached ${totalGP} GP)`,
+        statusMessage: totalGP === 0 ? 'In Development (0 GP)' : `Official NHL profile (using ${totalGP} GP)`,
         seasons25PlusGP: fallback25,
       };
     }
 
-    // Authentic NHL stats found
     return {
-      playerId,
+      playerId: directNhlId,
       currentSeasonGP: parsed.currentSeasonGP,
       priorCareerGP: parsed.priorCareerGP,
       totalGP: parsed.careerTotalGP,
@@ -710,11 +686,10 @@ export async function syncProspectWithNhlApi(prospect: Prospect): Promise<NhlPla
       seasons25PlusHistory: parsed.seasons25PlusHistory,
     };
   } catch (err: any) {
-    // Graceful fallback keeping cached stats from winkos_full_league_data.json or 0
     const { currentSeasonGP, priorCareerGP, totalGP } = getSafeGamesPlayed(cachedTotal);
     const fallback25 = getStored25PlusSeasons(prospect.id, prospect.name, totalGP);
     return {
-      playerId: prospect.nhlPlayerId || '',
+      playerId: directNhlId,
       currentSeasonGP,
       priorCareerGP,
       totalGP,
@@ -724,8 +699,8 @@ export async function syncProspectWithNhlApi(prospect: Prospect): Promise<NhlPla
       timestamp,
       matchFound: false,
       hasEmptyStats: true,
-      statusBadge: totalGP === 0 ? 'In Development' : 'No NHL Record',
-      error: err?.message || 'Network timeout or API restriction',
+      statusBadge: 'No NHL Record',
+      error: err?.message || 'Network error',
       seasons25PlusGP: fallback25,
     };
   }

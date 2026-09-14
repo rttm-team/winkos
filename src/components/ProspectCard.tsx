@@ -93,12 +93,14 @@ export const ProspectCard: React.FC<ProspectCardProps> = ({
       prospect.hasEmptyStats === true ||
       (safeTotalGP === 0 && safeSeasonGP === 0));
 
-  // Requirement 1: When a prospect card loads, trigger the API sync flow (only if NOT trashed)
+  // On-demand live NHL API fetching when explicitly expanded by user
   useEffect(() => {
-    if (!isTrashed && !prospect.lastSyncedAt && prospect.apiSyncStatus !== 'syncing' && onSyncProspect) {
-      onSyncProspect(prospect.id);
+    if (cardExpanded && !isTrashed && prospect.nhlPlayerId) {
+      if (!prospect.lastSyncedAt && prospect.apiSyncStatus !== 'syncing' && onSyncProspect) {
+        onSyncProspect(prospect.id);
+      }
     }
-  }, [prospect.id, isTrashed]);
+  }, [cardExpanded, prospect.id, isTrashed, prospect.nhlPlayerId, prospect.lastSyncedAt, prospect.apiSyncStatus, onSyncProspect]);
 
   // Position colors
   const posBadgeColor =
