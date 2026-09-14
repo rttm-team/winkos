@@ -325,6 +325,11 @@ export function sortProspects(
     const statusB = (b.status === 'trashed' || b.status === 'inactive') ? 1 : 0;
     if (statusA !== statusB) return statusA - statusB;
 
+    // Protected prospects should come first
+    if (a.isProtected !== b.isProtected) {
+      return a.isProtected ? -1 : 1;
+    }
+
     switch (sortOption) {
       case 'urgency': {
         const evA = evaluateProspect(a, rules);
