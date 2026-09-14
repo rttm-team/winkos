@@ -22,7 +22,9 @@ export const mapProspectRow = (row: any): Prospect => {
     ? LEAGUE_RULES.goalies.singleSeasonPromote 
     : LEAGUE_RULES.skaters.singleSeasonPromote;
 
-  const totalGames = row.total_games ?? row.totalGames ?? fallbackTotalGames;
+  const totalGames = (row.total_games != null && row.total_games > 0) 
+    ? row.total_games 
+    : ((row.totalGames != null && row.totalGames > 0) ? row.totalGames : fallbackTotalGames);
   const isPromoted = row.promoted ?? false;
 
   // Auto-distribute GP if not explicitly saved in DB

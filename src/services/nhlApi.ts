@@ -626,8 +626,11 @@ export async function syncProspectWithNhlApi(prospect: Prospect): Promise<NhlPla
     };
   }
 
-  const cachedTotal = Number.isFinite(prospect.totalGames) ? prospect.totalGames : 0;
-  const isGoalie = prospect.position === 'G';
+  const cachedRecord = getCachedProspectFromLeagueData(prospect.name);
+  const cachedTotal = (Number.isFinite(prospect.totalGames) && prospect.totalGames > 0)
+    ? prospect.totalGames
+    : (cachedRecord && Number.isFinite(cachedRecord.totalGames) ? cachedRecord.totalGames : 0);
+  const isGoalie = (cachedRecord?.pos || prospect.position) === 'G';
   const singleLimit = isGoalie ? 20 : 40;
 
   const getSafeGamesPlayed = (totalGP: number) => {
@@ -635,7 +638,7 @@ export async function syncProspectWithNhlApi(prospect: Prospect): Promise<NhlPla
     if (Number.isFinite(prospect.currentSeasonGP) && Number.isFinite(prospect.priorCareerGP) && (prospect.currentSeasonGP + prospect.priorCareerGP === totalGP)) {
       return { currentSeasonGP: prospect.currentSeasonGP, priorCareerGP: prospect.priorCareerGP, totalGP };
     }
-    const isPromoted = prospect.promoted;
+    const isPromoted = cachedRecord?.promoted || prospect.promoted;
     const currentSeasonGP = isPromoted ? Math.min(totalGP, singleLimit) : Math.min(totalGP, singleLimit - 1);
     const priorCareerGP = Math.max(0, totalGP - currentSeasonGP);
     return { currentSeasonGP, priorCareerGP, totalGP };
