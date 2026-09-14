@@ -19,6 +19,7 @@ interface PositionSectionProps {
   onDelete?: (prospectId: string) => void;
   onUpdate25PlusSeasons?: (prospectId: string, count: number) => void;
   onToggleStatus: (prospectId: string) => void;
+  isAdmin?: boolean;
 }
 
 export const PositionSection: React.FC<PositionSectionProps> = ({
@@ -36,6 +37,7 @@ export const PositionSection: React.FC<PositionSectionProps> = ({
   onDelete,
   onUpdate25PlusSeasons,
   onToggleStatus,
+  isAdmin = false,
 }) => {
   if (prospects.length === 0) {
     return null;
@@ -145,6 +147,7 @@ export const PositionSection: React.FC<PositionSectionProps> = ({
               key={prospect.id}
               prospect={prospect}
               isExpanded={expandedProspectIds.has(prospect.id)}
+              isAdmin={isAdmin}
               onToggleExpand={() => onToggleExpandProspect(prospect.id)}
               onUpdateGP={onUpdateGP}
               onToggleProtection={onToggleProtection}
@@ -164,6 +167,7 @@ export const PositionSection: React.FC<PositionSectionProps> = ({
               key={prospect.id}
               prospect={prospect}
               isExpanded={expandedProspectIds.has(prospect.id)}
+              isAdmin={isAdmin}
               onToggleExpand={() => onToggleExpandProspect(prospect.id)}
               onUpdateGP={onUpdateGP}
               onToggleProtection={onToggleProtection}

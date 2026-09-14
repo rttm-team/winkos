@@ -1,5 +1,5 @@
 export type Position = 'F' | 'D' | 'G';
-export type ProspectStatus = 'active' | 'inactive';
+export type ProspectStatus = 'active' | 'inactive' | 'trashed';
 
 export type PositionGroup = 'Forwards' | 'Defensemen' | 'Goalies';
 
@@ -75,7 +75,7 @@ export interface GeneralManager {
 }
 
 export type PositionFilter = 'ALL' | 'F' | 'D' | 'G';
-export type StatusFilter = 'ALL' | 'ACTION_REQUIRED' | 'WATCHLIST' | 'PROTECTION_WATCH' | 'PROMOTED' | 'DEVELOPING';
+export type StatusFilter = 'ALL' | 'ACTION_REQUIRED' | 'WATCHLIST' | 'PROTECTION_WATCH' | 'PROMOTED' | 'DEVELOPING' | 'TRASHED';
 export type ViewMode = 'list' | 'card';
 
 export type ProspectSortOption =
@@ -198,6 +198,35 @@ export function evaluateProspect(p: Prospect, rules: LeagueRules = DEFAULT_LEAGU
     };
   }
 
+  // Trashed / dormant prospects: stop tracking games played and suppress warnings
+  const isTrashed = p.status === 'trashed' || p.status === 'inactive';
+  if (isTrashed) {
+    return {
+      totalGP,
+      seasonLimit,
+      cumulativeLimit,
+      protectionMaxGames,
+      isProtectionEligible,
+      protectionGamesRemaining,
+      protectionProgress,
+      isAlreadyPromoted: false,
+      isMandatoryPromotion: false,
+      isWatchlist: false,
+      isProtectionWatchlist: false,
+      seasonGamesRemaining: Math.max(0, seasonLimit - safeCurrentSeasonGP),
+      cumulativeGamesRemaining: Math.max(0, cumulativeLimit - totalGP),
+      seasonProgress: seasonLimit > 0 ? Math.min(100, Math.round((safeCurrentSeasonGP / seasonLimit) * 100)) : 0,
+      cumulativeProgress: cumulativeLimit > 0 ? Math.min(100, Math.round((totalGP / cumulativeLimit) * 100)) : 0,
+      primaryTrigger: 'SAFE',
+      statusLabel: 'Trashed (Tracking Stopped)',
+      badgeType: 'safe',
+      seasons25PlusCount,
+      seasons25PlusTarget,
+      isFourSeasonsExceeded: false,
+      isFourSeasonsWatchlist: false,
+    };
+  }
+
   // Not promoted yet - check if threshold reached
   // Rule: when 4 seasons of 25+ GP are hit before 200 GP, prompt to promote them
   const isMandatoryPromotion = seasonExceeded || cumulativeExceeded || isFourSeasonsExceeded;
@@ -287,9 +316,9 @@ export function sortProspects(
   rules: LeagueRules = DEFAULT_LEAGUE_RULES
 ): Prospect[] {
   return [...prospects].sort((a, b) => {
-    // Always put inactive last, regardless of sort option
-    const statusA = a.status === 'inactive' ? 1 : 0;
-    const statusB = b.status === 'inactive' ? 1 : 0;
+    // Always put trashed/inactive last, regardless of sort option
+    const statusA = (a.status === 'trashed' || a.status === 'inactive') ? 1 : 0;
+    const statusB = (b.status === 'trashed' || b.status === 'inactive') ? 1 : 0;
     if (statusA !== statusB) return statusA - statusB;
 
     switch (sortOption) {

@@ -28,6 +28,7 @@ export const EditProspectModal: React.FC<EditProspectModalProps> = ({
   const [priorCareerGP, setPriorCareerGP] = useState<number>(0);
   const [seasons25PlusGP, setSeasons25PlusGP] = useState<number>(0);
   const [isProtected, setIsProtected] = useState<boolean>(false);
+  const [isTrashed, setIsTrashed] = useState<boolean>(false);
   const [statusNotes, setStatusNotes] = useState('');
 
   useEffect(() => {
@@ -43,6 +44,7 @@ export const EditProspectModal: React.FC<EditProspectModalProps> = ({
       setPriorCareerGP(prospect.priorCareerGP || 0);
       setSeasons25PlusGP(prospect.seasons25PlusGP || 0);
       setIsProtected(prospect.isProtected || false);
+      setIsTrashed(prospect.status === 'trashed' || prospect.status === 'inactive');
       setStatusNotes(prospect.statusNotes || '');
     }
   }, [prospect]);
@@ -65,6 +67,7 @@ export const EditProspectModal: React.FC<EditProspectModalProps> = ({
       priorCareerGP: Number(priorCareerGP) || 0,
       seasons25PlusGP: Number(seasons25PlusGP) || 0,
       isProtected,
+      status: isTrashed ? 'trashed' : 'active',
       statusNotes: statusNotes.trim() || undefined,
     });
 
@@ -245,10 +248,23 @@ export const EditProspectModal: React.FC<EditProspectModalProps> = ({
               id="edit-protected-check"
               checked={isProtected}
               onChange={(e) => setIsProtected(e.target.checked)}
-              className="h-4 w-4 rounded border-slate-700 bg-slate-800 text-cyan-500 focus:ring-cyan-500"
+              className="h-4 w-4 rounded border-slate-700 bg-slate-800 text-cyan-500 focus:ring-cyan-500 cursor-pointer"
             />
             <label htmlFor="edit-protected-check" className="font-semibold text-slate-300 cursor-pointer">
               Protect prospect (Protected? YES)
+            </label>
+          </div>
+
+          <div className="flex items-center gap-2 pt-1">
+            <input
+              type="checkbox"
+              id="edit-trashed-check"
+              checked={isTrashed}
+              onChange={(e) => setIsTrashed(e.target.checked)}
+              className="h-4 w-4 rounded border-slate-700 bg-slate-800 text-rose-500 focus:ring-rose-500 cursor-pointer"
+            />
+            <label htmlFor="edit-trashed-check" className="font-semibold text-rose-300/90 cursor-pointer">
+              Mark as Trashed (stop tracking games played; keeps DB record)
             </label>
           </div>
 

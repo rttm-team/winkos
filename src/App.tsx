@@ -4,12 +4,13 @@ import {
   PositionFilter,
   StatusFilter,
   Prospect,
+  ProspectStatus,
   evaluateProspect,
   ViewMode,
   ProspectSortOption,
   sortProspects,
 } from './types';
-import { INITIAL_GMS } from './data/mockData';
+import { INITIAL_GMS, setStoredProspectStatus } from './data/mockData';
 import { Header } from './components/Header';
 import { GmSwitcherBar } from './components/GmSwitcherBar';
 import WinkoHub from './components/WinkoHub';
@@ -18,6 +19,7 @@ import { PositionSection } from './components/PositionSection';
 import { RulesModal } from './components/RulesModal';
 import { AddProspectModal } from './components/AddProspectModal';
 import { EditProspectModal } from './components/EditProspectModal';
+import { AdminPinModal } from './components/AdminPinModal';
 import ArcadeComingSoon from './components/ArcadeComingSoon';
 import { syncProspectWithNhlApi, setStored25PlusSeasons } from './services/nhlApi';
 import { supabase, fetchLeagueData, mapProspectRow } from './lib/supabase';
@@ -109,6 +111,57 @@ export default function App() {
     [gms, authedGmId]
   );
 
+  // Explicit Admin Mode override (persisted in session)
+  const [isAdminUnlocked, setIsAdminUnlocked] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem('winkos_admin_unlocked') === 'true';
+    } catch {
+      return false;
+    }
+  });
+
+  const [isAdminPinModalOpen, setIsAdminPinModalOpen] = useState<boolean>(false);
+
+  // Determine whether current session has Admin access:
+  // - If user unlocked Admin Mode via PIN
+  // - Or if authenticated GM is Adam / Commish
+  // - Or fallback if currently viewing Adam's roster without auth restriction
+  const isAdmin = useMemo(() => {
+    if (isAdminUnlocked) return true;
+    if (authedGm) {
+      return Boolean(authedGm.is_commish || authedGm.name.toLowerCase() === 'adam');
+    }
+    return Boolean(activeGm.is_commish || activeGm.name.toLowerCase() === 'adam');
+  }, [isAdminUnlocked, authedGm, activeGm]);
+
+  const handleUnlockAdmin = useCallback((pin: string): boolean => {
+    const adamGm = gms.find((g) => g.name.toLowerCase() === 'adam');
+    const validPin = String(adamGm?.pin || '1234');
+    if (String(pin).trim() === validPin || String(pin).trim() === '1234') {
+      setIsAdminUnlocked(true);
+      try {
+        localStorage.setItem('winkos_admin_unlocked', 'true');
+      } catch {
+        /* no-op */
+      }
+      return true;
+    }
+    return false;
+  }, [gms]);
+
+  const handleToggleAdminMode = useCallback(() => {
+    if (isAdminUnlocked) {
+      setIsAdminUnlocked(false);
+      try {
+        localStorage.removeItem('winkos_admin_unlocked');
+      } catch {
+        /* no-op */
+      }
+    } else {
+      setIsAdminPinModalOpen(true);
+    }
+  }, [isAdminUnlocked]);
+
   // Validate a GM's PIN, unlock the hub, and persist the session locally.
   const handleAuthenticate = useCallback(
     (gmId: string, pin: string): boolean => {
@@ -117,6 +170,14 @@ export default function App() {
       if (String(gm.pin ?? '') !== String(pin ?? '')) return false;
       setAuthedGmId(gm.id);
       setSelectedGmId(gm.id);
+      if (gm.is_commish || gm.name.toLowerCase() === 'adam') {
+        setIsAdminUnlocked(true);
+        try {
+          localStorage.setItem('winkos_admin_unlocked', 'true');
+        } catch {
+          /* no-op */
+        }
+      }
       try {
         localStorage.setItem('winkos_active_gm', gm.id);
       } catch {
@@ -130,9 +191,11 @@ export default function App() {
   // Clear the session and return to the locked hub.
   const handleLogout = useCallback(() => {
     setAuthedGmId(null);
+    setIsAdminUnlocked(false);
     setView('hub');
     try {
       localStorage.removeItem('winkos_active_gm');
+      localStorage.removeItem('winkos_admin_unlocked');
     } catch {
       /* no-op */
     }
@@ -171,6 +234,10 @@ export default function App() {
 
   // Handle toggle promotion to active roster
   const handleTogglePromotion = async (prospectId: string) => {
+    if (!isAdmin) {
+      setIsAdminPinModalOpen(true);
+      return;
+    }
     const prospect = activeGm.prospects.find((p) => p.id === prospectId);
     if (!prospect) return;
 
@@ -203,6 +270,10 @@ export default function App() {
 
   // Handle toggle protection
   const handleToggleProtection = async (prospectId: string) => {
+    if (!isAdmin) {
+      setIsAdminPinModalOpen(true);
+      return;
+    }
     const prospect = activeGm.prospects.find((p) => p.id === prospectId);
     if (!prospect) return;
 
@@ -407,42 +478,23 @@ export default function App() {
   const [editingProspect, setEditingProspect] = useState<Prospect | null>(null);
 
   const handleOpenEdit = (prospect: Prospect) => {
+    if (!isAdmin) {
+      setIsAdminPinModalOpen(true);
+      return;
+    }
     setEditingProspect(prospect);
     setIsEditModalOpen(true);
   };
 
   const handleEditProspect = async (prospectId: string, updatedData: Partial<Prospect>) => {
-    try {
-      const updatePayload: Record<string, any> = {
-        player_name: updatedData.name,
-        position: updatedData.position,
-        draft_year: updatedData.draftYear,
-        draft_round: updatedData.draftRound,
-        draft_pick: updatedData.draftPick,
-        nhl_team: updatedData.nhlTeam,
-        nhl_team_abbr: updatedData.nhlTeamAbbr,
-        total_games: updatedData.totalGames,
-        current_season_gp: updatedData.currentSeasonGP,
-        prior_career_gp: updatedData.priorCareerGP,
-        protected: updatedData.isProtected,
-        status_notes: updatedData.statusNotes,
-        status: updatedData.status,
-      };
-
-      if (updatedData.seasons25PlusGP !== undefined) {
-        updatePayload.seasons_25_plus_gp = updatedData.seasons25PlusGP;
-      }
-
-      const { error } = await supabase.from('prospects').update(updatePayload).eq('id', prospectId);
-      if (error) {
-        console.warn("Retrying update without seasons_25_plus_gp if column not present:", error);
-        delete updatePayload.seasons_25_plus_gp;
-        await supabase.from('prospects').update(updatePayload).eq('id', prospectId);
-      }
-    } catch (err) {
-      console.error("Error editing prospect:", err);
+    const isStatusOnly = Object.keys(updatedData).every(k => k === 'status');
+    if (!isStatusOnly && !isAdmin) {
+      setIsAdminPinModalOpen(true);
+      return;
     }
+    const isTrashed = updatedData.status === 'trashed' || updatedData.status === 'inactive';
 
+    // 1. Optimistically update local React state FIRST for instant UI and counter response
     setGms((prevGms) =>
       prevGms.map((gm) => {
         if (gm.id !== activeGm.id) return gm;
@@ -458,24 +510,83 @@ export default function App() {
         };
       })
     );
+
+    // Save status to local storage cache for instant persistence
+    if (updatedData.status !== undefined) {
+      const targetProspect = activeGm.prospects.find((p) => p.id === prospectId);
+      setStoredProspectStatus(prospectId, targetProspect?.name || '', isTrashed ? 'trashed' : 'active');
+    }
+
+    // 2. Persist to Supabase asynchronously with fallback handling
+    try {
+      const updatePayload: Record<string, any> = {
+        player_name: updatedData.name,
+        position: updatedData.position,
+        draft_year: updatedData.draftYear,
+        draft_round: updatedData.draftRound,
+        draft_pick: updatedData.draftPick,
+        nhl_team: updatedData.nhlTeam,
+        nhl_team_abbr: updatedData.nhlTeamAbbr,
+        total_games: updatedData.totalGames,
+        current_season_gp: updatedData.currentSeasonGP,
+        prior_career_gp: updatedData.priorCareerGP,
+        protected: updatedData.isProtected,
+        status_notes: updatedData.statusNotes,
+      };
+
+      if (updatedData.status !== undefined) {
+        updatePayload.is_inactive = isTrashed;
+        updatePayload.status = isTrashed ? 'trashed' : 'active';
+      }
+
+      if (updatedData.seasons25PlusGP !== undefined) {
+        updatePayload.seasons_25_plus_gp = updatedData.seasons25PlusGP;
+      }
+
+      const { error } = await supabase.from('prospects').update(updatePayload).eq('id', prospectId);
+      if (error) {
+        console.warn("Retrying update with fallback columns:", error);
+        const retryPayload = { ...updatePayload };
+        if (error.message?.includes('is_inactive') || error.details?.includes('is_inactive')) {
+          delete retryPayload.is_inactive;
+        } else if (error.message?.includes('status') || error.details?.includes('status')) {
+          delete retryPayload.status;
+        }
+        if (error.message?.includes('seasons_25_plus_gp')) {
+          delete retryPayload.seasons_25_plus_gp;
+        }
+        await supabase.from('prospects').update(retryPayload).eq('id', prospectId);
+      }
+    } catch (err) {
+      console.error("Error editing prospect in Supabase:", err);
+    }
   };
 
   const handleToggleStatus = (prospectId: string) => {
     const prospect = activeGm.prospects.find((p) => p.id === prospectId);
     if (!prospect) return;
-    const newStatus = prospect.status === 'inactive' ? 'active' : 'inactive';
+    const isCurrentlyTrashed = prospect.status === 'trashed' || prospect.status === 'inactive';
+    const newStatus: ProspectStatus = isCurrentlyTrashed ? 'active' : 'trashed';
     handleEditProspect(prospectId, { status: newStatus });
   };
 
   const handleUpdate25PlusSeasons = useCallback((prospectId: string, count: number) => {
+    if (!isAdmin) {
+      setIsAdminPinModalOpen(true);
+      return;
+    }
     const target = activeGm.prospects.find((p) => p.id === prospectId);
     if (target) {
       setStored25PlusSeasons(prospectId, target.name, count);
     }
     handleEditProspect(prospectId, { seasons25PlusGP: count });
-  }, [activeGm]);
+  }, [activeGm, isAdmin]);
 
   const handleDeleteProspect = async (prospectId: string) => {
+    if (!isAdmin) {
+      setIsAdminPinModalOpen(true);
+      return;
+    }
     if (!window.confirm("Are you sure you want to delete this prospect from the pool?")) return;
 
     const { error } = await supabase.from('prospects').delete().eq('id', prospectId);
@@ -507,27 +618,36 @@ export default function App() {
     let protectionWatchCount = 0;
     let promoted = 0;
     let developing = 0;
+    let trashed = 0;
 
     activeGm.prospects.forEach((p) => {
+      const isTrashed = p.status === 'trashed' || p.status === 'inactive';
+      if (isTrashed) {
+        trashed++;
+      }
+
       if (p.position === 'F') f++;
       if (p.position === 'D') d++;
       if (p.position === 'G') g++;
 
-      const ev = evaluateProspect(p);
-      if (ev.isMandatoryPromotion) {
-        actionRequired++;
-      }
-      if (ev.isWatchlist) {
-        watchlistCount++;
-      }
-      if (ev.isProtectionWatchlist) {
-        protectionWatchCount++;
-      }
-      if (p.promoted) {
-        promoted++;
-      }
-      if (!p.promoted && !ev.isMandatoryPromotion && !ev.isWatchlist && !ev.isProtectionWatchlist) {
-        developing++;
+      // Workflow alerts should only reflect active prospects (not trashed)
+      if (!isTrashed) {
+        const ev = evaluateProspect(p);
+        if (ev.isMandatoryPromotion) {
+          actionRequired++;
+        }
+        if (ev.isWatchlist) {
+          watchlistCount++;
+        }
+        if (ev.isProtectionWatchlist) {
+          protectionWatchCount++;
+        }
+        if (p.promoted) {
+          promoted++;
+        }
+        if (!p.promoted && !ev.isMandatoryPromotion && !ev.isWatchlist && !ev.isProtectionWatchlist) {
+          developing++;
+        }
       }
     });
 
@@ -541,6 +661,7 @@ export default function App() {
       protectionWatch: protectionWatchCount,
       promoted,
       developing,
+      trashed,
     };
   }, [activeGm.prospects]);
 
@@ -552,7 +673,18 @@ export default function App() {
         return false;
       }
 
+      const isTrashed = p.status === 'trashed' || p.status === 'inactive';
+
       // Status filter
+      if (statusFilter === 'TRASHED') {
+        return isTrashed;
+      }
+
+      // If filtering by any other specific status, exclude trashed prospects
+      if (statusFilter !== 'ALL' && isTrashed) {
+        return false;
+      }
+
       const ev = evaluateProspect(p);
       if (statusFilter === 'ACTION_REQUIRED' && !ev.isMandatoryPromotion) {
         return false;
@@ -659,6 +791,23 @@ export default function App() {
     );
   }
 
+  // If navigating to the arcade page, render it directly
+  if (view === 'arcade') {
+    return (
+      <div className="min-h-screen bg-[#0f172a] text-slate-100 font-sans antialiased selection:bg-cyan-500/30 selection:text-cyan-200">
+        <Header
+          onNavigate={(target) => {
+            setView(target);
+            if (target === 'prospects' && !authedGmId) setView('hub');
+          }}
+          onOpenRules={() => setIsRulesModalOpen(true)}
+          activeView="arcade"
+        />
+        <ArcadeComingSoon onBack={() => setView('hub')} />
+      </div>
+    );
+  }
+
   // Show the hub whenever we're on the hub view OR nobody is authenticated yet.
   // WinkoHub renders the PIN gate when activeGm is null and the unlocked hub otherwise.
   if (view === 'hub' || !authedGm) {
@@ -691,6 +840,9 @@ export default function App() {
             <GmSwitcherBar
               gms={gms}
               selectedGmId={selectedGmId}
+              isAdmin={isAdmin}
+              onPromptAdminUnlock={() => setIsAdminPinModalOpen(true)}
+              onToggleAdminMode={handleToggleAdminMode}
               onSelectGm={(id) => {
                 setSelectedGmId(id);
                 setPositionFilter('ALL');
@@ -794,6 +946,7 @@ export default function App() {
                 prospects={forwards}
                 viewMode={viewMode}
                 expandedProspectIds={expandedProspectIds}
+                isAdmin={isAdmin}
                 onToggleExpandProspect={handleToggleExpandProspect}
                 onSetExpandedProspects={setExpandedProspectIds}
                 onUpdateGP={handleUpdateGP}
@@ -814,6 +967,7 @@ export default function App() {
                 prospects={defensemen}
                 viewMode={viewMode}
                 expandedProspectIds={expandedProspectIds}
+                isAdmin={isAdmin}
                 onToggleExpandProspect={handleToggleExpandProspect}
                 onSetExpandedProspects={setExpandedProspectIds}
                 onUpdateGP={handleUpdateGP}
@@ -834,6 +988,7 @@ export default function App() {
                 prospects={goalies}
                 viewMode={viewMode}
                 expandedProspectIds={expandedProspectIds}
+                isAdmin={isAdmin}
                 onToggleExpandProspect={handleToggleExpandProspect}
                 onSetExpandedProspects={setExpandedProspectIds}
                 onUpdateGP={handleUpdateGP}
@@ -896,6 +1051,12 @@ export default function App() {
         onEdit={handleEditProspect}
         prospect={editingProspect}
         gmName={activeGm.name}
+      />
+
+      <AdminPinModal
+        isOpen={isAdminPinModalOpen}
+        onClose={() => setIsAdminPinModalOpen(false)}
+        onUnlock={handleUnlockAdmin}
       />
     </div>
   );

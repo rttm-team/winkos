@@ -31,6 +31,7 @@ interface FiltersAndSearchProps {
     protectionWatch: number;
     promoted: number;
     developing: number;
+    trashed: number;
   };
   onResetFilters: () => void;
   viewMode: ViewMode;
@@ -164,13 +165,14 @@ export const FiltersAndSearch: React.FC<FiltersAndSearchProps> = ({
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value as StatusFilter)}
-              className="rounded-xl border border-slate-700/80 bg-slate-800/90 px-3 py-2 text-xs font-bold text-slate-100 focus:border-cyan-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/20"
+              className="rounded-xl border border-slate-700/80 bg-slate-800/90 px-3 py-2 text-xs font-bold text-slate-100 focus:border-cyan-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/20 cursor-pointer"
             >
               <option value="ALL">All Status</option>
               <option value="ACTION_REQUIRED">Action Required ({counts.actionRequired})</option>
               <option value="WATCHLIST">Watchlist ({counts.watchlist})</option>
               <option value="PROMOTED">Promoted ({counts.promoted})</option>
               <option value="PROTECTION_WATCH">Protection Watch ({counts.protectionWatch})</option>
+              <option value="TRASHED">Trashed ({counts.trashed})</option>
             </select>
           </div>
 

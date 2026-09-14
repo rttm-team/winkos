@@ -1,17 +1,23 @@
 import React, { useState } from 'react';
-import { ChevronDown } from 'lucide-react';
+import { ChevronDown, Crown, Shield, Key } from 'lucide-react';
 import { GeneralManager } from '../types';
 
 interface GmSwitcherBarProps {
   gms: GeneralManager[];
   selectedGmId: string;
   onSelectGm: (id: string) => void;
+  isAdmin?: boolean;
+  onPromptAdminUnlock?: () => void;
+  onToggleAdminMode?: () => void;
 }
 
 export const GmSwitcherBar: React.FC<GmSwitcherBarProps> = ({
   gms,
   selectedGmId,
   onSelectGm,
+  isAdmin = false,
+  onPromptAdminUnlock,
+  onToggleAdminMode,
 }) => {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const selectedGm = gms.find((g) => g.id === selectedGmId) || gms[0];
@@ -19,75 +25,138 @@ export const GmSwitcherBar: React.FC<GmSwitcherBarProps> = ({
   return (
     <div className="bg-slate-800 border-b border-slate-700">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-2">
-        <div className="relative">
-          <label htmlFor="gm-selector" className="sr-only">
-            Select General Manager
-          </label>
-          <button
-            id="gm-selector"
-            type="button"
-            onClick={() => setDropdownOpen(!dropdownOpen)}
-            className="flex items-center gap-2.5 rounded-xl border border-slate-700 bg-slate-900/90 px-3 py-1.5 text-left text-sm text-slate-200 hover:border-slate-600 transition-all focus:outline-none focus:ring-2 focus:ring-cyan-500/50 shadow-sm"
-          >
-            <div
-              className={`flex h-6 w-6 items-center justify-center rounded-lg bg-gradient-to-br ${selectedGm.avatarColor} text-[10px] font-bold text-white shadow-inner`}
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          {/* GM Selector Dropdown */}
+          <div className="relative">
+            <label htmlFor="gm-selector" className="sr-only">
+              Select General Manager
+            </label>
+            <button
+              id="gm-selector"
+              type="button"
+              onClick={() => setDropdownOpen(!dropdownOpen)}
+              className="flex items-center gap-2.5 rounded-xl border border-slate-700 bg-slate-900/90 px-3 py-1.5 text-left text-sm text-slate-200 hover:border-slate-600 transition-all focus:outline-none focus:ring-2 focus:ring-cyan-500/50 shadow-sm cursor-pointer"
             >
-              {selectedGm.avatarInitials}
-            </div>
-            <div className="flex flex-col text-left">
-              <span className="text-[10px] font-medium uppercase tracking-wider text-slate-400">
-                General Manager
-              </span>
-              <span className="font-semibold text-slate-100 leading-tight text-xs">
-                {selectedGm.name}
-              </span>
-            </div>
-            <ChevronDown
-              className={`h-4 w-4 text-slate-400 transition-transform duration-200 ${
-                dropdownOpen ? 'rotate-180' : ''
-              }`}
-            />
-          </button>
-
-          {/* Dropdown Menu */}
-          {dropdownOpen && (
-            <>
               <div
-                className="fixed inset-0 z-40"
-                onClick={() => setDropdownOpen(false)}
-              />
-              <div className="absolute left-0 mt-2 z-50 w-72 max-h-[50vh] overflow-y-auto rounded-xl border border-slate-700 bg-slate-800/95 p-1.5 shadow-2xl backdrop-blur-md scrollbar-thin scrollbar-thumb-slate-600">
-                <div className="px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-slate-400 border-b border-slate-700/60 mb-1">
-                  Switch General Manager
-                </div>
-                {gms.map((gm) => (
-                  <button
-                    key={gm.id}
-                    onClick={() => {
-                      onSelectGm(gm.id);
-                      setDropdownOpen(false);
-                    }}
-                    className={`w-full flex items-center justify-between rounded-lg px-3 py-2 text-left transition-colors ${
-                      gm.id === selectedGm.id
-                        ? 'bg-cyan-500/15 text-cyan-200 font-semibold'
-                        : 'text-slate-300 hover:bg-slate-700/60 hover:text-white'
-                    }`}
-                  >
-                    <div className="flex items-center gap-2.5">
-                      <div
-                        className={`flex h-6 w-6 items-center justify-center rounded-md bg-gradient-to-br ${gm.avatarColor} text-[10px] font-bold text-white`}
-                      >
-                        {gm.avatarInitials}
-                      </div>
-                      <div>
-                        <div className="text-xs font-bold leading-none">{gm.name}</div>
-                      </div>
-                    </div>
-                  </button>
-                ))}
+                className={`flex h-6 w-6 items-center justify-center rounded-lg bg-gradient-to-br ${selectedGm.avatarColor} text-[10px] font-bold text-white shadow-inner`}
+              >
+                {selectedGm.avatarInitials}
               </div>
-            </>
-          )}
+              <div className="flex flex-col text-left">
+                <span className="text-[10px] font-medium uppercase tracking-wider text-slate-400 flex items-center gap-1">
+                  <span>General Manager</span>
+                  {(selectedGm.is_commish || selectedGm.name.toLowerCase() === 'adam') && (
+                    <Crown className="h-2.5 w-2.5 text-amber-400 inline" />
+                  )}
+                </span>
+                <span className="font-semibold text-slate-100 leading-tight text-xs">
+                  {selectedGm.name}
+                </span>
+              </div>
+              <ChevronDown
+                className={`h-4 w-4 text-slate-400 transition-transform duration-200 ${
+                  dropdownOpen ? 'rotate-180' : ''
+                }`}
+              />
+            </button>
+
+            {/* Dropdown Menu */}
+            {dropdownOpen && (
+              <>
+                <div
+                  className="fixed inset-0 z-40"
+                  onClick={() => setDropdownOpen(false)}
+                />
+                <div className="absolute left-0 mt-2 z-50 w-72 max-h-[50vh] overflow-y-auto rounded-xl border border-slate-700 bg-slate-800/95 p-1.5 shadow-2xl backdrop-blur-md scrollbar-thin scrollbar-thumb-slate-600">
+                  <div className="px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-slate-400 border-b border-slate-700/60 mb-1">
+                    Switch General Manager
+                  </div>
+                  {gms.map((gm) => {
+                    const isGmCommish = gm.is_commish || gm.name.toLowerCase() === 'adam';
+                    return (
+                      <button
+                        key={gm.id}
+                        onClick={() => {
+                          onSelectGm(gm.id);
+                          setDropdownOpen(false);
+                        }}
+                        className={`w-full flex items-center justify-between rounded-lg px-3 py-2 text-left transition-colors cursor-pointer ${
+                          gm.id === selectedGm.id
+                            ? 'bg-cyan-500/15 text-cyan-200 font-semibold'
+                            : 'text-slate-300 hover:bg-slate-700/60 hover:text-white'
+                        }`}
+                      >
+                        <div className="flex items-center gap-2.5">
+                          <div
+                            className={`flex h-6 w-6 items-center justify-center rounded-md bg-gradient-to-br ${gm.avatarColor} text-[10px] font-bold text-white`}
+                          >
+                            {gm.avatarInitials}
+                          </div>
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-xs font-bold leading-none">{gm.name}</span>
+                            {isGmCommish && (
+                              <span className="inline-flex items-center gap-0.5 rounded px-1 py-0.2 text-[9px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                                <Crown className="h-2.5 w-2.5" /> Commish
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </>
+            )}
+          </div>
+
+          {/* Admin / GM View Status Indicator */}
+          <div className="flex items-center gap-2">
+            {isAdmin ? (
+              <div className="flex items-center gap-2">
+                <span
+                  className="flex items-center gap-1.5 rounded-xl border border-amber-500/40 bg-amber-500/10 px-2.5 py-1.5 text-xs font-bold text-amber-300 shadow-sm"
+                  title="Admin Access: You can Edit, Delete, Promote, and change Protection across all rosters."
+                >
+                  <Crown className="h-3.5 w-3.5 text-amber-400" />
+                  <span>Admin Access (Full)</span>
+                </span>
+                {onToggleAdminMode && (
+                  <button
+                    type="button"
+                    onClick={onToggleAdminMode}
+                    className="text-[11px] text-slate-400 hover:text-slate-200 underline decoration-slate-600 transition-colors cursor-pointer"
+                    title="Switch to GM View to test standard permissions"
+                  >
+                    Switch to GM View
+                  </button>
+                )}
+              </div>
+            ) : (
+              <div className="flex items-center gap-2">
+                <span
+                  className="flex items-center gap-1.5 rounded-xl border border-slate-700 bg-slate-900/90 px-2.5 py-1.5 text-xs font-medium text-slate-300 shadow-sm"
+                  title="GM View: Restricted to 'Trash 'em' and 'Refresh NHL Stats'. Only Admins can Edit, Delete, Promote, or change Protection."
+                >
+                  <Shield className="h-3.5 w-3.5 text-slate-400" />
+                  <span>GM View</span>
+                  <span className="hidden sm:inline text-[10px] text-slate-400 font-normal">
+                    (Trash & Refresh Only)
+                  </span>
+                </span>
+                {onPromptAdminUnlock && (
+                  <button
+                    type="button"
+                    onClick={onPromptAdminUnlock}
+                    className="flex items-center gap-1 rounded-xl border border-amber-500/30 bg-amber-500/10 px-2.5 py-1.5 text-xs font-bold text-amber-300 hover:bg-amber-500/20 hover:border-amber-400 transition-colors cursor-pointer shadow-sm"
+                    title="Unlock Admin permissions with Commissioner PIN"
+                  >
+                    <Key className="h-3.5 w-3.5" />
+                    <span>Admin Unlock</span>
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>

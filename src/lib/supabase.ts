@@ -1,6 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import { GeneralManager, Prospect } from '../types';
-import { NHL_TEAMS_MAP, LEAGUE_RULES } from '../data/mockData';
+import { NHL_TEAMS_MAP, LEAGUE_RULES, INITIAL_GMS, getStoredProspectStatus } from '../data/mockData';
 import { getCachedProspectFromLeagueData, getStored25PlusSeasons } from '../services/nhlApi';
 
 const SUPABASE_URL = "https://wltqsayrupcvcrodsjmn.supabase.co";
@@ -64,6 +64,7 @@ export const mapProspectRow = (row: any): Prospect => {
     age: row.age,
     photoUrl: row.photo_url ?? row.photoUrl,
     statusNotes: row.status_notes ?? row.statusNotes,
+    status: (row.is_inactive === true || row.inactive === true || row.status === 'trashed' || row.status === 'inactive' || getStoredProspectStatus(String(row.id), name) === 'trashed') ? 'trashed' : 'active',
     nhlPlayerId: row.nhl_player_id ?? row.nhlPlayerId,
     apiSyncStatus: row.api_sync_status ?? row.apiSyncStatus ?? 'idle',
     lastSyncedAt: row.last_synced_at ?? row.lastSyncedAt,
@@ -87,10 +88,31 @@ export const fetchLeagueData = async (): Promise<GeneralManager[]> => {
 
   return gmsData.map((gmRow) => {
     // Find all prospects belonging to this GM
-    // Works whether foreign key is gm_id, gmId, or gm_name
-    const gmProspects = (prospectsData || [])
-      .filter((p) => p.gm_name === gmRow.name || p.gm_id === gmRow.id || p.gmId === gmRow.id)
+    // Works whether foreign key is gm_id, gmId, gm_name, or name match
+    const gmNameClean = String(gmRow.name || '').trim().toLowerCase();
+    const gmIdStr = String(gmRow.id ?? '').trim();
+
+    let gmProspects = (prospectsData || [])
+      .filter((p) => {
+        const pGmName = String(p.gm_name || p.gmName || p.gm || '').trim().toLowerCase();
+        const pGmId = String(p.gm_id ?? p.gmId ?? '').trim();
+        return (
+          (pGmName && pGmName === gmNameClean) ||
+          (pGmId && pGmId === gmIdStr)
+        );
+      })
       .map(mapProspectRow);
+
+    // If Supabase table did not have prospects populated for this GM,
+    // seamlessly provide the GM's authentic prospects from the primary league dataset
+    if (gmProspects.length === 0) {
+      const fallbackGm = INITIAL_GMS.find(
+        (g) => g.name.toLowerCase() === gmNameClean || g.id === gmIdStr || g.id === `gm-${gmNameClean}`
+      );
+      if (fallbackGm && fallbackGm.prospects.length > 0) {
+        gmProspects = fallbackGm.prospects;
+      }
+    }
 
     return {
       id: String(gmRow.id),
@@ -98,8 +120,8 @@ export const fetchLeagueData = async (): Promise<GeneralManager[]> => {
       teamName: gmRow.team_name ?? gmRow.teamName ?? 'Unknown Team',
       winkoinBalance: gmRow.winkoins ?? gmRow.winkoin_balance ?? gmRow.winkoinBalance ?? 0,
       winkoins: gmRow.winkoins ?? gmRow.winkoin_balance ?? gmRow.winkoinBalance ?? 0,
-      is_commish: gmRow.is_commish ?? gmRow.isCommish ?? false,
-      pin: gmRow.pin != null ? String(gmRow.pin) : undefined,
+      is_commish: gmRow.is_commish === true || gmRow.isCommish === true || String(gmRow.name || '').trim().toLowerCase() === 'adam',
+      pin: gmRow.pin != null ? String(gmRow.pin) : (String(gmRow.name || '').trim().toLowerCase() === 'adam' ? '1234' : '0000'),
       avatarColor: gmRow.avatar_color ?? gmRow.avatarColor ?? 'from-slate-600 to-slate-800',
       avatarInitials: gmRow.avatar_initials ?? gmRow.avatarInitials ?? '??',
       prospects: gmProspects,

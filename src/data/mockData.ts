@@ -391,6 +391,41 @@ export function setStored25PlusSeasons(prospectId: string, name: string, count: 
   }
 }
 
+export function getStoredProspectStatus(prospectId: string, name: string): 'active' | 'trashed' | null {
+  if (typeof window !== 'undefined' && window.localStorage) {
+    try {
+      const byId = window.localStorage.getItem(`winkos_status_${prospectId}`);
+      if (byId === 'trashed' || byId === 'active') {
+        return byId as 'active' | 'trashed';
+      }
+      const norm = normalizePlayerName(name);
+      if (norm) {
+        const byName = window.localStorage.getItem(`winkos_status_name_${norm}`);
+        if (byName === 'trashed' || byName === 'active') {
+          return byName as 'active' | 'trashed';
+        }
+      }
+    } catch {
+      // Ignore localStorage restrictions
+    }
+  }
+  return null;
+}
+
+export function setStoredProspectStatus(prospectId: string, name: string, status: 'active' | 'trashed'): void {
+  if (typeof window !== 'undefined' && window.localStorage) {
+    try {
+      window.localStorage.setItem(`winkos_status_${prospectId}`, status);
+      const norm = normalizePlayerName(name);
+      if (norm) {
+        window.localStorage.setItem(`winkos_status_name_${norm}`, status);
+      }
+    } catch {
+      // Ignore localStorage restrictions
+    }
+  }
+}
+
 /**
  * Transforms raw league data from winkos_full_league_data.json into the GeneralManager model
  */
@@ -426,6 +461,7 @@ export const INITIAL_GMS: GeneralManager[] = rawLeagueData.gms.map((gm) => {
 
     const prospectId = `p-${gm.name.toLowerCase()}-${slugify(p.name)}`;
     const seasons25PlusGP = getStored25PlusSeasons(prospectId, p.name, p.totalGames);
+    const storedStatus = getStoredProspectStatus(prospectId, p.name);
 
     const prospectObj: Prospect = {
       id: prospectId,
@@ -438,6 +474,7 @@ export const INITIAL_GMS: GeneralManager[] = rawLeagueData.gms.map((gm) => {
       promoted: Boolean(p.promoted),
       promotionDate: p.promotionDate,
       isProtected: Boolean(p.protected),
+      status: storedStatus || 'active',
       nhlTeam: teamInfo.team,
       nhlTeamAbbr: teamInfo.abbr,
       apiSyncStatus: 'idle',
@@ -454,6 +491,8 @@ export const INITIAL_GMS: GeneralManager[] = rawLeagueData.gms.map((gm) => {
     winkoinBalance: gm.winkoins,
     avatarColor: meta.avatarColor,
     avatarInitials: meta.avatarInitials,
+    is_commish: gm.name.toLowerCase() === 'adam',
+    pin: gm.name.toLowerCase() === 'adam' ? '1234' : '0000',
     prospects,
   };
 });

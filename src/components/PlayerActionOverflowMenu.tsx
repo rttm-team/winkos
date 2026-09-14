@@ -11,9 +11,13 @@ import {
   ShieldAlert,
   ShieldOff,
   Ban,
+  RotateCcw,
+  Lock,
 } from 'lucide-react';
+import { ProspectStatus } from '../types';
 
 interface PlayerActionOverflowMenuProps {
+  isAdmin?: boolean;
   onSync?: () => void;
   onEdit?: () => void;
   onDelete?: () => void;
@@ -37,6 +41,7 @@ interface MenuCoords {
 }
 
 export const PlayerActionOverflowMenu: React.FC<PlayerActionOverflowMenuProps> = ({
+  isAdmin = false,
   onSync,
   onEdit,
   onDelete,
@@ -136,8 +141,8 @@ export const PlayerActionOverflowMenu: React.FC<PlayerActionOverflowMenuProps> =
     };
   }, [isOpen, calculatePosition]);
 
-  const hasRosterActions = Boolean(onTogglePromotion || onToggleProtection);
-  const hasManagementActions = Boolean(onSync || onEdit);
+  const hasRosterActions = isAdmin && Boolean(onTogglePromotion || onToggleProtection);
+  const hasManagementActions = Boolean(onSync || (isAdmin && onEdit));
 
   return (
     <>
@@ -170,8 +175,8 @@ export const PlayerActionOverflowMenu: React.FC<PlayerActionOverflowMenuProps> =
             className="w-[216px] rounded-xl border border-slate-700/90 bg-slate-900/95 py-1.5 shadow-2xl backdrop-blur-md ring-1 ring-white/10 animate-in fade-in zoom-in-95 duration-100 select-none"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Roster & Eligibility Actions */}
-            {onTogglePromotion && (
+            {/* Roster & Eligibility Actions - Admins Only */}
+            {isAdmin && onTogglePromotion && (
               <button
                 type="button"
                 onClick={(e) => {
@@ -205,7 +210,7 @@ export const PlayerActionOverflowMenu: React.FC<PlayerActionOverflowMenuProps> =
               </button>
             )}
 
-            {onToggleProtection && (
+            {isAdmin && onToggleProtection && (
               <>
                 {!isProtectionEligible ? (
                   <button
@@ -247,44 +252,71 @@ export const PlayerActionOverflowMenu: React.FC<PlayerActionOverflowMenuProps> =
               </>
             )}
 
-            {onToggleStatus && (
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setIsOpen(false);
-                  onToggleStatus();
-                }}
-                className="flex w-full items-center gap-2.5 px-3 py-2 text-xs font-medium text-slate-300 hover:bg-slate-800 hover:text-slate-100 transition-colors cursor-pointer text-left"
-              >
-                <Ban className={`h-3.5 w-3.5 ${status === 'inactive' ? 'text-emerald-400' : 'text-slate-400'} shrink-0`} />
-                <span>{status === 'inactive' ? 'Mark Active' : 'Mark Inactive'}</span>
-              </button>
-            )}
+            {/* Trash 'em / Restore - Available to ALL GMs */}
+            {onToggleStatus && (() => {
+              const isTrashed = status === 'trashed' || status === 'inactive';
+              return (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setIsOpen(false);
+                    onToggleStatus();
+                  }}
+                  className={`flex w-full items-center gap-2.5 px-3 py-2 text-xs font-medium transition-colors cursor-pointer text-left ${
+                    isTrashed
+                      ? 'text-emerald-300 hover:bg-emerald-950/50 hover:text-emerald-200'
+                      : 'text-slate-300 hover:bg-slate-800 hover:text-rose-300'
+                  }`}
+                >
+                  {isTrashed ? (
+                    <>
+                      <RotateCcw className="h-3.5 w-3.5 text-emerald-400 shrink-0" />
+                      <span>Restore from Trashed</span>
+                    </>
+                  ) : (
+                    <>
+                      <Trash2 className="h-3.5 w-3.5 text-rose-400 shrink-0" />
+                      <span>Trash 'em</span>
+                    </>
+                  )}
+                </button>
+              );
+            })()}
 
             {/* Divider between roster actions and management actions */}
-            {hasRosterActions && (hasManagementActions || onDelete) && (
+            {hasRosterActions && (hasManagementActions || (isAdmin && onDelete)) && (
               <div className="my-1 border-t border-slate-800" />
             )}
 
-            {/* Management Actions */}
-            {onSync && (
-              <button
-                type="button"
-                disabled={isSyncing}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setIsOpen(false);
-                  onSync();
-                }}
-                className="flex w-full items-center gap-2.5 px-3 py-2 text-xs font-medium text-slate-300 hover:bg-slate-800 hover:text-cyan-300 transition-colors disabled:opacity-50 cursor-pointer text-left"
-              >
-                <RefreshCw className={`h-3.5 w-3.5 text-cyan-400 shrink-0 ${isSyncing ? 'animate-spin' : ''}`} />
-                <span>{isSyncing ? 'Syncing...' : 'Refresh NHL Stats'}</span>
-              </button>
-            )}
+            {/* Refresh NHL Stats - Available to ALL GMs */}
+            {onSync && (() => {
+              const isTrashed = status === 'trashed' || status === 'inactive';
+              return (
+                <button
+                  type="button"
+                  disabled={isSyncing || isTrashed}
+                  onClick={(e) => {
+                    if (isTrashed) return;
+                    e.stopPropagation();
+                    setIsOpen(false);
+                    onSync();
+                  }}
+                  className={`flex w-full items-center gap-2.5 px-3 py-2 text-xs font-medium transition-colors text-left ${
+                    isTrashed
+                      ? 'text-slate-500 cursor-not-allowed opacity-60'
+                      : 'text-slate-300 hover:bg-slate-800 hover:text-cyan-300 disabled:opacity-50 cursor-pointer'
+                  }`}
+                  title={isTrashed ? 'Tracking paused for trashed prospect. Restore player to track live games.' : 'Refresh NHL stats'}
+                >
+                  <RefreshCw className={`h-3.5 w-3.5 ${isTrashed ? 'text-slate-500' : 'text-cyan-400'} shrink-0 ${isSyncing ? 'animate-spin' : ''}`} />
+                  <span>{isSyncing ? 'Syncing...' : isTrashed ? 'Tracking Paused (Trashed)' : 'Refresh NHL Stats'}</span>
+                </button>
+              );
+            })()}
 
-            {onEdit && (
+            {/* Edit Prospect - Admins Only */}
+            {isAdmin && onEdit && (
               <button
                 type="button"
                 onClick={(e) => {
@@ -299,8 +331,8 @@ export const PlayerActionOverflowMenu: React.FC<PlayerActionOverflowMenuProps> =
               </button>
             )}
 
-            {/* Danger Zone */}
-            {onDelete && (
+            {/* Delete Prospect - Admins Only */}
+            {isAdmin && onDelete && (
               <>
                 <div className="my-1 border-t border-slate-800" />
                 <button
@@ -316,6 +348,14 @@ export const PlayerActionOverflowMenu: React.FC<PlayerActionOverflowMenuProps> =
                   <span>Delete Prospect</span>
                 </button>
               </>
+            )}
+
+            {/* Helpful indicator for non-admins */}
+            {!isAdmin && (
+              <div className="mt-1 border-t border-slate-800/80 px-3 py-1.5 text-[10px] text-slate-400 flex items-center gap-1.5 bg-slate-950/40">
+                <Lock className="h-3 w-3 text-amber-400 shrink-0" />
+                <span>Admin only: Edit, Delete, Promote, Protect</span>
+              </div>
             )}
           </div>,
           document.body

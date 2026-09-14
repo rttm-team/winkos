@@ -16,11 +16,14 @@ import {
   TrendingUp,
   Loader2,
   Clock,
+  Trash2,
+  RotateCcw,
 } from 'lucide-react';
 
 interface ProspectCardProps {
   prospect: Prospect;
   isExpanded?: boolean;
+  isAdmin?: boolean;
   onToggleExpand?: () => void;
   onUpdateGP: (prospectId: string, delta: number) => void;
   onToggleProtection: (prospectId: string) => void;
@@ -35,6 +38,7 @@ interface ProspectCardProps {
 export const ProspectCard: React.FC<ProspectCardProps> = ({
   prospect,
   isExpanded,
+  isAdmin = false,
   onToggleExpand,
   onUpdateGP,
   onToggleProtection,
@@ -81,17 +85,20 @@ export const ProspectCard: React.FC<ProspectCardProps> = ({
     (!prospect.nhlPlayerId && prospect.apiSyncStatus === 'fallback') ||
     prospect.matchFound === false;
 
-  const isInDevelopment =
-    prospect.syncBadge === 'In Development' ||
-    prospect.hasEmptyStats === true ||
-    (safeTotalGP === 0 && safeSeasonGP === 0);
+  const isTrashed = prospect.status === 'trashed' || prospect.status === 'inactive';
 
-  // Requirement 1: When a prospect card loads, trigger the API sync flow
+  const isInDevelopment =
+    !isTrashed &&
+    (prospect.syncBadge === 'In Development' ||
+      prospect.hasEmptyStats === true ||
+      (safeTotalGP === 0 && safeSeasonGP === 0));
+
+  // Requirement 1: When a prospect card loads, trigger the API sync flow (only if NOT trashed)
   useEffect(() => {
-    if (!prospect.lastSyncedAt && prospect.apiSyncStatus !== 'syncing' && onSyncProspect) {
+    if (!isTrashed && !prospect.lastSyncedAt && prospect.apiSyncStatus !== 'syncing' && onSyncProspect) {
       onSyncProspect(prospect.id);
     }
-  }, [prospect.id]);
+  }, [prospect.id, isTrashed]);
 
   // Position colors
   const posBadgeColor =
@@ -109,7 +116,9 @@ export const ProspectCard: React.FC<ProspectCardProps> = ({
     <div
       id={`prospect-card-${prospect.id}`}
       className={`group relative flex flex-col justify-between overflow-hidden rounded-2xl border transition-all duration-200 ${
-        prospect.promoted
+        isTrashed
+          ? 'border-slate-800/80 bg-[#151c28]/90 opacity-80 hover:opacity-100 hover:border-slate-700 shadow-sm'
+          : prospect.promoted
           ? 'border-emerald-500/40 bg-[#1e293b] shadow-md shadow-slate-950/40 hover:border-emerald-500/60'
           : ev.isMandatoryPromotion
           ? 'border-red-500/60 bg-[#1e293b] shadow-lg shadow-red-950/40 hover:border-red-400'
@@ -121,7 +130,9 @@ export const ProspectCard: React.FC<ProspectCardProps> = ({
       {/* Top Highlight Accent Bar */}
       <div
         className={`h-1.5 w-full ${
-          prospect.promoted
+          isTrashed
+            ? 'bg-slate-700/40'
+            : prospect.promoted
             ? 'bg-gradient-to-r from-emerald-500 via-teal-400 to-cyan-500'
             : ev.isMandatoryPromotion
             ? 'bg-gradient-to-r from-red-600 via-rose-500 to-red-600 animate-pulse'
@@ -138,7 +149,12 @@ export const ProspectCard: React.FC<ProspectCardProps> = ({
           {/* Top API Sync Status & Timestamp Bar */}
           <div className="mb-3 flex flex-wrap items-center justify-between gap-1.5 pb-2 border-b border-slate-800/80">
             <div className="flex items-center gap-1.5 flex-wrap">
-              {isSyncing ? (
+              {isTrashed ? (
+                <span className="inline-flex items-center gap-1.5 rounded-md bg-rose-950/40 px-2 py-0.5 text-[10px] font-semibold text-rose-300 border border-rose-900/50">
+                  <Trash2 className="h-3 w-3 text-rose-400" />
+                  <span>Tracking Paused (Trashed)</span>
+                </span>
+              ) : isSyncing ? (
                 <span className="inline-flex items-center gap-1.5 rounded-md bg-cyan-950/80 px-2 py-0.5 text-[11px] font-semibold text-cyan-300 border border-cyan-700/60 animate-pulse">
                   <Loader2 className="h-3 w-3 animate-spin text-cyan-400" />
                   <span>Syncing with NHL API...</span>
@@ -332,9 +348,13 @@ export const ProspectCard: React.FC<ProspectCardProps> = ({
               </div>
             )}
 
-            {prospect.status === 'inactive' && (
-              <div className="inline-flex items-center gap-1.5 rounded-lg bg-slate-950 px-2.5 py-1 text-xs font-bold text-slate-400 border border-slate-700">
-                <span>Inactive</span>
+            {isTrashed && (
+              <div
+                className="inline-flex items-center gap-1.5 rounded-lg bg-rose-950/80 px-2.5 py-1 text-xs font-bold text-rose-300 border border-rose-800/60 shadow-sm"
+                title="Player is trashed (tracking paused, log kept in DB)"
+              >
+                <Trash2 className="h-3.5 w-3.5 text-rose-400" />
+                <span>Trashed</span>
               </div>
             )}
 
@@ -348,10 +368,26 @@ export const ProspectCard: React.FC<ProspectCardProps> = ({
               interactive={false}
             />
 
-            {/* Overflow Action Menu (Promote, Protect, Refresh, Edit, Delete) */}
-            {(onSyncProspect || onEdit || onDelete || onTogglePromotion || onToggleProtection) && (
-              <div className="ml-auto flex items-center gap-1.5">
+            {/* Overflow Action Menu & Quick Restore Button */}
+            <div className="ml-auto flex items-center gap-1.5">
+              {isTrashed && onToggleStatus && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onToggleStatus(prospect.id);
+                  }}
+                  className="inline-flex items-center gap-1 rounded-lg border border-emerald-500/50 bg-emerald-950/40 px-2.5 py-1 text-xs font-bold text-emerald-300 hover:bg-emerald-900/60 hover:border-emerald-400 transition-colors shadow-sm cursor-pointer"
+                  title="Restore prospect from Trashed list (resume live tracking)"
+                >
+                  <RotateCcw className="h-3 w-3 text-emerald-400" />
+                  <span>Restore</span>
+                </button>
+              )}
+
+              {(onSyncProspect || onEdit || onDelete || onTogglePromotion || onToggleProtection || onToggleStatus) && (
                 <PlayerActionOverflowMenu
+                  isAdmin={isAdmin}
                   onSync={onSyncProspect ? () => onSyncProspect(prospect.id) : undefined}
                   onEdit={onEdit ? () => onEdit(prospect) : undefined}
                   onDelete={onDelete ? () => onDelete(prospect.id) : undefined}
@@ -365,8 +401,8 @@ export const ProspectCard: React.FC<ProspectCardProps> = ({
                   onToggleStatus={() => onToggleStatus(prospect.id)}
                   isSyncing={isSyncing}
                 />
-              </div>
-            )}
+              )}
+            </div>
           </div>
 
           {/* Total NHL Games Played Display */}
@@ -537,9 +573,9 @@ export const ProspectCard: React.FC<ProspectCardProps> = ({
                 totalGP={safeTotalGP}
                 isPromoted={prospect.promoted}
                 showSubtext={true}
-                showStepper={true}
-                interactive={true}
-                onCountChange={(newCount) => onUpdate25PlusSeasons?.(prospect.id, newCount)}
+                showStepper={isAdmin}
+                interactive={isAdmin}
+                onCountChange={isAdmin ? (newCount) => onUpdate25PlusSeasons?.(prospect.id, newCount) : undefined}
               />
             </div>
           </div>

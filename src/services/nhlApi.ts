@@ -535,6 +535,28 @@ export function parseNhlLandingStats(landingData: any): {
 export async function syncProspectWithNhlApi(prospect: Prospect): Promise<NhlPlayerStatsResult> {
   const timestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
 
+  // If player is Trashed (or inactive), stop tracking games played immediately
+  if (prospect.status === 'trashed' || prospect.status === 'inactive') {
+    const currentSeasonGP = Number.isFinite(prospect.currentSeasonGP) ? Math.max(0, prospect.currentSeasonGP) : 0;
+    const priorCareerGP = Number.isFinite(prospect.priorCareerGP) ? Math.max(0, prospect.priorCareerGP) : 0;
+    const totalGP = currentSeasonGP + priorCareerGP;
+    return {
+      playerId: prospect.nhlPlayerId || '',
+      currentSeasonGP,
+      priorCareerGP,
+      totalGP,
+      headshotUrl: prospect.photoUrl,
+      nhlTeamAbbr: prospect.nhlTeamAbbr,
+      source: 'sample_fallback',
+      timestamp,
+      matchFound: Boolean(prospect.nhlPlayerId),
+      hasEmptyStats: totalGP === 0,
+      statusBadge: 'In Development',
+      statusMessage: 'Tracking stopped (Trashed prospect)',
+      seasons25PlusGP: prospect.seasons25PlusGP || 0,
+    };
+  }
+
   // Look up cached prospect record from winkos_full_league_data.json
   const cachedRecord = getCachedProspectFromLeagueData(prospect.name);
   const cachedTotal = cachedRecord !== null && Number.isFinite(cachedRecord.totalGames)

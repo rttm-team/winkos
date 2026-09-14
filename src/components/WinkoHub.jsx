@@ -35,7 +35,7 @@ export default function WinkoHub({
   activeGm = null,
   onAuthenticate = () => false,
   onLogout = () => {},
-  onNavigate = () => {},
+  onNavigate = (_target = 'prospects') => {},
 }) {
   // GM chosen in the locked state whose PIN modal is open (null = no modal).
   const [pinTarget, setPinTarget] = useState(null);
@@ -157,6 +157,7 @@ export default function WinkoHub({
             leaderboard={leaderboard}
             isArcadeComingSoon={isArcadeComingSoon}
             onPick={(gm) => setPinTarget(gm)}
+            onNavigate={onNavigate}
           />
         ) : (
           /* ===================== UNLOCKED / AUTHENTICATED ===================== */
@@ -187,7 +188,7 @@ export default function WinkoHub({
 
 /* ---------------------------- Locked view ---------------------------- */
 
-function LockedView({ gms, leaderboard, isArcadeComingSoon, onPick }) {
+function LockedView({ gms, leaderboard, isArcadeComingSoon, onPick, onNavigate }) {
   return (
     <>
       {/* Hero */}
@@ -261,6 +262,15 @@ function LockedView({ gms, leaderboard, isArcadeComingSoon, onPick }) {
           badge={isArcadeComingSoon ? 'Coming Soon' : null}
         >
           <div className="mt-4">
+            <button
+              type="button"
+              onClick={() => onNavigate('arcade')}
+              className="mb-4 flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-amber-500 to-amber-400 px-4 py-3 text-xs font-black uppercase tracking-wider text-slate-950 transition hover:from-amber-400 hover:to-amber-300 shadow-md shadow-amber-500/20 cursor-pointer"
+            >
+              <Dice5 className="h-4 w-4" />
+              <span>Arcade Coming Soon — View Info</span>
+              <ArrowRight className="h-3.5 w-3.5 ml-1" />
+            </button>
             <div className="mb-3 flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-slate-400">
               <Trophy className="h-4 w-4 text-amber-400" />
               Top GMs
@@ -316,10 +326,15 @@ function UnlockedView({ activeGm, leaderboard, isArcadeComingSoon, onNavigate })
   
   const stats = useMemo(() => {
     const prospects = activeGm?.prospects || [];
-    const skaters = prospects.filter(p => p.position === 'F' || p.position === 'D');
-    const goalies = prospects.filter(p => p.position === 'G');
+    // Only track active players (exclude trashed and inactive)
+    const activeProspects = prospects.filter(p => p.status !== 'trashed' && p.status !== 'inactive');
+    const skaters = activeProspects.filter(p => p.position === 'F' || p.position === 'D');
+    const goalies = activeProspects.filter(p => p.position === 'G');
 
     const evaluate = (list) => {
+      if (!list || list.length === 0) {
+        return { count: 0, tracked: 0, progress: 0 };
+      }
       let trackedCount = 0;
       let totalProgress = 0;
       list.forEach(p => {
@@ -328,13 +343,16 @@ function UnlockedView({ activeGm, leaderboard, isArcadeComingSoon, onNavigate })
         if (p.promoted || ev.isMandatoryPromotion || ev.isWatchlist) {
           trackedCount++;
         }
-        // Use cumulative progress as a proxy for progress bar
-        totalProgress += ev.cumulativeProgress;
+        // Player's actual progress towards single season, cumulative, or 4x25 GP promotion threshold
+        const playerProgress = p.promoted
+          ? 100
+          : Math.min(100, Math.max(ev.seasonProgress || 0, ev.cumulativeProgress || 0, ((ev.seasons25PlusCount || 0) / 4) * 100));
+        totalProgress += playerProgress;
       });
       return {
         count: list.length,
         tracked: trackedCount,
-        progress: list.length > 0 ? Math.round(totalProgress / list.length) : 0
+        progress: Math.round(totalProgress / list.length)
       };
     };
 
@@ -343,9 +361,9 @@ function UnlockedView({ activeGm, leaderboard, isArcadeComingSoon, onNavigate })
 
     return {
       skaterPercent: skaterStats.progress,
-      skaterCaption: `${skaterStats.tracked} / ${skaterStats.count} tracked to threshold`,
+      skaterCaption: skaterStats.count > 0 ? `${skaterStats.tracked} of ${skaterStats.count} tracked to threshold` : 'No active skaters',
       goaliePercent: goalieStats.progress,
-      goalieCaption: `${goalieStats.tracked} / ${goalieStats.count} tracked to threshold`,
+      goalieCaption: goalieStats.count > 0 ? `${goalieStats.tracked} of ${goalieStats.count} tracked to threshold` : 'No active goalies',
     };
   }, [activeGm]);
 
@@ -462,10 +480,10 @@ function UnlockedView({ activeGm, leaderboard, isArcadeComingSoon, onNavigate })
             <button
               type="button"
               onClick={() => onNavigate('arcade')}
-              className="flex w-full items-center justify-center gap-2 rounded-xl bg-amber-500 px-4 py-3 text-sm font-bold text-slate-950 transition hover:bg-amber-400"
+              className="flex w-full items-center justify-center gap-2 rounded-xl bg-amber-500 px-4 py-3 text-sm font-bold text-slate-950 transition hover:bg-amber-400 cursor-pointer"
             >
               <Dice5 className="h-4 w-4" />
-              Open Arcade
+              <span>Arcade Coming Soon — View Info</span>
             </button>
             <p className="mt-2 text-center text-xs text-slate-500">
               Daily mini-games drop soon — keep stacking Winkoins.
