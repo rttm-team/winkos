@@ -171,7 +171,6 @@ export const NHL_TEAMS_MAP: Record<string, { team: string; abbr: string }> = {
   'nikita nesterenko': { team: 'Anaheim Ducks', abbr: 'ANA' },
   'jacob perreault': { team: 'Montreal Canadiens', abbr: 'MTL' },
   'tristen robins': { team: 'San Jose Sharks', abbr: 'SJS' },
-  'bradly nadeau': { team: 'Carolina Hurricanes', abbr: 'CAR' },
   'lenni hameenaho': { team: 'New Jersey Devils', abbr: 'NJD' },
   'luca cagnoni': { team: 'San Jose Sharks', abbr: 'SJS' },
   'ryan ufko': { team: 'Nashville Predators', abbr: 'NSH' },

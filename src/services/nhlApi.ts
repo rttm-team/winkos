@@ -129,6 +129,7 @@ export const KNOWN_NHL_PLAYER_IDS: Record<string, string> = {
   'leevi meriläinen': '8482447',
   'aatu räty': '8482691',
   'vitali kravtsov': '8480833',
+  'arthur kaliyev': '8481560',
   'vitaliy kravtsov': '8480833',
 };
 
