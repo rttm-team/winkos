@@ -422,14 +422,21 @@ function UnlockedView({ activeGm, leaderboard, isArcadeComingSoon, onNavigate })
             <FeatureChip icon={RadioTower} label="Real-time sync" />
           </ul>
 
-          <div className="relative mt-auto pt-6">
+          <div className="relative mt-auto pt-6 flex flex-col sm:flex-row gap-2.5">
+            <button
+              type="button"
+              onClick={() => onNavigate('prospect-central')}
+              className="flex-1 flex items-center justify-center gap-2 rounded-xl bg-sky-500 px-4 py-3 text-sm font-bold text-slate-950 transition hover:bg-sky-400 cursor-pointer shadow-md shadow-sky-500/20"
+            >
+              <span>Prospect Central HQ</span>
+              <ArrowRight className="h-4 w-4" />
+            </button>
             <button
               type="button"
               onClick={() => onNavigate('prospects')}
-              className="flex w-full items-center justify-center gap-2 rounded-xl bg-sky-500 px-4 py-3 text-sm font-bold text-slate-950 transition hover:bg-sky-400"
+              className="flex items-center justify-center gap-2 rounded-xl border border-slate-700 bg-slate-800 px-4 py-3 text-sm font-bold text-slate-200 transition hover:bg-slate-700 hover:text-white cursor-pointer"
             >
-              Open Prospect Central
-              <ArrowRight className="h-4 w-4" />
+              <span>My Prospect Pool</span>
             </button>
           </div>
         </section>

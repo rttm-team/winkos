@@ -20,6 +20,7 @@ import { RulesModal } from './components/RulesModal';
 import { AddProspectModal } from './components/AddProspectModal';
 import { EditProspectModal } from './components/EditProspectModal';
 import ArcadeComingSoon from './components/ArcadeComingSoon';
+import { ProspectLanding } from './components/ProspectLanding';
 import { syncProspectWithNhlApi, setStored25PlusSeasons } from './services/nhlApi';
 import { supabase, fetchLeagueData, mapProspectRow } from './lib/supabase';
 import {
@@ -37,7 +38,7 @@ export default function App() {
   const [gms, setGms] = useState<GeneralManager[]>(INITIAL_GMS);
   const [selectedGmId, setSelectedGmId] = useState<string>('gm-adam');
   const [authedGmId, setAuthedGmId] = useState<string | null>(null);
-  const [view, setView] = useState<'hub' | 'prospects' | 'arcade'>('hub');
+  const [view, setView] = useState<'hub' | 'prospect-central' | 'prospects' | 'arcade'>('hub');
   const [positionFilter, setPositionFilter] = useState<PositionFilter>('ALL');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('ALL');
   const [sortOption, setSortOption] = useState<ProspectSortOption>('urgency');
@@ -808,7 +809,7 @@ export default function App() {
         activeGm={authedGm}
         onAuthenticate={handleAuthenticate}
         onLogout={handleLogout}
-        onNavigate={(target: 'prospects' | 'arcade') => setView(target)}
+        onNavigate={(target: 'prospect-central' | 'prospects' | 'arcade') => setView(target)}
       />
     );
   }
@@ -818,27 +819,41 @@ export default function App() {
       <Header
         onNavigate={(target) => {
           setView(target);
-          if (target === 'prospects' && !authedGmId) setView('hub'); // Force hub if not authed
+          if ((target === 'prospects' || target === 'prospect-central') && !authedGmId) setView('hub'); // Force hub if not authed
         }}
         onOpenRules={() => setIsRulesModalOpen(true)}
         activeView={view}
       />
 
       {view === 'arcade' && <ArcadeComingSoon onBack={() => setView('hub')} />}
-      {view !== 'arcade' && (
+
+      {view === 'prospect-central' && (
+        <ProspectLanding
+          gms={gms}
+          isAdmin={isAdmin}
+          onSelectGmPool={(gmId) => {
+            setSelectedGmId(gmId);
+            setPositionFilter('ALL');
+            setStatusFilter('ALL');
+            setSearchQuery('');
+            setView('prospects');
+          }}
+        />
+      )}
+
+      {view === 'prospects' && (
         <>
-          {view === 'prospects' && (
-            <GmSwitcherBar
-              gms={gms}
-              selectedGmId={selectedGmId}
-              onSelectGm={(id) => {
-                setSelectedGmId(id);
-                setPositionFilter('ALL');
-                setStatusFilter('ALL');
-                setSearchQuery('');
-              }}
-            />
-          )}
+          <GmSwitcherBar
+            gms={gms}
+            selectedGmId={selectedGmId}
+            onSelectGm={(id) => {
+              setSelectedGmId(id);
+              setPositionFilter('ALL');
+              setStatusFilter('ALL');
+              setSearchQuery('');
+            }}
+            onBackToLanding={() => setView('prospect-central')}
+          />
 
           <main className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
         {/* Action Toolbar above filters */}

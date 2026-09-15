@@ -320,6 +320,7 @@ export const ProspectListItem: React.FC<ProspectListItemProps> = ({
               totalGP={safeTotalGP}
               isPromoted={prospect.promoted}
               interactive={false}
+              prospect={prospect}
             />
           </div>
         </div>
@@ -563,6 +564,7 @@ export const ProspectListItem: React.FC<ProspectListItemProps> = ({
               showStepper={isAdmin}
               interactive={isAdmin}
               onCountChange={isAdmin ? (newCount) => onUpdate25PlusSeasons?.(prospect.id, newCount) : undefined}
+              prospect={prospect}
             />
           </div>
 

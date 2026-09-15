@@ -1,17 +1,19 @@
 import React, { useState } from 'react';
-import { ChevronDown, Crown, Shield, Key } from 'lucide-react';
+import { ChevronDown, Crown, Shield, Key, LayoutGrid } from 'lucide-react';
 import { GeneralManager } from '../types';
 
 interface GmSwitcherBarProps {
   gms: GeneralManager[];
   selectedGmId: string;
   onSelectGm: (id: string) => void;
+  onBackToLanding?: () => void;
 }
 
 export const GmSwitcherBar: React.FC<GmSwitcherBarProps> = ({
   gms,
   selectedGmId,
   onSelectGm,
+  onBackToLanding,
 }) => {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const selectedGm = gms.find((g) => g.id === selectedGmId) || gms[0];
@@ -102,6 +104,17 @@ export const GmSwitcherBar: React.FC<GmSwitcherBarProps> = ({
               </>
             )}
           </div>
+
+          {onBackToLanding && (
+            <button
+              type="button"
+              onClick={onBackToLanding}
+              className="flex items-center gap-1.5 rounded-lg border border-slate-700 bg-slate-900/80 px-3 py-1.5 text-xs font-semibold text-cyan-400 hover:text-cyan-300 hover:border-cyan-500/50 hover:bg-slate-900 transition shadow-sm cursor-pointer"
+            >
+              <LayoutGrid className="h-3.5 w-3.5" />
+              <span>Prospect Central HQ</span>
+            </button>
+          )}
         </div>
       </div>
     </div>

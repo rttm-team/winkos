@@ -138,9 +138,24 @@ export function evaluateProspect(p: Prospect, rules: LeagueRules = DEFAULT_LEAGU
     : (safePriorCareerGP + safeCurrentSeasonGP);
 
   // 4 Seasons of 25+ GP Rule: Count from 0 to 4
-  const base25Count = Number.isFinite(p.seasons25PlusGP)
+  let breakdownCount: number | undefined;
+  if (p.season_breakdown) {
+    let breakdown: any = p.season_breakdown;
+    if (typeof breakdown === 'string') {
+      try {
+        breakdown = JSON.parse(breakdown);
+      } catch {
+        breakdown = [];
+      }
+    }
+    if (Array.isArray(breakdown) && breakdown.length > 0) {
+      breakdownCount = breakdown.filter((s: any) => s.qualifies).length;
+    }
+  }
+
+  const base25Count = breakdownCount ?? (Number.isFinite(p.seasons25PlusGP)
     ? p.seasons25PlusGP!
-    : (safeCurrentSeasonGP >= 25 ? 1 : 0);
+    : (safeCurrentSeasonGP >= 25 ? 1 : 0));
   const seasons25PlusCount = Math.min(4, Math.max(0, base25Count));
   const seasons25PlusTarget = 4;
   const isFourSeasonsExceeded = seasons25PlusCount >= seasons25PlusTarget && totalGP < protectionMaxGames;

@@ -580,6 +580,7 @@ export const ProspectCard: React.FC<ProspectCardProps> = ({
                 showStepper={isAdmin}
                 interactive={isAdmin}
                 onCountChange={isAdmin ? (newCount) => onUpdate25PlusSeasons?.(prospect.id, newCount) : undefined}
+                prospect={prospect}
               />
             </div>
           </div>
