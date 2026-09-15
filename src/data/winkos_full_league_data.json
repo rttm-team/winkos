@@ -383,7 +383,7 @@
           "protected": true
         },
         {
-          "name": "Jonathan Lekkerimäki",
+          "name": "Jonathan Lekkerim\u00e4ki",
           "pos": "F",
           "draftYear": 2022,
           "totalGames": 37,
@@ -1463,15 +1463,6 @@
           "protected": true
         },
         {
-          "name": "Dustin Wolf",
-          "pos": "G",
-          "draftYear": 2019,
-          "totalGames": 128,
-          "promoted": true,
-          "protected": true,
-          "promotionDate": "12/17/2024"
-        },
-        {
           "name": "Domenic DiVincentiis",
           "pos": "G",
           "draftYear": 2023,
@@ -1862,7 +1853,7 @@
           "promotionDate": "12/18/2023"
         },
         {
-          "name": "Leevi Meriläinen",
+          "name": "Leevi Meril\u00e4inen",
           "pos": "G",
           "draftYear": 2021,
           "totalGames": 34,
@@ -1988,7 +1979,7 @@
           "protected": true
         },
         {
-          "name": "Aatu Räty",
+          "name": "Aatu R\u00e4ty",
           "pos": "F",
           "draftYear": 2021,
           "totalGames": 114,
@@ -2160,7 +2151,7 @@
           "protected": true
         },
         {
-          "name": "Mads Søgaard",
+          "name": "Mads S\u00f8gaard",
           "pos": "G",
           "draftYear": 2019,
           "totalGames": 31,
@@ -2504,6 +2495,15 @@
           "totalGames": 0,
           "promoted": false,
           "protected": true
+        },
+        {
+          "name": "Dustin Wolf",
+          "pos": "G",
+          "draftYear": 2019,
+          "totalGames": 128,
+          "promoted": true,
+          "protected": true,
+          "promotionDate": "12/17/2024"
         }
       ]
     },
