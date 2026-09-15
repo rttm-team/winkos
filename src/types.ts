@@ -44,6 +44,7 @@ export interface Prospect {
   max_single_season_gp?: number;
   maxSingleSeasonGP?: number;
   qualifying_seasons?: number;
+  qualifyingSeasons?: number;
   currentSeasonGP: number;
   priorCareerGP: number; // total NHL GP = priorCareerGP + currentSeasonGP
   promoted: boolean;
@@ -152,13 +153,17 @@ export function evaluateProspect(p: Prospect, rules: LeagueRules = DEFAULT_LEAGU
       }
     }
     if (Array.isArray(breakdown) && breakdown.length > 0) {
-      breakdownCount = breakdown.filter((s: any) => s.qualifies).length;
+      breakdownCount = breakdown.filter((s: any) => s.qualifies === true || s.hit === true).length;
     }
   }
 
-  const base25Count = breakdownCount ?? (Number.isFinite(p.seasons25PlusGP)
-    ? p.seasons25PlusGP!
-    : (safeCurrentSeasonGP >= 25 ? 1 : 0));
+  const base25Count = breakdownCount ?? (Number.isFinite(p.qualifying_seasons)
+    ? p.qualifying_seasons!
+    : (Number.isFinite(p.qualifyingSeasons)
+        ? p.qualifyingSeasons!
+        : (Number.isFinite(p.seasons25PlusGP)
+            ? p.seasons25PlusGP!
+            : (safeCurrentSeasonGP >= 25 ? 1 : 0))));
   const seasons25PlusCount = Math.min(4, Math.max(0, base25Count));
   const seasons25PlusTarget = 4;
   const isFourSeasonsExceeded = seasons25PlusCount >= seasons25PlusTarget && totalGP < protectionMaxGames;

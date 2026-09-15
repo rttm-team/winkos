@@ -314,21 +314,31 @@ export default function App() {
 
     // Persist new fields to Supabase
     try {
+      const dbId = !isNaN(Number(prospectId)) ? Number(prospectId) : prospectId;
+      const parsedNhlId = result.playerId && !isNaN(Number(result.playerId))
+        ? Number(result.playerId)
+        : (currentProspect.nhl_id && !isNaN(Number(currentProspect.nhl_id)) ? Number(currentProspect.nhl_id) : null);
+
       const updatePayload: Record<string, any> = {
         total_games: result.totalGP ?? currentProspect.total_games ?? currentProspect.totalGames ?? 0,
         max_single_season_gp: maxSingleSeason ?? 0,
         qualifying_seasons: qualSeasons,
-        seasons_25_plus_gp: seasonsCount,
-        season_breakdown: JSON.stringify(result.season_breakdown ?? []),
+        season_breakdown: result.season_breakdown ?? [],
       };
-      if (result.playerId) {
-        updatePayload.nhl_id = result.playerId;
+      if (parsedNhlId !== null) {
+        updatePayload.nhl_id = parsedNhlId;
       }
-      const { error: syncDbErr } = await supabase.from('prospects')
+
+      console.log(`[Supabase] Syncing prospect #${dbId} (${currentProspect.name}):`, updatePayload);
+      const { data, error: syncDbErr } = await supabase.from('prospects')
         .update(updatePayload)
-        .eq('id', prospectId);
+        .eq('id', dbId)
+        .select();
+
       if (syncDbErr) {
         console.error("Error updating synced stats in Supabase:", syncDbErr);
+      } else {
+        console.log(`[Supabase] Synced stats successfully saved for prospect #${dbId}:`, data);
       }
     } catch (e) {
       console.error("Failed to persist synced stats to Supabase:", e);
@@ -416,19 +426,28 @@ export default function App() {
           const p = activeGm.prospects.find(item => item.id === resObj.prospectId);
           const maxSingleSeason = resObj.result.max_single_season_gp ?? resObj.result.maxSingleSeasonGP ?? p?.max_single_season_gp ?? 0;
           const qualSeasons = resObj.result.qualifying_seasons ?? resObj.result.qualifyingSeasons ?? resObj.result.seasons25PlusGP ?? 0;
+          const dbId = !isNaN(Number(resObj.prospectId)) ? Number(resObj.prospectId) : resObj.prospectId;
+          const parsedNhlId = resObj.result.playerId && !isNaN(Number(resObj.result.playerId))
+            ? Number(resObj.result.playerId)
+            : (p?.nhl_id && !isNaN(Number(p.nhl_id)) ? Number(p.nhl_id) : null);
+
+          // Keep localStorage cache in sync
+          if (p?.name) {
+            setStored25PlusSeasons(resObj.prospectId, p.name, qualSeasons);
+          }
+
           const updatePayload: Record<string, any> = {
             total_games: resObj.result.totalGP ?? p?.total_games ?? p?.totalGames ?? 0,
             max_single_season_gp: maxSingleSeason,
             qualifying_seasons: qualSeasons,
-            seasons_25_plus_gp: resObj.result.seasons25PlusGP ?? 0,
-            season_breakdown: JSON.stringify(resObj.result.season_breakdown ?? []),
+            season_breakdown: resObj.result.season_breakdown ?? [],
           };
-          if (resObj.result.playerId) {
-            updatePayload.nhl_id = resObj.result.playerId;
+          if (parsedNhlId !== null) {
+            updatePayload.nhl_id = parsedNhlId;
           }
           await supabase.from('prospects')
             .update(updatePayload)
-            .eq('id', resObj.prospectId);
+            .eq('id', dbId);
         } catch (err) {
           console.error("Error persisting batch sync to Supabase:", err);
         }
@@ -537,67 +556,59 @@ export default function App() {
 
     // 2. Persist to Supabase asynchronously with fallback handling
     try {
+      const dbId = !isNaN(Number(prospectId)) ? Number(prospectId) : prospectId;
       const updatePayload: Record<string, any> = {};
+
       if (updatedData.name !== undefined) {
         updatePayload.player_name = updatedData.name;
-        updatePayload.name = updatedData.name;
       }
       if (updatedData.position !== undefined) updatePayload.position = updatedData.position;
       if (updatedData.draftYear !== undefined) updatePayload.draft_year = updatedData.draftYear;
-      if (updatedData.draftRound !== undefined) updatePayload.draft_round = updatedData.draftRound;
-      if (updatedData.draftPick !== undefined) updatePayload.draft_pick = updatedData.draftPick;
-      if (updatedData.nhlTeam !== undefined) updatePayload.nhl_team = updatedData.nhlTeam;
-      if (updatedData.nhlTeamAbbr !== undefined) updatePayload.nhl_team_abbr = updatedData.nhlTeamAbbr;
       if (updatedData.totalGames !== undefined) {
         updatePayload.total_games = updatedData.totalGames;
       }
-      if (updatedData.currentSeasonGP !== undefined) updatePayload.current_season_gp = updatedData.currentSeasonGP;
-      if (updatedData.priorCareerGP !== undefined) updatePayload.prior_career_gp = updatedData.priorCareerGP;
       if (updatedData.isProtected !== undefined) updatePayload.protected = updatedData.isProtected;
-      if (updatedData.statusNotes !== undefined) updatePayload.status_notes = updatedData.statusNotes;
 
       if (updatedData.status !== undefined) {
         updatePayload.is_inactive = isTrashed;
-        updatePayload.status = isTrashed ? 'trashed' : 'active';
-      }
-
-      if (updatedData.seasons25PlusGP !== undefined) {
-        updatePayload.seasons_25_plus_gp = updatedData.seasons25PlusGP;
       }
 
       if (updatedData.nhl_id !== undefined || updatedData.nhlId !== undefined || updatedData.nhlPlayerId !== undefined) {
         const rawNhlId = updatedData.nhl_id ?? updatedData.nhlId ?? updatedData.nhlPlayerId;
-        updatePayload.nhl_id = rawNhlId ? String(rawNhlId).trim() : null;
+        const numId = rawNhlId && !isNaN(Number(rawNhlId)) ? Number(rawNhlId) : null;
+        updatePayload.nhl_id = numId;
       }
 
       if (updatedData.max_single_season_gp !== undefined || updatedData.maxSingleSeasonGP !== undefined) {
         updatePayload.max_single_season_gp = updatedData.max_single_season_gp ?? updatedData.maxSingleSeasonGP;
       }
 
-      if (updatedData.qualifying_seasons !== undefined) {
-        updatePayload.qualifying_seasons = updatedData.qualifying_seasons;
+      const qual = updatedData.qualifying_seasons ?? updatedData.qualifyingSeasons ?? updatedData.seasons25PlusGP;
+      if (qual !== undefined) {
+        updatePayload.qualifying_seasons = qual;
       }
 
       if (updatedData.season_breakdown !== undefined) {
-        updatePayload.season_breakdown = typeof updatedData.season_breakdown === 'string'
-          ? updatedData.season_breakdown
-          : JSON.stringify(updatedData.season_breakdown);
+        if (typeof updatedData.season_breakdown === 'string') {
+          try {
+            updatePayload.season_breakdown = JSON.parse(updatedData.season_breakdown);
+          } catch {
+            updatePayload.season_breakdown = [];
+          }
+        } else if (Array.isArray(updatedData.season_breakdown)) {
+          updatePayload.season_breakdown = updatedData.season_breakdown;
+        }
       }
 
-      console.log("Updating Supabase prospect id:", prospectId, updatePayload);
-      const { data, error } = await supabase.from('prospects').update(updatePayload).eq('id', prospectId).select();
+      console.log("Updating Supabase prospect id:", dbId, updatePayload);
+      const { data, error } = await supabase.from('prospects').update(updatePayload).eq('id', dbId).select();
       if (error) {
         console.warn("Retrying update with fallback columns:", error);
         const retryPayload = { ...updatePayload };
         if (error.message?.includes('is_inactive') || error.details?.includes('is_inactive')) {
           delete retryPayload.is_inactive;
-        } else if (error.message?.includes('status') || error.details?.includes('status')) {
-          delete retryPayload.status;
         }
-        if (error.message?.includes('seasons_25_plus_gp')) {
-          delete retryPayload.seasons_25_plus_gp;
-        }
-        const retryRes = await supabase.from('prospects').update(retryPayload).eq('id', prospectId).select();
+        const retryRes = await supabase.from('prospects').update(retryPayload).eq('id', dbId).select();
         if (retryRes.error) {
           console.error("Supabase update failed on retry:", retryRes.error);
         } else {
@@ -628,7 +639,7 @@ export default function App() {
     if (target) {
       setStored25PlusSeasons(prospectId, target.name, count);
     }
-    handleEditProspect(prospectId, { seasons25PlusGP: count });
+    handleEditProspect(prospectId, { seasons25PlusGP: count, qualifying_seasons: count });
   }, [activeGm, isAdmin]);
 
   const handleDeleteProspect = async (prospectId: string) => {

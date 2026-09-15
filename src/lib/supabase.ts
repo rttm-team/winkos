@@ -73,7 +73,6 @@ export const mapProspectRow = (row: any): Prospect => {
     nhlPlayerId: row.nhl_id != null ? String(row.nhl_id) : (row.nhl_player_id ?? row.nhlPlayerId),
     max_single_season_gp: row.max_single_season_gp != null ? Number(row.max_single_season_gp) : undefined,
     maxSingleSeasonGP: row.max_single_season_gp != null ? Number(row.max_single_season_gp) : undefined,
-    qualifying_seasons: row.qualifying_seasons != null ? Number(row.qualifying_seasons) : undefined,
     apiSyncStatus: row.api_sync_status ?? row.apiSyncStatus ?? 'idle',
     lastSyncedAt: row.last_synced_at ?? row.lastSyncedAt,
     syncSource: row.sync_source ?? row.syncSource,
@@ -81,10 +80,72 @@ export const mapProspectRow = (row: any): Prospect => {
     syncBadge: row.sync_badge ?? row.syncBadge,
     hasEmptyStats: row.has_empty_stats ?? row.hasEmptyStats,
     matchFound: row.match_found ?? row.matchFound,
-    seasons25PlusGP: row.qualifying_seasons ?? row.seasons_25_plus_gp ?? row.seasons25PlusGP ?? getStored25PlusSeasons(String(row.id), name, totalGames),
+    qualifying_seasons: (() => {
+      let parsed: any[] = [];
+      if (row.season_breakdown) {
+        if (typeof row.season_breakdown === 'string') {
+          try { parsed = JSON.parse(row.season_breakdown); } catch { parsed = []; }
+        } else if (Array.isArray(row.season_breakdown)) {
+          parsed = row.season_breakdown;
+        }
+      }
+      const breakdownHits = parsed.length > 0
+        ? parsed.filter((s: any) => s.qualifies === true || s.hit === true).length
+        : undefined;
+      return (row.qualifying_seasons != null && !isNaN(Number(row.qualifying_seasons)))
+        ? Number(row.qualifying_seasons)
+        : (breakdownHits ?? getStored25PlusSeasons(String(row.id), name, totalGames));
+    })(),
+    qualifyingSeasons: (() => {
+      let parsed: any[] = [];
+      if (row.season_breakdown) {
+        if (typeof row.season_breakdown === 'string') {
+          try { parsed = JSON.parse(row.season_breakdown); } catch { parsed = []; }
+        } else if (Array.isArray(row.season_breakdown)) {
+          parsed = row.season_breakdown;
+        }
+      }
+      const breakdownHits = parsed.length > 0
+        ? parsed.filter((s: any) => s.qualifies === true || s.hit === true).length
+        : undefined;
+      return (row.qualifying_seasons != null && !isNaN(Number(row.qualifying_seasons)))
+        ? Number(row.qualifying_seasons)
+        : (breakdownHits ?? getStored25PlusSeasons(String(row.id), name, totalGames));
+    })(),
+    seasons25PlusGP: (() => {
+      let parsed: any[] = [];
+      if (row.season_breakdown) {
+        if (typeof row.season_breakdown === 'string') {
+          try { parsed = JSON.parse(row.season_breakdown); } catch { parsed = []; }
+        } else if (Array.isArray(row.season_breakdown)) {
+          parsed = row.season_breakdown;
+        }
+      }
+      const breakdownHits = parsed.length > 0
+        ? parsed.filter((s: any) => s.qualifies === true || s.hit === true).length
+        : undefined;
+      return (row.qualifying_seasons != null && !isNaN(Number(row.qualifying_seasons)))
+        ? Number(row.qualifying_seasons)
+        : (breakdownHits ?? getStored25PlusSeasons(String(row.id), name, totalGames));
+    })(),
     season_breakdown: typeof row.season_breakdown === 'string'
       ? (() => { try { return JSON.parse(row.season_breakdown); } catch { return []; } })()
       : (Array.isArray(row.season_breakdown) ? row.season_breakdown : []),
+    seasons25PlusHistory: (() => {
+      let parsed: any[] = [];
+      if (row.season_breakdown) {
+        if (typeof row.season_breakdown === 'string') {
+          try { parsed = JSON.parse(row.season_breakdown); } catch { parsed = []; }
+        } else if (Array.isArray(row.season_breakdown)) {
+          parsed = row.season_breakdown;
+        }
+      }
+      return parsed.map((s: any) => ({
+        season: String(s.season || ''),
+        gp: Number(s.gp || 0),
+        hit: Boolean(s.qualifies ?? s.hit),
+      }));
+    })(),
   };
 };
 
