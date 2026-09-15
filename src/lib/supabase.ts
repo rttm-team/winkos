@@ -68,7 +68,12 @@ export const mapProspectRow = (row: any): Prospect => {
     photoUrl: row.photo_url ?? row.photoUrl,
     statusNotes: row.status_notes ?? row.statusNotes,
     status: (row.is_inactive === true || row.inactive === true || row.status === 'trashed' || row.status === 'inactive' || getStoredProspectStatus(String(row.id), name) === 'trashed') ? 'trashed' : 'active',
-    nhlPlayerId: row.nhl_player_id ?? row.nhlPlayerId,
+    nhl_id: row.nhl_id != null ? String(row.nhl_id) : undefined,
+    nhlId: row.nhl_id != null ? String(row.nhl_id) : (row.nhlPlayerId != null ? String(row.nhlPlayerId) : undefined),
+    nhlPlayerId: row.nhl_id != null ? String(row.nhl_id) : (row.nhl_player_id ?? row.nhlPlayerId),
+    max_single_season_gp: row.max_single_season_gp != null ? Number(row.max_single_season_gp) : undefined,
+    maxSingleSeasonGP: row.max_single_season_gp != null ? Number(row.max_single_season_gp) : undefined,
+    qualifying_seasons: row.qualifying_seasons != null ? Number(row.qualifying_seasons) : undefined,
     apiSyncStatus: row.api_sync_status ?? row.apiSyncStatus ?? 'idle',
     lastSyncedAt: row.last_synced_at ?? row.lastSyncedAt,
     syncSource: row.sync_source ?? row.syncSource,
@@ -77,7 +82,9 @@ export const mapProspectRow = (row: any): Prospect => {
     hasEmptyStats: row.has_empty_stats ?? row.hasEmptyStats,
     matchFound: row.match_found ?? row.matchFound,
     seasons25PlusGP: row.qualifying_seasons ?? row.seasons_25_plus_gp ?? row.seasons25PlusGP ?? getStored25PlusSeasons(String(row.id), name, totalGames),
-    season_breakdown: typeof row.season_breakdown === 'string' ? JSON.parse(row.season_breakdown) : row.season_breakdown,
+    season_breakdown: typeof row.season_breakdown === 'string'
+      ? (() => { try { return JSON.parse(row.season_breakdown); } catch { return []; } })()
+      : (Array.isArray(row.season_breakdown) ? row.season_breakdown : []),
   };
 };
 

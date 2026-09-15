@@ -41,6 +41,9 @@ export interface Prospect {
   nhlTeamAbbr: string;
   totalGames: number;
   total_games?: number;
+  max_single_season_gp?: number;
+  maxSingleSeasonGP?: number;
+  qualifying_seasons?: number;
   currentSeasonGP: number;
   priorCareerGP: number; // total NHL GP = priorCareerGP + currentSeasonGP
   promoted: boolean;
@@ -50,8 +53,8 @@ export interface Prospect {
   photoUrl?: string;
   statusNotes?: string;
   nhlPlayerId?: string;
-  nhl_id?: string;
-  nhlId?: string;
+  nhl_id?: string | number;
+  nhlId?: string | number;
   status?: ProspectStatus;
   apiSyncStatus?: 'idle' | 'syncing' | 'synced' | 'fallback' | 'error' | 'no_record';
   lastSyncedAt?: string;
@@ -167,10 +170,14 @@ export function evaluateProspect(p: Prospect, rules: LeagueRules = DEFAULT_LEAGU
     ? Math.min(100, Math.max(0, Math.round((totalGP / protectionMaxGames) * 100)))
     : 0;
 
-  const seasonGamesRemaining = Math.max(0, seasonLimit - safeCurrentSeasonGP);
+  const maxSingleSeason = Number.isFinite(p.max_single_season_gp)
+    ? p.max_single_season_gp!
+    : (Number.isFinite(p.maxSingleSeasonGP) ? p.maxSingleSeasonGP! : safeCurrentSeasonGP);
+  const effectiveSeasonGP = Math.max(safeCurrentSeasonGP, maxSingleSeason);
+  const seasonGamesRemaining = Math.max(0, seasonLimit - effectiveSeasonGP);
   const cumulativeGamesRemaining = Math.max(0, cumulativeLimit - totalGP);
 
-  const seasonExceeded = safeCurrentSeasonGP >= seasonLimit;
+  const seasonExceeded = effectiveSeasonGP >= seasonLimit;
   const cumulativeExceeded = totalGP >= cumulativeLimit;
 
   // If already promoted

@@ -18,6 +18,12 @@ export interface NhlPlayerStatsResult {
   seasons25PlusGP?: number;
   seasons25PlusHistory?: Array<{ season: string; gp: number; hit: boolean }>;
   season_breakdown?: Array<{ season: string; gp: number; qualifies: boolean }>;
+  maxSingleSeasonGP?: number;
+  max_single_season_gp?: number;
+  qualifyingSeasons?: number;
+  qualifying_seasons?: number;
+  shouldPromote?: boolean;
+  losesProtection?: boolean;
 }
 
 // Cached league prospects lookup by normalized name from winkos_full_league_data.json
@@ -498,7 +504,7 @@ export async function fetchNhlPlayerLanding(
  * Parses the official NHL landing response and extracts current season GP and career total GP.
  * Detects whether authentic NHL stats exist, or whether stats are null/empty.
  */
-export function parseNhlLandingStats(landingData: any): {
+export function parseNhlLandingStats(landingData: any, playerPos?: string): {
   currentSeasonGP: number;
   careerTotalGP: number;
   priorCareerGP: number;
@@ -506,6 +512,10 @@ export function parseNhlLandingStats(landingData: any): {
   teamAbbr?: string;
   hasNhlStats: boolean;
   seasons25PlusGP: number;
+  qualifyingSeasons: number;
+  qualifying_seasons: number;
+  maxSingleSeasonGP: number;
+  max_single_season_gp: number;
   seasons25PlusHistory: Array<{ season: string; gp: number; hit: boolean }>;
   season_breakdown: Array<{ season: string; gp: number; qualifies: boolean }>;
 } {
@@ -516,6 +526,10 @@ export function parseNhlLandingStats(landingData: any): {
       priorCareerGP: 0,
       hasNhlStats: false,
       seasons25PlusGP: 0,
+      qualifyingSeasons: 0,
+      qualifying_seasons: 0,
+      maxSingleSeasonGP: 0,
+      max_single_season_gp: 0,
       seasons25PlusHistory: [],
       season_breakdown: [],
     };
@@ -525,13 +539,11 @@ export function parseNhlLandingStats(landingData: any): {
   let careerTotalGP = 0;
   let hasNhlStats = false;
   let qualifying_seasons = 0;
+  let max_single_season_gp = 0;
   const season_breakdown: Array<{ season: string; gp: number; qualifies: boolean }> = [];
   
-  // Need to know if skater or goalie for threshold
-  // Landing data doesn't explicitly have position easily, but let's assume skater (F/D) for now if we don't have it
-  // Actually, we can check landingData.position
-  const position = landingData.position; 
-  const isGoalie = position === 'G';
+  // Skater threshold: 25 GP; Goalie threshold: 15 GP
+  const isGoalie = (playerPos === 'G') || (landingData.position === 'G');
   const threshold = isGoalie ? 15 : 25;
 
   // 1. Try featuredStats for regular season
@@ -580,6 +592,9 @@ export function parseNhlLandingStats(landingData: any): {
       }
 
       for (const [seasonKey, gp] of seasonMap.entries()) {
+        if (gp > max_single_season_gp) {
+          max_single_season_gp = gp;
+        }
         const qualifies = gp >= threshold;
         if (qualifies) {
           qualifying_seasons++;
@@ -595,6 +610,10 @@ export function parseNhlLandingStats(landingData: any): {
     }
   }
 
+  if (currentSeasonGP > max_single_season_gp) {
+    max_single_season_gp = currentSeasonGP;
+  }
+
   // Calculate priorCareerGP
   const priorCareerGP = Math.max(0, careerTotalGP - currentSeasonGP);
 
@@ -606,6 +625,10 @@ export function parseNhlLandingStats(landingData: any): {
     teamAbbr: landingData.currentTeamAbbrev || landingData.teamCommonName?.default,
     hasNhlStats,
     seasons25PlusGP: qualifying_seasons,
+    qualifyingSeasons: qualifying_seasons,
+    qualifying_seasons,
+    maxSingleSeasonGP: max_single_season_gp,
+    max_single_season_gp,
     seasons25PlusHistory: season_breakdown.map(s => ({ season: s.season, gp: s.gp, hit: s.qualifies })),
     season_breakdown,
   };
@@ -630,10 +653,14 @@ export async function syncProspectWithNhlApi(prospect: Prospect): Promise<NhlPla
     const priorCareerGP = Number.isFinite(prospect.priorCareerGP) ? Math.max(0, prospect.priorCareerGP) : 0;
     const totalGP = currentSeasonGP + priorCareerGP;
     return {
-      playerId: directNhlId || '',
+      playerId: directNhlId ? String(directNhlId) : '',
       currentSeasonGP,
       priorCareerGP,
       totalGP,
+      maxSingleSeasonGP: prospect.max_single_season_gp ?? currentSeasonGP,
+      max_single_season_gp: prospect.max_single_season_gp ?? currentSeasonGP,
+      qualifyingSeasons: prospect.qualifying_seasons ?? prospect.seasons25PlusGP ?? 0,
+      qualifying_seasons: prospect.qualifying_seasons ?? prospect.seasons25PlusGP ?? 0,
       headshotUrl: prospect.photoUrl,
       nhlTeamAbbr: prospect.nhlTeamAbbr,
       source: 'sample_fallback',
@@ -643,6 +670,7 @@ export async function syncProspectWithNhlApi(prospect: Prospect): Promise<NhlPla
       statusBadge: 'In Development',
       statusMessage: 'Tracking stopped (Trashed prospect)',
       seasons25PlusGP: prospect.seasons25PlusGP || 0,
+      season_breakdown: prospect.season_breakdown || [],
     };
   }
 
@@ -664,12 +692,12 @@ export async function syncProspectWithNhlApi(prospect: Prospect): Promise<NhlPla
   };
 
   // If directNhlId exists, skip searchNhlPlayerId entirely and fetch directly using fetchNhlPlayerLanding
-  let resolvedId = directNhlId;
+  let resolvedId: string = directNhlId ? String(directNhlId).trim() : '';
   if (!resolvedId) {
     try {
       const searchRes = await searchNhlPlayerId(prospect.name);
       if (searchRes && searchRes.playerId) {
-        resolvedId = searchRes.playerId;
+        resolvedId = String(searchRes.playerId).trim();
       }
     } catch {
       // Ignore search error
@@ -718,7 +746,7 @@ export async function syncProspectWithNhlApi(prospect: Prospect): Promise<NhlPla
       };
     }
 
-    const parsed = parseNhlLandingStats(landingResult.data);
+    const parsed = parseNhlLandingStats(landingResult.data, prospect.position);
     if (!parsed.hasNhlStats || (parsed.careerTotalGP === 0 && parsed.currentSeasonGP === 0)) {
       const { currentSeasonGP, priorCareerGP, totalGP } = getSafeGamesPlayed(cachedTotal);
       const fallback25 = getStored25PlusSeasons(prospect.id, prospect.name, totalGP);
@@ -727,6 +755,10 @@ export async function syncProspectWithNhlApi(prospect: Prospect): Promise<NhlPla
         currentSeasonGP,
         priorCareerGP,
         totalGP,
+        maxSingleSeasonGP: prospect.max_single_season_gp ?? currentSeasonGP,
+        max_single_season_gp: prospect.max_single_season_gp ?? currentSeasonGP,
+        qualifyingSeasons: prospect.qualifying_seasons ?? fallback25,
+        qualifying_seasons: prospect.qualifying_seasons ?? fallback25,
         headshotUrl: parsed.headshotUrl || prospect.photoUrl,
         nhlTeamAbbr: parsed.teamAbbr || prospect.nhlTeamAbbr,
         source: landingResult.source,
@@ -736,6 +768,7 @@ export async function syncProspectWithNhlApi(prospect: Prospect): Promise<NhlPla
         statusBadge: 'In Development',
         statusMessage: totalGP === 0 ? 'In Development (0 GP)' : `Official NHL profile (using ${totalGP} GP)`,
         seasons25PlusGP: fallback25,
+        season_breakdown: prospect.season_breakdown || [],
       };
     }
 
@@ -744,6 +777,10 @@ export async function syncProspectWithNhlApi(prospect: Prospect): Promise<NhlPla
       currentSeasonGP: parsed.currentSeasonGP,
       priorCareerGP: parsed.priorCareerGP,
       totalGP: parsed.careerTotalGP,
+      maxSingleSeasonGP: parsed.maxSingleSeasonGP,
+      max_single_season_gp: parsed.max_single_season_gp,
+      qualifyingSeasons: parsed.qualifyingSeasons,
+      qualifying_seasons: parsed.qualifying_seasons,
       headshotUrl: parsed.headshotUrl || prospect.photoUrl,
       nhlTeamAbbr: parsed.teamAbbr || prospect.nhlTeamAbbr,
       source: landingResult.source,

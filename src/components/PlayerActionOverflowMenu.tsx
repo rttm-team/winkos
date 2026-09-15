@@ -12,6 +12,7 @@ import {
   Ban,
   RotateCcw,
   Lock,
+  RefreshCw,
 } from 'lucide-react';
 import { ProspectStatus } from '../types';
 
@@ -286,6 +287,31 @@ export const PlayerActionOverflowMenu: React.FC<PlayerActionOverflowMenuProps> =
             {/* Divider between roster actions and management actions */}
             {hasRosterActions && (hasManagementActions || (isAdmin && onDelete)) && (
               <div className="my-1 border-t border-slate-800" />
+            )}
+
+            {/* Commish Feature: Live NHL Sync */}
+            {isAdmin && onSync && (
+              <button
+                type="button"
+                disabled={isSyncing}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setIsOpen(false);
+                  onSync();
+                }}
+                className={`flex w-full items-center gap-2.5 px-3 py-2 text-xs font-medium transition-colors cursor-pointer text-left ${
+                  isSyncing
+                    ? 'text-cyan-400 bg-cyan-950/40 cursor-wait'
+                    : 'text-slate-300 hover:bg-slate-800 hover:text-cyan-300'
+                }`}
+                title="Pulls live stats from NHL API and updates Supabase DB"
+              >
+                <RefreshCw className={`h-3.5 w-3.5 text-cyan-400 shrink-0 ${isSyncing ? 'animate-spin' : ''}`} />
+                <div className="flex flex-col">
+                  <span>{isSyncing ? 'Syncing NHL API...' : 'NHL Sync'}</span>
+                  <span className="text-[10px] text-slate-500 font-normal">Pull stats & update DB</span>
+                </div>
+              </button>
             )}
 
             {/* Edit Prospect - Admins Only */}

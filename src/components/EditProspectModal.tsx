@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Position, Prospect } from '../types';
-import { X, Edit3 } from 'lucide-react';
+import { X, Edit3, ExternalLink } from 'lucide-react';
 
 interface EditProspectModalProps {
   isOpen: boolean;
@@ -18,6 +18,7 @@ export const EditProspectModal: React.FC<EditProspectModalProps> = ({
   gmName,
 }) => {
   const [name, setName] = useState('');
+  const [nhlId, setNhlId] = useState('');
   const [position, setPosition] = useState<Position>('F');
   const [nhlTeam, setNhlTeam] = useState('');
   const [nhlTeamAbbr, setNhlTeamAbbr] = useState('');
@@ -34,6 +35,8 @@ export const EditProspectModal: React.FC<EditProspectModalProps> = ({
   useEffect(() => {
     if (prospect) {
       setName(prospect.name || '');
+      const rawNhlId = prospect.nhl_id ?? prospect.nhlId ?? prospect.nhlPlayerId ?? '';
+      setNhlId(rawNhlId ? String(rawNhlId) : '');
       setPosition(prospect.position || 'F');
       setNhlTeam(prospect.nhlTeam || '');
       setNhlTeamAbbr(prospect.nhlTeamAbbr || '');
@@ -69,6 +72,9 @@ export const EditProspectModal: React.FC<EditProspectModalProps> = ({
       isProtected,
       status: isTrashed ? 'trashed' : 'active',
       statusNotes: statusNotes.trim() || undefined,
+      nhl_id: nhlId.trim() || undefined,
+      nhlId: nhlId.trim() || undefined,
+      nhlPlayerId: nhlId.trim() || undefined,
     });
 
     onClose();
@@ -102,15 +108,47 @@ export const EditProspectModal: React.FC<EditProspectModalProps> = ({
         </div>
 
         <form onSubmit={handleSubmit} className="mt-5 space-y-4 text-xs">
-          <div>
-            <label className="block font-semibold text-slate-300 mb-1">Player Name *</label>
-            <input
-              type="text"
-              required
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              className="w-full rounded-xl border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-white focus:border-cyan-500 focus:outline-none"
-            />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label className="block font-semibold text-slate-300 mb-1">Player Name *</label>
+              <input
+                type="text"
+                required
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                className="w-full rounded-xl border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-white focus:border-cyan-500 focus:outline-none"
+              />
+            </div>
+
+            <div>
+              <div className="flex items-center justify-between mb-1">
+                <label className="block font-semibold text-slate-300">
+                  NHL Player ID <span className="text-cyan-400 font-mono text-[10px] font-normal">(DB: nhl_id)</span>
+                </label>
+                {nhlId ? (
+                  <a
+                    href={`https://api-web.nhle.com/v1/player/${nhlId}/landing`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-[10px] text-cyan-400 hover:text-cyan-300 underline inline-flex items-center gap-0.5"
+                    title="Inspect live NHL API data in new tab"
+                  >
+                    <span>Test API</span>
+                    <ExternalLink className="h-2.5 w-2.5" />
+                  </a>
+                ) : null}
+              </div>
+              <input
+                type="text"
+                value={nhlId}
+                placeholder="e.g. 8481692"
+                onChange={(e) => setNhlId(e.target.value)}
+                className="w-full rounded-xl border border-slate-700 bg-slate-800 px-3 py-2 text-sm font-mono text-cyan-300 focus:border-cyan-500 focus:outline-none placeholder:text-slate-600"
+              />
+              <p className="mt-1 text-[10px] text-slate-400">
+                Direct Supabase DB column <code className="font-mono text-cyan-300">nhl_id</code> for live NHL stats sync.
+              </p>
+            </div>
           </div>
 
           <div className="grid grid-cols-2 gap-3">

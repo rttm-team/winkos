@@ -273,6 +273,9 @@ export default function App() {
     setStored25PlusSeasons(prospectId, currentProspect.name, seasonsCount);
 
     // 3. Update state with fresh data and auto re-evaluate rules
+    const maxSingleSeason = result.max_single_season_gp ?? result.maxSingleSeasonGP ?? currentProspect.max_single_season_gp ?? currentProspect.maxSingleSeasonGP;
+    const qualSeasons = result.qualifying_seasons ?? result.qualifyingSeasons ?? seasonsCount;
+
     setGms((prevGms) =>
       prevGms.map((gm) => ({
         ...gm,
@@ -283,8 +286,13 @@ export default function App() {
             ...p,
             totalGames: displayGP,
             total_games: displayGP,
+            max_single_season_gp: maxSingleSeason,
+            maxSingleSeasonGP: maxSingleSeason,
+            qualifying_seasons: qualSeasons,
             currentSeasonGP: result.currentSeasonGP,
             priorCareerGP: result.priorCareerGP,
+            nhl_id: result.playerId || p.nhl_id,
+            nhlId: result.playerId || p.nhlId,
             nhlPlayerId: result.playerId || p.nhlPlayerId,
             nhlTeamAbbr: result.nhlTeamAbbr || p.nhlTeamAbbr,
             photoUrl: result.headshotUrl || p.photoUrl,
@@ -305,14 +313,25 @@ export default function App() {
     );
 
     // Persist new fields to Supabase
-    if (result.matchFound) {
-      await supabase.from('prospects')
-        .update({
-          seasons_25_plus_gp: seasonsCount,
-          season_breakdown: JSON.stringify(result.season_breakdown),
-          // Add threshold calculation results here too if needed
-        })
+    try {
+      const updatePayload: Record<string, any> = {
+        total_games: result.totalGP ?? currentProspect.total_games ?? currentProspect.totalGames ?? 0,
+        max_single_season_gp: maxSingleSeason ?? 0,
+        qualifying_seasons: qualSeasons,
+        seasons_25_plus_gp: seasonsCount,
+        season_breakdown: JSON.stringify(result.season_breakdown ?? []),
+      };
+      if (result.playerId) {
+        updatePayload.nhl_id = result.playerId;
+      }
+      const { error: syncDbErr } = await supabase.from('prospects')
+        .update(updatePayload)
         .eq('id', prospectId);
+      if (syncDbErr) {
+        console.error("Error updating synced stats in Supabase:", syncDbErr);
+      }
+    } catch (e) {
+      console.error("Failed to persist synced stats to Supabase:", e);
     }
 
     setGlobalLastUpdated(result.timestamp);
@@ -357,13 +376,20 @@ export default function App() {
               const seasonsCount = result.seasons25PlusGP !== undefined 
                 ? result.seasons25PlusGP 
                 : (p.seasons25PlusGP ?? 0);
+              const maxSingleSeason = result.max_single_season_gp ?? result.maxSingleSeasonGP ?? p.max_single_season_gp ?? p.maxSingleSeasonGP;
+              const qualSeasons = result.qualifying_seasons ?? result.qualifyingSeasons ?? seasonsCount;
               const displayGP = result.totalGP ?? p.total_games ?? p.totalGames ?? 0;
               return {
                 ...p,
                 totalGames: displayGP,
                 total_games: displayGP,
+                max_single_season_gp: maxSingleSeason,
+                maxSingleSeasonGP: maxSingleSeason,
+                qualifying_seasons: qualSeasons,
                 currentSeasonGP: result.currentSeasonGP,
                 priorCareerGP: result.priorCareerGP,
+                nhl_id: result.playerId || p.nhl_id,
+                nhlId: result.playerId || p.nhlId,
                 nhlPlayerId: result.playerId || p.nhlPlayerId,
                 nhlTeamAbbr: result.nhlTeamAbbr || p.nhlTeamAbbr,
                 photoUrl: result.headshotUrl || p.photoUrl,
@@ -386,13 +412,25 @@ export default function App() {
 
       // Persist new fields to Supabase
       for (const resObj of results) {
-        if (resObj.result.matchFound) {
+        try {
+          const p = activeGm.prospects.find(item => item.id === resObj.prospectId);
+          const maxSingleSeason = resObj.result.max_single_season_gp ?? resObj.result.maxSingleSeasonGP ?? p?.max_single_season_gp ?? 0;
+          const qualSeasons = resObj.result.qualifying_seasons ?? resObj.result.qualifyingSeasons ?? resObj.result.seasons25PlusGP ?? 0;
+          const updatePayload: Record<string, any> = {
+            total_games: resObj.result.totalGP ?? p?.total_games ?? p?.totalGames ?? 0,
+            max_single_season_gp: maxSingleSeason,
+            qualifying_seasons: qualSeasons,
+            seasons_25_plus_gp: resObj.result.seasons25PlusGP ?? 0,
+            season_breakdown: JSON.stringify(resObj.result.season_breakdown ?? []),
+          };
+          if (resObj.result.playerId) {
+            updatePayload.nhl_id = resObj.result.playerId;
+          }
           await supabase.from('prospects')
-            .update({
-              seasons_25_plus_gp: resObj.result.seasons25PlusGP,
-              season_breakdown: JSON.stringify(resObj.result.season_breakdown),
-            })
+            .update(updatePayload)
             .eq('id', resObj.prospectId);
+        } catch (err) {
+          console.error("Error persisting batch sync to Supabase:", err);
         }
       }
 
@@ -525,6 +563,25 @@ export default function App() {
 
       if (updatedData.seasons25PlusGP !== undefined) {
         updatePayload.seasons_25_plus_gp = updatedData.seasons25PlusGP;
+      }
+
+      if (updatedData.nhl_id !== undefined || updatedData.nhlId !== undefined || updatedData.nhlPlayerId !== undefined) {
+        const rawNhlId = updatedData.nhl_id ?? updatedData.nhlId ?? updatedData.nhlPlayerId;
+        updatePayload.nhl_id = rawNhlId ? String(rawNhlId).trim() : null;
+      }
+
+      if (updatedData.max_single_season_gp !== undefined || updatedData.maxSingleSeasonGP !== undefined) {
+        updatePayload.max_single_season_gp = updatedData.max_single_season_gp ?? updatedData.maxSingleSeasonGP;
+      }
+
+      if (updatedData.qualifying_seasons !== undefined) {
+        updatePayload.qualifying_seasons = updatedData.qualifying_seasons;
+      }
+
+      if (updatedData.season_breakdown !== undefined) {
+        updatePayload.season_breakdown = typeof updatedData.season_breakdown === 'string'
+          ? updatedData.season_breakdown
+          : JSON.stringify(updatedData.season_breakdown);
       }
 
       console.log("Updating Supabase prospect id:", prospectId, updatePayload);
