@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Prospect, evaluateProspect } from '../types';
 import { proxyImageUrl } from '../lib/utils';
 import { Season25GPMarkers, SeasonThresholdMarkers } from './Season25GPMarkers';
@@ -90,15 +90,6 @@ export const ProspectListItem: React.FC<ProspectListItemProps> = ({
     (prospect.syncBadge === 'In Development' ||
       prospect.hasEmptyStats === true ||
       (safeTotalGP === 0 && safeSeasonGP === 0));
-
-  // On-demand live NHL API fetching when explicitly expanded by user
-  useEffect(() => {
-    if (isExpanded && !isTrashed && prospect.nhlPlayerId) {
-      if (!prospect.lastSyncedAt && prospect.apiSyncStatus !== 'syncing' && onSyncProspect) {
-        onSyncProspect(prospect.id);
-      }
-    }
-  }, [isExpanded, prospect.id, isTrashed, prospect.nhlPlayerId, prospect.lastSyncedAt, prospect.apiSyncStatus, onSyncProspect]);
 
   // Position badge styling
   const posBadgeColor =
