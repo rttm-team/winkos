@@ -450,7 +450,7 @@ export const ProspectLanding: React.FC<ProspectLandingProps> = ({
                 </h2>
               </div>
               <p className="text-xs text-slate-400 mt-0.5">
-                Ranked by Draft Hit Rate % &amp; Total NHL Games Produced. Click any row to filter the Watchlist below or visit their prospect pool.
+                Ranked by Draft Hit Rate % &amp; Total NHL Games Produced. Click &ldquo;View Pool&rdquo; to jump directly to any GM&apos;s prospect pool.
               </p>
             </div>
 
@@ -486,7 +486,6 @@ export const ProspectLanding: React.FC<ProspectLandingProps> = ({
               <tbody className="divide-y divide-slate-800/60 font-medium">
                 {leaderboard.map((row, idx) => {
                   const rank = idx + 1;
-                  const isSelected = selectedGmFilter === row.gm_name;
                   const isScoutMaster = row.gm_name === badgeLeaders.scoutMaster;
                   const isDiamond = row.gm_name === badgeLeaders.diamondRough;
                   const isWorkhorse = row.gm_name === badgeLeaders.workhorse;
@@ -494,14 +493,7 @@ export const ProspectLanding: React.FC<ProspectLandingProps> = ({
                   return (
                     <tr
                       key={row.gm_name}
-                      onClick={() => {
-                        setSelectedGmFilter(selectedGmFilter === row.gm_name ? 'ALL' : row.gm_name);
-                      }}
-                      className={`group transition-colors cursor-pointer ${
-                        isSelected
-                          ? 'bg-cyan-500/15 text-white'
-                          : 'hover:bg-slate-800/60 text-slate-200'
-                      }`}
+                      className="group transition-colors hover:bg-slate-800/60 text-slate-200"
                     >
                       {/* Rank with Gold, Silver, Bronze icons */}
                       <td className="py-3 px-4 text-center">
@@ -527,14 +519,9 @@ export const ProspectLanding: React.FC<ProspectLandingProps> = ({
                       {/* GM Name */}
                       <td className="py-3 px-4">
                         <div className="flex items-center gap-2">
-                          <span className="font-bold text-slate-100 group-hover:text-cyan-300 transition-colors">
+                          <span className="font-bold text-slate-100">
                             {row.gm_name}
                           </span>
-                          {isSelected && (
-                            <span className="rounded bg-cyan-500/30 px-1.5 py-0.2 text-[9px] font-bold text-cyan-200 uppercase tracking-wide">
-                              Filtering
-                            </span>
-                          )}
                         </div>
                       </td>
 
