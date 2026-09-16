@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   Info,
   Home,
@@ -7,6 +7,9 @@ import {
   LayoutGrid,
   Sun,
   Moon,
+  Settings,
+  LogOut,
+  ChevronDown
 } from 'lucide-react';
 
 interface HeaderProps {
@@ -16,6 +19,12 @@ interface HeaderProps {
   theme: 'light' | 'dark';
   onToggleTheme: () => void;
   activeGm?: any;
+  // new props for settings
+  onLogout?: () => void;
+  isAdmin?: boolean;
+  gms?: any[];
+  selectedGmId?: string;
+  onSelectGm?: (id: string) => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -25,8 +34,30 @@ export const Header: React.FC<HeaderProps> = ({
   theme,
   onToggleTheme,
   activeGm,
+  onLogout,
+  isAdmin,
+  gms = [],
+  selectedGmId,
+  onSelectGm,
 }) => {
   const isLight = theme === 'light';
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  // Close dropdown on click outside
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setSettingsOpen(false);
+      }
+    }
+    if (settingsOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [settingsOpen]);
 
   return (
     <header className={`sticky top-0 z-40 w-full border-b backdrop-blur-md ${
@@ -68,17 +99,87 @@ export const Header: React.FC<HeaderProps> = ({
               </div>
             )}
 
-            <button
-              onClick={onToggleTheme}
-              className={`p-2 rounded-xl text-xs font-semibold transition-colors flex items-center justify-center border shadow-sm ${
-                isLight
-                  ? 'border-slate-200 bg-slate-100 text-slate-700 hover:bg-slate-200 hover:text-slate-900'
-                  : 'border-slate-700 bg-slate-800 text-amber-300 hover:bg-slate-700'
-              }`}
-              title={isLight ? 'Switch to Dark Mode' : 'Switch to Light Mode'}
-            >
-              {isLight ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
-            </button>
+            <div className="relative" ref={dropdownRef}>
+              <button
+                onClick={() => setSettingsOpen(!settingsOpen)}
+                className={`p-2 rounded-xl text-xs font-semibold transition-colors flex items-center justify-center border shadow-sm ${
+                  isLight
+                    ? 'border-slate-200 bg-slate-100 text-slate-700 hover:bg-slate-200 hover:text-slate-900'
+                    : 'border-slate-700 bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-white'
+                } ${settingsOpen ? (isLight ? 'bg-slate-200 text-slate-900' : 'bg-slate-700 text-white') : ''}`}
+                title="Settings"
+              >
+                <Settings className="h-4 w-4" />
+              </button>
+
+              {settingsOpen && (
+                <div className={`absolute right-0 mt-2 w-64 rounded-xl border shadow-xl origin-top-right z-50 ${
+                  isLight ? 'bg-white border-slate-200' : 'bg-slate-800 border-slate-700 text-slate-100'
+                }`}>
+                  <div className="p-2 space-y-1">
+                    <button
+                      onClick={() => {
+                        onToggleTheme();
+                        setSettingsOpen(false);
+                      }}
+                      className={`w-full flex items-center gap-3 px-3 py-2.5 text-sm font-semibold rounded-lg transition-colors ${
+                        isLight ? 'text-slate-700 hover:bg-slate-100' : 'text-slate-300 hover:bg-slate-700 hover:text-white'
+                      }`}
+                    >
+                      {isLight ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
+                      {isLight ? 'Switch to Dark Mode' : 'Switch to Light Mode'}
+                    </button>
+
+                    {isAdmin && gms.length > 0 && onSelectGm && (
+                      <div className="px-1 py-1">
+                        <div className={`px-2 py-1.5 text-[10px] font-bold uppercase tracking-wider ${isLight ? 'text-slate-500' : 'text-slate-400'}`}>
+                          Commish Tools: View As GM
+                        </div>
+                        <div className="relative mt-1">
+                          <select
+                            value={selectedGmId}
+                            onChange={(e) => {
+                              onSelectGm(e.target.value);
+                              setSettingsOpen(false);
+                            }}
+                            className={`w-full appearance-none rounded-lg border px-3 py-2 pr-8 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-cyan-500/50 ${
+                              isLight 
+                                ? 'border-slate-300 bg-slate-50 text-slate-800' 
+                                : 'border-slate-600 bg-slate-900 text-slate-200'
+                            }`}
+                          >
+                            {gms.map((gm) => (
+                              <option key={gm.id} value={gm.id}>
+                                {gm.name}
+                              </option>
+                            ))}
+                          </select>
+                          <ChevronDown className={`pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 ${isLight ? 'text-slate-400' : 'text-slate-500'}`} />
+                        </div>
+                      </div>
+                    )}
+
+                    {onLogout && (
+                      <>
+                        <div className={`my-1 border-t ${isLight ? 'border-slate-200' : 'border-slate-700'}`} />
+                        <button
+                          onClick={() => {
+                            onLogout();
+                            setSettingsOpen(false);
+                          }}
+                          className={`w-full flex items-center gap-3 px-3 py-2.5 text-sm font-semibold rounded-lg transition-colors ${
+                            isLight ? 'text-red-600 hover:bg-red-50' : 'text-red-400 hover:bg-red-400/10'
+                          }`}
+                        >
+                          <LogOut className="h-4 w-4" />
+                          Sign Out
+                        </button>
+                      </>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>

@@ -88,98 +88,43 @@ export default function WinkoHub({
 
       <div className="relative mx-auto flex min-h-screen max-w-7xl flex-col px-4 py-6 sm:px-6 lg:px-8">
         {/* ============================= HEADER ============================= */}
-        <header className={`flex flex-col gap-4 border-b pb-6 lg:flex-row lg:items-center lg:justify-between ${
-          isLight ? 'border-slate-200' : 'border-slate-800/80'
-        }`}>
-          {/* Brand */}
-          <div className="flex items-center gap-3">
-            <div className="relative flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-sky-400 to-sky-600 shadow-lg shadow-sky-500/25">
-              <HockeyMark className="h-7 w-7 text-slate-950" />
-            </div>
-            <div>
-              <h1 className={`text-3xl font-extrabold tracking-tight sm:text-4xl ${
-                isLight ? 'text-slate-900' : 'text-white'
-              }`}>
-                Winko&apos;s Hockey Pool Hub
-              </h1>
-              <p className={`text-xs font-medium ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>
-                Fantasy Pool Command Center
-              </p>
-            </div>
-          </div>
-
-          {/* Controls & Theme Toggle */}
-          <div className="flex items-center gap-3">
-            {!isLocked && (
-              <div className="flex flex-wrap items-center gap-3">
-                {/* Active GM identity */}
-                <div className={`flex items-center gap-2 rounded-xl border px-3 py-2 text-sm font-semibold ${
-                  isLight ? 'border-slate-200 bg-white text-slate-800 shadow-sm' : 'border-slate-700 bg-slate-900 text-slate-100'
-                }`}>
-                  <span className="flex h-6 w-6 items-center justify-center rounded-full bg-sky-500/20 text-sky-600 dark:text-sky-300">
-                    <Users className="h-3.5 w-3.5" />
-                  </span>
-                  <span className="max-w-[10rem] truncate">{activeGm.name}</span>
-                  {activeGm.is_commish && (
-                    <span className="hidden items-center gap-1 rounded-md bg-amber-400/15 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-amber-700 dark:text-amber-300 sm:flex">
-                      <Crown className="h-3 w-3" />
-                      Commish
-                    </span>
-                  )}
-                </div>
-
-                {/* Winkoin balance */}
-                <div className="flex items-center gap-2 rounded-xl border border-amber-400/30 bg-amber-400/10 px-3 py-2 text-sm font-bold text-amber-700 dark:text-amber-300">
-                  <Coins className="h-4 w-4" />
-                  {(activeGm.winkoins ?? 0).toLocaleString()} Winkoins
-                </div>
-
-                {/* PIN Verified badge */}
-                <div className="flex items-center gap-2 rounded-xl border border-emerald-400/30 bg-emerald-400/10 px-3 py-2 text-sm font-bold text-emerald-700 dark:text-emerald-300">
-                  <ShieldCheck className="h-4 w-4" />
-                  PIN Verified
-                </div>
-
-                {/* Commish admin */}
-                {activeGm.is_commish && (
-                  <button
-                    type="button"
-                    className="flex items-center gap-2 rounded-xl border border-purple-400/30 bg-purple-500/10 px-3 py-2 text-sm font-bold text-purple-700 dark:text-purple-300 transition hover:bg-purple-500/20"
-                  >
-                    <Settings className="h-4 w-4" />
-                    Commish Admin
-                  </button>
-                )}
-
-                {/* Switch GM / Lock */}
-                <button
-                  type="button"
-                  onClick={onLogout}
-                  className={`flex items-center gap-2 rounded-xl border px-3 py-2 text-sm font-semibold transition ${
-                    isLight
-                      ? 'border-slate-200 bg-white text-slate-700 hover:border-rose-300 hover:bg-slate-50 hover:text-rose-600 shadow-sm'
-                      : 'border-slate-700 bg-slate-900 text-slate-300 hover:border-rose-500/50 hover:bg-slate-800 hover:text-rose-300'
-                  }`}
-                >
-                  <LogOut className="h-4 w-4" />
-                  Switch GM / Lock
-                </button>
+        {isLocked && (
+          <header className={`flex flex-col gap-4 border-b pb-6 lg:flex-row lg:items-center lg:justify-between ${
+            isLight ? 'border-slate-200' : 'border-slate-800/80'
+          }`}>
+            {/* Brand */}
+            <div className="flex items-center gap-3">
+              <div className="relative flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-sky-400 to-sky-600 shadow-lg shadow-sky-500/25">
+                <HockeyMark className="h-7 w-7 text-slate-950" />
               </div>
-            )}
+              <div>
+                <h1 className={`text-3xl font-extrabold tracking-tight sm:text-4xl ${
+                  isLight ? 'text-slate-900' : 'text-white'
+                }`}>
+                  Winko&apos;s Hockey Pool Hub
+                </h1>
+                <p className={`text-xs font-medium ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>
+                  Fantasy Pool Command Center
+                </p>
+              </div>
+            </div>
 
-            <button
-              onClick={onToggleTheme}
-              className={`p-2 rounded-xl text-xs font-semibold transition-colors flex items-center justify-center border shadow-sm ${
-                isLight
-                  ? 'border-slate-200 bg-white text-slate-700 hover:bg-slate-100 hover:text-slate-900'
-                  : 'border-slate-700 bg-slate-900 text-amber-300 hover:bg-slate-800'
-              }`}
-              title={isLight ? 'Switch to Dark Mode' : 'Switch to Light Mode'}
-            >
-              {isLight ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
-            </button>
-          </div>
-        </header>
+            {/* Controls & Theme Toggle */}
+            <div className="flex items-center gap-3">
+              <button
+                onClick={onToggleTheme}
+                className={`p-2 rounded-xl text-xs font-semibold transition-colors flex items-center justify-center border shadow-sm ${
+                  isLight
+                    ? 'border-slate-200 bg-white text-slate-700 hover:bg-slate-100 hover:text-slate-900'
+                    : 'border-slate-700 bg-slate-900 text-amber-300 hover:bg-slate-800'
+                }`}
+                title={isLight ? 'Switch to Dark Mode' : 'Switch to Light Mode'}
+              >
+                {isLight ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
+              </button>
+            </div>
+          </header>
+        )}
 
         {isLocked ? (
           /* ===================== LOCKED / UNAUTHENTICATED ===================== */

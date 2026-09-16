@@ -12,7 +12,6 @@ import {
 } from './types';
 import { INITIAL_GMS, setStoredProspectStatus } from './data/mockData';
 import { Header } from './components/Header';
-import { GmSwitcherBar } from './components/GmSwitcherBar';
 import WinkoHub from './components/WinkoHub';
 import { FiltersAndSearch } from './components/FiltersAndSearch';
 import { PositionSection } from './components/PositionSection';
@@ -977,44 +976,22 @@ export default function App() {
     );
   }
 
-  // If navigating to the arcade page, render it directly
-  if (view === 'arcade') {
-    return (
-      <div className={`min-h-screen font-sans antialiased selection:bg-cyan-500/30 selection:text-cyan-200 ${
-        isLight ? 'bg-slate-50 text-slate-900' : 'bg-[#0f172a] text-slate-100'
-      }`}>
-        <Header
-          onNavigate={(target) => {
-            setView(target);
-            if (target === 'prospects' && !authedGmId) setView('hub');
-          }}
-          onOpenRules={() => setIsRulesModalOpen(true)}
-          activeView="arcade"
-          theme={theme}
-          onToggleTheme={toggleTheme}
-          activeGm={authedGm}
-        />
-        <WinkosChallenges gmName={authedGm?.name || ''} theme={theme} />
-      </div>
-    );
-  }
-
-  // Show the hub whenever we're on the hub view OR nobody is authenticated yet.
-  // WinkoHub renders the PIN gate when activeGm is null and the unlocked hub otherwise.
-  if (view === 'hub' || !authedGm) {
+  // If nobody is authenticated, show the PIN gate only
+  if (!authedGm) {
     return (
       <WinkoHub
         gms={gms}
-        activeGm={authedGm}
+        activeGm={null}
         onAuthenticate={handleAuthenticate}
         onLogout={handleLogout}
-        onNavigate={(target: 'prospect-central' | 'prospects' | 'arcade') => setView(target)}
+        onNavigate={() => {}}
         theme={theme}
         onToggleTheme={toggleTheme}
       />
     );
   }
 
+  // Once authenticated, render the global layout
   return (
     <div className={`min-h-screen font-sans antialiased selection:bg-cyan-500/30 selection:text-cyan-200 ${
       isLight ? 'bg-slate-50 text-slate-900' : 'bg-[#0f172a] text-slate-100'
@@ -1029,7 +1006,33 @@ export default function App() {
         theme={theme}
         onToggleTheme={toggleTheme}
         activeGm={authedGm}
+        onLogout={handleLogout}
+        isAdmin={isAdmin}
+        gms={gms}
+        selectedGmId={selectedGmId}
+        onSelectGm={(id) => {
+          setSelectedGmId(id);
+          setPositionFilter('ALL');
+          setStatusFilter('ALL');
+          setSearchQuery('');
+        }}
       />
+
+      {view === 'hub' && (
+        <WinkoHub
+          gms={gms}
+          activeGm={authedGm}
+          onAuthenticate={handleAuthenticate}
+          onLogout={handleLogout}
+          onNavigate={(target: 'prospect-central' | 'prospects' | 'arcade') => setView(target)}
+          theme={theme}
+          onToggleTheme={toggleTheme}
+        />
+      )}
+
+      {view === 'arcade' && (
+        <WinkosChallenges gmName={authedGm?.name || ''} theme={theme} />
+      )}
 
       {view === 'prospect-central' && (
         <ProspectLanding
@@ -1047,20 +1050,7 @@ export default function App() {
       )}
 
       {view === 'prospects' && (
-        <>
-          <GmSwitcherBar
-            gms={gms}
-            selectedGmId={selectedGmId}
-            onSelectGm={(id) => {
-              setSelectedGmId(id);
-              setPositionFilter('ALL');
-              setStatusFilter('ALL');
-              setSearchQuery('');
-            }}
-            onBackToLanding={() => setView('prospect-central')}
-          />
-
-          <main className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+        <main className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
         {/* Action Toolbar above filters */}
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3 border-b pb-6 dark:border-slate-800/80 border-slate-200">
           <div className="flex items-center gap-2">
@@ -1228,7 +1218,6 @@ export default function App() {
           </button>
         </div>
       </main>
-      </>
       )}
 
       {/* Modals */}
