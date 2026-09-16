@@ -39,6 +39,14 @@ export const PositionSection: React.FC<PositionSectionProps> = ({
   onToggleStatus,
   isAdmin = false,
 }) => {
+  const isLight = (() => {
+    try {
+      return localStorage.getItem('winkos_theme') !== 'dark';
+    } catch {
+      return true;
+    }
+  })();
+
   if (prospects.length === 0) {
     return null;
   }
@@ -67,11 +75,11 @@ export const PositionSection: React.FC<PositionSectionProps> = ({
   const getPositionIcon = () => {
     switch (title) {
       case 'Forwards':
-        return <Target className="h-4 w-4 text-blue-400" />;
+        return <Target className="h-4 w-4 text-blue-600 dark:text-blue-400" />;
       case 'Defensemen':
-        return <Shield className="h-4 w-4 text-indigo-400" />;
+        return <Shield className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />;
       case 'Goalies':
-        return <Flame className="h-4 w-4 text-emerald-400" />;
+        return <Flame className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />;
     }
   };
 
@@ -88,21 +96,27 @@ export const PositionSection: React.FC<PositionSectionProps> = ({
   return (
     <section className="mb-8" id={`section-${title.toLowerCase()}`}>
       {/* Section Header */}
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-2 border-b border-slate-800 pb-2.5">
+      <div className={`mb-4 flex flex-wrap items-center justify-between gap-2 border-b pb-2.5 ${
+        isLight ? 'border-slate-200' : 'border-slate-800'
+      }`}>
         <div className="flex items-center gap-2.5">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-800 border border-slate-700">
+          <div className={`flex h-8 w-8 items-center justify-center rounded-lg border ${
+            isLight ? 'bg-white border-slate-300' : 'bg-slate-800 border-slate-700'
+          }`}>
             {getPositionIcon()}
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h2 className="text-base sm:text-lg font-black tracking-tight text-slate-100">
+              <h2 className={`text-base sm:text-lg font-black tracking-tight ${isLight ? 'text-slate-900' : 'text-slate-100'}`}>
                 {title}
               </h2>
-              <span className="rounded-md bg-slate-800 px-2 py-0.5 text-xs font-bold text-slate-300 font-mono border border-slate-700">
+              <span className={`rounded-md px-2 py-0.5 text-xs font-bold font-mono border ${
+                isLight ? 'bg-slate-100 text-slate-700 border-slate-300' : 'bg-slate-800 text-slate-300 border-slate-700'
+              }`}>
                 {prospects.length}
               </span>
             </div>
-            <p className="text-[11px] text-slate-400">{getRulesHint()}</p>
+            <p className={`text-[11px] ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>{getRulesHint()}</p>
           </div>
         </div>
 

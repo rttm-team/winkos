@@ -47,13 +47,16 @@ interface ProspectLandingProps {
   gms: GeneralManager[];
   onSelectGmPool: (gmId: string) => void;
   isAdmin?: boolean;
+  theme?: 'light' | 'dark';
 }
 
 export const ProspectLanding: React.FC<ProspectLandingProps> = ({
   gms,
   onSelectGmPool,
   isAdmin = false,
+  theme = 'light',
 }) => {
+  const isLight = theme === 'light';
   const [leaderboard, setLeaderboard] = useState<GmDraftLeaderboardRow[]>([]);
   const [prospects, setProspects] = useState<ProspectRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -283,7 +286,9 @@ export const ProspectLanding: React.FC<ProspectLandingProps> = ({
   };
 
   return (
-    <div className="min-h-screen bg-[#0f172a] text-slate-100 font-sans antialiased selection:bg-cyan-500/30 selection:text-cyan-200">
+    <div className={`min-h-screen font-sans antialiased selection:bg-cyan-500/30 selection:text-cyan-200 ${
+      isLight ? 'bg-slate-50 text-slate-900' : 'bg-[#0f172a] text-slate-100'
+    }`}>
       {/* Background ambient lighting */}
       <div className="pointer-events-none fixed inset-0 overflow-hidden">
         <div className="absolute -top-40 -left-40 h-96 w-96 rounded-full bg-cyan-500/10 blur-3xl" />
@@ -295,29 +300,37 @@ export const ProspectLanding: React.FC<ProspectLandingProps> = ({
         {/* ========================================================================= */}
         {/* 1. TOP HEADER & CONTROL BAR */}
         {/* ========================================================================= */}
-        <section className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between border-b border-slate-800/80 pb-6">
+        <section className={`flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between border-b pb-6 ${
+          isLight ? 'border-slate-200' : 'border-slate-800/80'
+        }`}>
           <div>
-            <div className="inline-flex items-center gap-2 rounded-full border border-cyan-500/30 bg-cyan-500/10 px-3 py-1 text-xs font-bold uppercase tracking-wider text-cyan-300 mb-2">
-              <Sparkles className="h-3.5 w-3.5 text-cyan-400" />
+            <div className="inline-flex items-center gap-2 rounded-full border border-cyan-500/30 bg-cyan-500/10 px-3 py-1 text-xs font-bold uppercase tracking-wider text-cyan-600 dark:text-cyan-300 mb-2">
+              <Sparkles className="h-3.5 w-3.5 text-cyan-500 dark:text-cyan-400" />
               <span>Prospect Central Hub</span>
             </div>
-            <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-white flex items-center gap-3">
+            <h1 className={`text-2xl sm:text-3xl font-black tracking-tight flex items-center gap-3 ${
+              isLight ? 'text-slate-900' : 'text-white'
+            }`}>
               <span>Winko's Draft &amp; Prospect HQ</span>
             </h1>
-            <p className="text-xs sm:text-sm text-slate-400 mt-1 max-w-xl">
+            <p className={`text-xs sm:text-sm mt-1 max-w-xl ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>
               League-wide draft hit rates, star producer leaderboards, and real-time NHL promotion threshold tracking.
             </p>
           </div>
 
           {/* GM Team Switcher Dropdown */}
           <div className="relative shrink-0">
-            <div className="text-[11px] font-semibold uppercase tracking-wider text-slate-400 mb-1">
+            <div className={`text-[11px] font-semibold uppercase tracking-wider mb-1 ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>
               Filter Watchlist by GM
             </div>
             <button
               type="button"
               onClick={() => setGmDropdownOpen(!gmDropdownOpen)}
-              className="flex items-center justify-between gap-3 min-w-[200px] rounded-xl border border-slate-700 bg-slate-800/90 px-4 py-2.5 text-sm font-semibold text-slate-100 hover:border-cyan-500/50 hover:bg-slate-800 transition-all shadow-md focus:outline-none focus:ring-2 focus:ring-cyan-500/40 cursor-pointer"
+              className={`flex items-center justify-between gap-3 min-w-[200px] rounded-xl border px-4 py-2.5 text-sm font-semibold transition-all shadow-md focus:outline-none focus:ring-2 focus:ring-cyan-500/40 cursor-pointer ${
+                isLight
+                  ? 'border-slate-300 bg-white text-slate-800 hover:border-cyan-600 shadow-sm'
+                  : 'border-slate-700 bg-slate-800/90 text-slate-100 hover:border-cyan-500/50 hover:bg-slate-800'
+              }`}
             >
               <div className="flex items-center gap-2">
                 <Users className="h-4 w-4 text-cyan-400" />
@@ -382,75 +395,81 @@ export const ProspectLanding: React.FC<ProspectLandingProps> = ({
         {/* 3 Quick Stat Cards */}
         <section className="grid grid-cols-1 gap-4 sm:grid-cols-3">
           {/* Card 1: Total Prospects Tracked */}
-          <div className="relative overflow-hidden rounded-2xl border border-slate-800 bg-slate-900/60 p-5 backdrop-blur-sm shadow-md transition hover:border-cyan-500/40">
+          <div className={`relative overflow-hidden rounded-2xl border p-5 backdrop-blur-sm shadow-md transition ${
+            isLight ? 'border-slate-200 bg-white hover:border-cyan-400 text-slate-900' : 'border-slate-800 bg-slate-900/60 hover:border-cyan-500/40 text-white'
+          }`}>
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">
+                <p className={`text-xs font-semibold uppercase tracking-wider ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>
                   Total Prospects Tracked
                 </p>
                 <div className="mt-2 flex items-baseline gap-2">
-                  <span className="text-3xl font-black text-white font-mono">
+                  <span className={`text-3xl font-black font-mono ${isLight ? 'text-slate-900' : 'text-white'}`}>
                     {loading ? '...' : quickStats.totalCount.toLocaleString()}
                   </span>
-                  <span className="text-xs font-semibold text-cyan-400">Across 12 Teams</span>
+                  <span className="text-xs font-semibold text-cyan-600 dark:text-cyan-400">Across 12 Teams</span>
                 </div>
               </div>
-              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-cyan-500/15 text-cyan-400 ring-1 ring-cyan-500/30">
+              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-cyan-500/15 text-cyan-600 dark:text-cyan-400 ring-1 ring-cyan-500/30">
                 <Users className="h-6 w-6" />
               </div>
             </div>
-            <div className="mt-4 flex items-center gap-1.5 text-xs text-slate-400">
-              <Activity className="h-3.5 w-3.5 text-cyan-400" />
+            <div className={`mt-4 flex items-center gap-1.5 text-xs ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>
+              <Activity className="h-3.5 w-3.5 text-cyan-600 dark:text-cyan-400" />
               <span>Full active prospect rosters in database</span>
             </div>
           </div>
 
           {/* Card 2: Promoted to NHL */}
-          <div className="relative overflow-hidden rounded-2xl border border-slate-800 bg-slate-900/60 p-5 backdrop-blur-sm shadow-md transition hover:border-emerald-500/40">
+          <div className={`relative overflow-hidden rounded-2xl border p-5 backdrop-blur-sm shadow-md transition ${
+            isLight ? 'border-slate-200 bg-white hover:border-emerald-400 text-slate-900' : 'border-slate-800 bg-slate-900/60 hover:border-emerald-500/40 text-white'
+          }`}>
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">
+                <p className={`text-xs font-semibold uppercase tracking-wider ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>
                   Promoted to NHL
                 </p>
                 <div className="mt-2 flex items-baseline gap-2">
-                  <span className="text-3xl font-black text-emerald-400 font-mono">
+                  <span className={`text-3xl font-black font-mono ${isLight ? 'text-emerald-700' : 'text-emerald-400'}`}>
                     {loading ? '...' : quickStats.promotedCount.toLocaleString()}
                   </span>
-                  <span className="text-xs font-semibold text-slate-400">
+                  <span className={`text-xs font-semibold ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>
                     ({quickStats.totalCount > 0 ? Math.round((quickStats.promotedCount / quickStats.totalCount) * 100) : 0}% of all)
                   </span>
                 </div>
               </div>
-              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-emerald-500/15 text-emerald-400 ring-1 ring-emerald-500/30">
+              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 ring-1 ring-emerald-500/30">
                 <CheckCircle2 className="h-6 w-6" />
               </div>
             </div>
-            <div className="mt-4 flex items-center gap-1.5 text-xs text-slate-400">
-              <Shield className="h-3.5 w-3.5 text-emerald-400" />
+            <div className={`mt-4 flex items-center gap-1.5 text-xs ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>
+              <Shield className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
               <span>Graduated to official Winko active rosters</span>
             </div>
           </div>
 
           {/* Card 3: League Avg Hit Rate */}
-          <div className="relative overflow-hidden rounded-2xl border border-slate-800 bg-slate-900/60 p-5 backdrop-blur-sm shadow-md transition hover:border-amber-500/40">
+          <div className={`relative overflow-hidden rounded-2xl border p-5 backdrop-blur-sm shadow-md transition ${
+            isLight ? 'border-slate-200 bg-white hover:border-amber-400 text-slate-900' : 'border-slate-800 bg-slate-900/60 hover:border-amber-500/40 text-white'
+          }`}>
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">
+                <p className={`text-xs font-semibold uppercase tracking-wider ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>
                   League Avg Hit Rate
                 </p>
                 <div className="mt-2 flex items-baseline gap-2">
-                  <span className="text-3xl font-black text-amber-300 font-mono">
+                  <span className={`text-3xl font-black font-mono ${isLight ? 'text-amber-700' : 'text-amber-300'}`}>
                     {loading ? '...' : `${quickStats.avgHitRate}%`}
                   </span>
-                  <span className="text-xs font-semibold text-amber-400">Draft Production</span>
+                  <span className="text-xs font-semibold text-amber-600 dark:text-amber-400">Draft Production</span>
                 </div>
               </div>
-              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-amber-500/15 text-amber-400 ring-1 ring-amber-500/30">
+              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-amber-500/15 text-amber-600 dark:text-amber-400 ring-1 ring-amber-500/30">
                 <TrendingUp className="h-6 w-6" />
               </div>
             </div>
-            <div className="mt-4 flex items-center gap-1.5 text-xs text-slate-400">
-              <Trophy className="h-3.5 w-3.5 text-amber-400" />
+            <div className={`mt-4 flex items-center gap-1.5 text-xs ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>
+              <Trophy className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
               <span>Highest GM sits at {leaderboard[0]?.hit_rate_pct ?? '--'}%</span>
             </div>
           </div>
@@ -459,38 +478,48 @@ export const ProspectLanding: React.FC<ProspectLandingProps> = ({
         {/* ========================================================================= */}
         {/* 2. MAIN HERO SECTION — GM DRAFTING LEADERBOARD */}
         {/* ========================================================================= */}
-        <section className="rounded-2xl border border-slate-800 bg-slate-900/80 p-5 sm:p-6 shadow-xl backdrop-blur-sm">
+        <section className={`rounded-2xl border p-5 sm:p-6 shadow-xl backdrop-blur-sm ${
+          isLight ? 'border-slate-200 bg-white text-slate-900' : 'border-slate-800 bg-slate-900/80 text-white'
+        }`}>
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
             <div>
               <div className="flex items-center gap-2">
-                <Trophy className="h-5 w-5 text-amber-400" />
-                <h2 className="text-lg sm:text-xl font-black tracking-tight text-white">
+                <Trophy className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+                <h2 className={`text-lg sm:text-xl font-black tracking-tight ${isLight ? 'text-slate-900' : 'text-white'}`}>
                   GM Drafting Leaderboard
                 </h2>
               </div>
-              <p className="text-xs text-slate-400 mt-0.5">
+              <p className={`text-xs mt-0.5 ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>
                 Ranked by Draft Hit Rate % &amp; Total NHL Games Produced. Click &ldquo;View Pool&rdquo; to jump directly to any GM&apos;s prospect pool.
               </p>
             </div>
 
             {/* Badges Legend */}
             <div className="flex flex-wrap items-center gap-2 text-[11px]">
-              <span className="inline-flex items-center gap-1 rounded-md bg-cyan-500/10 border border-cyan-500/30 px-2 py-0.5 font-semibold text-cyan-300">
-                <Target className="h-3 w-3 text-cyan-400" /> Scout Master (Hit Rate)
+              <span className={`inline-flex items-center gap-1 rounded-md border px-2 py-0.5 font-semibold ${
+                isLight ? 'bg-cyan-50 border-cyan-200 text-cyan-800' : 'bg-cyan-500/10 border-cyan-500/30 text-cyan-300'
+              }`}>
+                <Target className="h-3 w-3 text-cyan-600 dark:text-cyan-400" /> Scout Master (Hit Rate)
               </span>
-              <span className="inline-flex items-center gap-1 rounded-md bg-purple-500/10 border border-purple-500/30 px-2 py-0.5 font-semibold text-purple-300">
-                <Gem className="h-3 w-3 text-purple-400" /> Diamond Rough (Stars)
+              <span className={`inline-flex items-center gap-1 rounded-md border px-2 py-0.5 font-semibold ${
+                isLight ? 'bg-purple-50 border-purple-200 text-purple-800' : 'bg-purple-500/10 border-purple-500/30 text-purple-300'
+              }`}>
+                <Gem className="h-3 w-3 text-purple-600 dark:text-purple-400" /> Diamond Rough (Stars)
               </span>
-              <span className="inline-flex items-center gap-1 rounded-md bg-amber-500/10 border border-amber-500/30 px-2 py-0.5 font-semibold text-amber-300">
-                <Flame className="h-3 w-3 text-amber-400" /> The Workhorse (NHL GP)
+              <span className={`inline-flex items-center gap-1 rounded-md border px-2 py-0.5 font-semibold ${
+                isLight ? 'bg-amber-50 border-amber-200 text-amber-800' : 'bg-amber-500/10 border-amber-500/30 text-amber-300'
+              }`}>
+                <Flame className="h-3 w-3 text-amber-600 dark:text-amber-400" /> The Workhorse (NHL GP)
               </span>
             </div>
           </div>
 
-          {/* Sleek Dark Table */}
-          <div className="overflow-x-auto rounded-xl border border-slate-800">
+          {/* Sleek Table */}
+          <div className={`overflow-x-auto rounded-xl border ${isLight ? 'border-slate-200' : 'border-slate-800'}`}>
             <table className="w-full text-left text-xs sm:text-sm">
-              <thead className="bg-slate-950/80 uppercase text-[10px] tracking-wider text-slate-400 border-b border-slate-800 font-semibold">
+              <thead className={`uppercase text-[10px] tracking-wider border-b font-semibold ${
+                isLight ? 'bg-slate-100 text-slate-700 border-slate-200' : 'bg-slate-950/80 text-slate-400 border-slate-800'
+              }`}>
                 <tr>
                   <th className="py-3.5 px-4 w-12 text-center">Rank</th>
                   <th className="py-3.5 px-4">General Manager</th>
@@ -502,7 +531,7 @@ export const ProspectLanding: React.FC<ProspectLandingProps> = ({
                   <th className="py-3.5 px-4 text-right">Pool</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-800/60 font-medium">
+              <tbody className={`font-medium ${isLight ? 'divide-y divide-slate-200 text-slate-800' : 'divide-y divide-slate-800/60 text-slate-200'}`}>
                 {leaderboard.map((row, idx) => {
                   const rank = idx + 1;
                   const isScoutMaster = row.gm_name === badgeLeaders.scoutMaster;
@@ -512,7 +541,7 @@ export const ProspectLanding: React.FC<ProspectLandingProps> = ({
                   return (
                     <tr
                       key={row.gm_name}
-                      className="group transition-colors hover:bg-slate-800/60 text-slate-200"
+                      className={`group transition-colors ${isLight ? 'hover:bg-slate-50' : 'hover:bg-slate-800/60'}`}
                     >
                       {/* Rank with Gold, Silver, Bronze icons */}
                       <td className="py-3 px-4 text-center">
@@ -529,7 +558,7 @@ export const ProspectLanding: React.FC<ProspectLandingProps> = ({
                             3
                           </span>
                         ) : (
-                          <span className="font-mono text-slate-500 text-xs font-semibold">
+                          <span className={`font-mono text-xs font-semibold ${isLight ? 'text-slate-500' : 'text-slate-500'}`}>
                             #{rank}
                           </span>
                         )}
@@ -538,7 +567,7 @@ export const ProspectLanding: React.FC<ProspectLandingProps> = ({
                       {/* GM Name */}
                       <td className="py-3 px-4">
                         <div className="flex items-center gap-2">
-                          <span className="font-bold text-slate-100">
+                          <span className={`font-bold ${isLight ? 'text-slate-900' : 'text-slate-100'}`}>
                             {row.gm_name}
                           </span>
                         </div>
@@ -550,15 +579,15 @@ export const ProspectLanding: React.FC<ProspectLandingProps> = ({
                           <span
                             className={`font-mono font-black text-sm ${
                               row.hit_rate_pct >= 45
-                                ? 'text-emerald-400'
+                                ? isLight ? 'text-emerald-700' : 'text-emerald-400'
                                 : row.hit_rate_pct >= 40
-                                ? 'text-cyan-300'
-                                : 'text-slate-300'
+                                ? isLight ? 'text-cyan-700' : 'text-cyan-300'
+                                : isLight ? 'text-slate-700' : 'text-slate-300'
                             }`}
                           >
                             {row.hit_rate_pct}%
                           </span>
-                          <div className="w-16 bg-slate-800 h-1.5 rounded-full overflow-hidden mt-1">
+                          <div className={`w-16 h-1.5 rounded-full overflow-hidden mt-1 ${isLight ? 'bg-slate-200' : 'bg-slate-800'}`}>
                             <div
                               className={`h-full ${
                                 row.hit_rate_pct >= 45
@@ -575,20 +604,22 @@ export const ProspectLanding: React.FC<ProspectLandingProps> = ({
 
                       {/* Promoted / Drafted */}
                       <td className="py-3 px-4 text-center font-mono">
-                        <span className="font-bold text-slate-100">{row.promoted_count}</span>
+                        <span className={`font-bold ${isLight ? 'text-slate-900' : 'text-slate-100'}`}>{row.promoted_count}</span>
                         <span className="text-slate-500 mx-1">/</span>
-                        <span className="text-slate-400">{row.total_prospects}</span>
+                        <span className={isLight ? 'text-slate-600' : 'text-slate-400'}>{row.total_prospects}</span>
                       </td>
 
                       {/* Total NHL Games Produced */}
-                      <td className="py-3 px-4 text-center font-mono font-bold text-slate-200">
+                      <td className={`py-3 px-4 text-center font-mono font-bold ${isLight ? 'text-slate-900' : 'text-slate-200'}`}>
                         {row.total_nhl_games_produced?.toLocaleString() || 0}
                       </td>
 
                       {/* Star Players Count */}
                       <td className="py-3 px-4 text-center">
-                        <span className="inline-flex items-center gap-1 font-mono font-bold text-purple-300/90 bg-purple-950/40 px-2 py-0.5 rounded-md border border-purple-800/40">
-                          <Sparkles className="h-3 w-3 text-purple-400/80" />
+                        <span className={`inline-flex items-center gap-1 font-mono font-bold px-2 py-0.5 rounded-md border ${
+                          isLight ? 'bg-purple-50 text-purple-800 border-purple-200' : 'bg-purple-950/40 text-purple-300/90 border-purple-800/40'
+                        }`}>
+                          <Sparkles className="h-3 w-3 text-purple-600 dark:text-purple-400/80" />
                           {row.star_players_count || 0}
                         </span>
                       </td>
@@ -599,25 +630,31 @@ export const ProspectLanding: React.FC<ProspectLandingProps> = ({
                           {isScoutMaster && (
                             <span
                               title="Highest Draft Hit Rate %"
-                              className="inline-flex items-center gap-1 rounded-md bg-cyan-950/40 border border-cyan-800/40 px-2 py-0.5 text-[10px] font-medium text-cyan-300/90"
+                              className={`inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-[10px] font-medium ${
+                                isLight ? 'bg-cyan-50 border-cyan-200 text-cyan-800' : 'bg-cyan-950/40 border-cyan-800/40 text-cyan-300/90'
+                              }`}
                             >
-                              <Target className="h-3 w-3 text-cyan-400/80" /> Scout Master
+                              <Target className="h-3 w-3 text-cyan-600 dark:text-cyan-400/80" /> Scout Master
                             </span>
                           )}
                           {isDiamond && (
                             <span
                               title="Most 100+ NHL Game Stars Produced"
-                              className="inline-flex items-center gap-1 rounded-md bg-purple-950/40 border border-purple-800/40 px-2 py-0.5 text-[10px] font-medium text-purple-300/90"
+                              className={`inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-[10px] font-medium ${
+                                isLight ? 'bg-purple-50 border-purple-200 text-purple-800' : 'bg-purple-950/40 border-purple-800/40 text-purple-300/90'
+                              }`}
                             >
-                              <Gem className="h-3 w-3 text-purple-400/80" /> Diamond Rough
+                              <Gem className="h-3 w-3 text-purple-600 dark:text-purple-400/80" /> Diamond Rough
                             </span>
                           )}
                           {isWorkhorse && (
                             <span
                               title="Most Total NHL Games Produced"
-                              className="inline-flex items-center gap-1 rounded-md bg-amber-950/40 border border-amber-800/40 px-2 py-0.5 text-[10px] font-medium text-amber-300/90"
+                              className={`inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-[10px] font-medium ${
+                                isLight ? 'bg-amber-50 border-amber-200 text-amber-800' : 'bg-amber-950/40 border-amber-800/40 text-amber-300/90'
+                              }`}
                             >
-                              <Flame className="h-3 w-3 text-amber-400/80" /> Workhorse
+                              <Flame className="h-3 w-3 text-amber-600 dark:text-amber-400/80" /> Workhorse
                             </span>
                           )}
                           {!isScoutMaster && !isDiamond && !isWorkhorse && (
@@ -634,10 +671,14 @@ export const ProspectLanding: React.FC<ProspectLandingProps> = ({
                             e.stopPropagation();
                             handleOpenGmPool(row.gm_name);
                           }}
-                          className="inline-flex items-center gap-1 rounded-lg border border-slate-700 bg-slate-800 px-2.5 py-1 text-[11px] font-semibold text-slate-300 hover:text-cyan-300 hover:border-cyan-500/50 transition cursor-pointer"
+                          className={`inline-flex items-center gap-1 rounded-lg border px-2.5 py-1 text-[11px] font-semibold transition cursor-pointer ${
+                            isLight
+                              ? 'border-slate-300 bg-slate-50 text-slate-700 hover:text-cyan-700 hover:bg-slate-100 hover:border-slate-400'
+                              : 'border-slate-700 bg-slate-800 text-slate-300 hover:text-cyan-300 hover:border-cyan-500/50'
+                          }`}
                         >
                           <span>View Pool</span>
-                          <ArrowRight className="h-3 w-3" />
+                          <ExternalLink className="h-3 w-3" />
                         </button>
                       </td>
                     </tr>
@@ -654,15 +695,17 @@ export const ProspectLanding: React.FC<ProspectLandingProps> = ({
         <section className="space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
             <div>
-              <h2 className="text-xl font-black tracking-tight text-white flex items-center gap-2">
+              <h2 className={`text-xl font-black tracking-tight flex items-center gap-2 ${isLight ? 'text-slate-900' : 'text-white'}`}>
                 <span>Promotion Watchlist</span>
                 {selectedGmFilter !== 'ALL' && (
-                  <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
+                  <span className={`text-xs font-semibold px-2 py-0.5 rounded-full border ${
+                    isLight ? 'bg-cyan-50 text-cyan-800 border-cyan-200' : 'bg-cyan-500/20 text-cyan-300 border-cyan-500/30'
+                  }`}>
                     Filtered to {selectedGmFilter}
                   </span>
                 )}
               </h2>
-              <p className="text-xs text-slate-400">
+              <p className={`text-xs ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>
                 Real-time tracking of non-promoted players approaching or exceeding league promotion criteria.
               </p>
             </div>
@@ -671,7 +714,7 @@ export const ProspectLanding: React.FC<ProspectLandingProps> = ({
               <button
                 type="button"
                 onClick={() => setSelectedGmFilter('ALL')}
-                className="self-start sm:self-auto text-xs font-semibold text-cyan-400 hover:text-cyan-300 underline cursor-pointer"
+                className="self-start sm:self-auto text-xs font-semibold text-cyan-600 dark:text-cyan-400 hover:underline cursor-pointer"
               >
                 Reset to All GMs
               </button>
@@ -682,20 +725,24 @@ export const ProspectLanding: React.FC<ProspectLandingProps> = ({
             {/* ----------------------------------------------------------------- */}
             {/* PANEL 1: Action Required: Needs Promotion Card */}
             {/* ----------------------------------------------------------------- */}
-            <div className="rounded-2xl border border-red-500/30 bg-slate-900/80 p-5 sm:p-6 shadow-xl backdrop-blur-sm flex flex-col">
-              <div className="flex items-center justify-between border-b border-slate-800 pb-4 mb-4">
+            <div className={`rounded-2xl border p-5 sm:p-6 shadow-xl backdrop-blur-sm flex flex-col ${
+              isLight ? 'border-red-200 bg-white text-slate-900' : 'border-red-500/30 bg-slate-900/80 text-white'
+            }`}>
+              <div className={`flex items-center justify-between border-b pb-4 mb-4 ${isLight ? 'border-slate-200' : 'border-slate-800'}`}>
                 <div className="flex items-center gap-2.5">
-                  <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-red-500/15 text-red-400 ring-1 ring-red-500/30">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-red-500/15 text-red-600 dark:text-red-400 ring-1 ring-red-500/30">
                     <AlertTriangle className="h-5 w-5" />
                   </div>
                   <div>
-                    <h3 className="text-base font-black text-white flex items-center gap-2">
+                    <h3 className={`text-base font-black flex items-center gap-2 ${isLight ? 'text-slate-900' : 'text-white'}`}>
                       <span>Action Required: Needs Promotion</span>
-                      <span className="rounded-full bg-red-500/20 px-2 py-0.5 text-xs font-bold text-red-300 border border-red-500/30">
+                      <span className={`rounded-full px-2 py-0.5 text-xs font-bold border ${
+                        isLight ? 'bg-red-50 text-red-700 border-red-200' : 'bg-red-500/20 text-red-300 border-red-500/30'
+                      }`}>
                         {needsPromotionList.length}
                       </span>
                     </h3>
-                    <p className="text-[11px] text-slate-400">
+                    <p className={`text-[11px] ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>
                       Skaters: ≥40 Season GP or ≥65 Total GP • Goalies: ≥20 Season GP or ≥30 Total GP
                     </p>
                   </div>
@@ -703,15 +750,17 @@ export const ProspectLanding: React.FC<ProspectLandingProps> = ({
               </div>
 
               {needsPromotionList.length === 0 ? (
-                <div className="flex-1 flex flex-col items-center justify-center py-12 text-center text-slate-500 border border-dashed border-slate-800 rounded-xl bg-slate-950/40">
-                  <CheckCircle2 className="h-10 w-10 text-emerald-500/60 mb-2" />
-                  <p className="text-sm font-semibold text-slate-300">All Rosters Compliant</p>
-                  <p className="text-xs text-slate-500 max-w-xs mt-1">
+                <div className={`flex-1 flex flex-col items-center justify-center py-12 text-center border border-dashed rounded-xl ${
+                  isLight ? 'border-slate-200 bg-slate-50 text-slate-600' : 'border-slate-800 bg-slate-950/40 text-slate-500'
+                }`}>
+                  <CheckCircle2 className="h-10 w-10 text-emerald-500/80 mb-2" />
+                  <p className={`text-sm font-semibold ${isLight ? 'text-slate-900' : 'text-slate-300'}`}>All Rosters Compliant</p>
+                  <p className={`text-xs max-w-xs mt-1 ${isLight ? 'text-slate-600' : 'text-slate-500'}`}>
                     No active unpromoted prospects currently exceed the single-season or cumulative GP thresholds.
                   </p>
                 </div>
               ) : (
-                <div className="space-y-3 max-h-[500px] overflow-y-auto pr-1 scrollbar-thin scrollbar-thumb-slate-700">
+                <div className="space-y-3 max-h-[500px] overflow-y-auto pr-1">
                   {needsPromotionList.map((player) => {
                     const isGoalie = (player.position || 'F').toUpperCase() === 'G';
                     const headshotUrl = player.nhl_id
@@ -721,18 +770,21 @@ export const ProspectLanding: React.FC<ProspectLandingProps> = ({
                     return (
                       <div
                         key={player.id}
-                        className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-xl border border-red-500/20 bg-slate-950/60 p-3.5 hover:border-red-500/40 transition-colors"
+                        className={`flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-xl border p-3.5 transition-colors ${
+                          isLight ? 'border-red-200 bg-slate-50/80 hover:border-red-300' : 'border-red-500/20 bg-slate-950/60 hover:border-red-500/40'
+                        }`}
                       >
                         <div className="flex items-center gap-3">
                           {/* Player Headshot */}
-                          <div className="relative h-12 w-12 shrink-0 rounded-xl overflow-hidden bg-slate-800 border border-slate-700">
+                          <div className={`relative h-12 w-12 shrink-0 rounded-xl overflow-hidden border ${
+                            isLight ? 'bg-slate-100 border-slate-200' : 'bg-slate-800 border-slate-700'
+                          }`}>
                             {headshotUrl ? (
                               <img
                                 src={headshotUrl}
                                 alt={player.player_name}
                                 className="h-full w-full object-cover"
                                 onError={(e) => {
-                                  // Fallback to initial avatar if image fails
                                   e.currentTarget.style.display = 'none';
                                   const fallback = e.currentTarget.nextElementSibling;
                                   if (fallback) (fallback as HTMLElement).style.display = 'flex';
@@ -740,7 +792,9 @@ export const ProspectLanding: React.FC<ProspectLandingProps> = ({
                               />
                             ) : null}
                             <div
-                              className="h-full w-full flex items-center justify-center bg-slate-800 text-xs font-black text-slate-400"
+                              className={`h-full w-full flex items-center justify-center text-xs font-black ${
+                                isLight ? 'bg-slate-200 text-slate-700' : 'bg-slate-800 text-slate-400'
+                              }`}
                               style={{ display: headshotUrl ? 'none' : 'flex' }}
                             >
                               {player.player_name.slice(0, 2).toUpperCase()}
@@ -750,27 +804,27 @@ export const ProspectLanding: React.FC<ProspectLandingProps> = ({
                           {/* Player Details */}
                           <div>
                             <div className="flex items-center gap-2">
-                              <span className="font-bold text-sm text-slate-100">
+                              <span className={`font-bold text-sm ${isLight ? 'text-slate-900' : 'text-slate-100'}`}>
                                 {player.player_name}
                               </span>
                               <span
-                                className={`rounded px-1.5 py-0.2 text-[10px] font-black uppercase ${
+                                className={`rounded px-1.5 py-0.2 text-[10px] font-black uppercase border ${
                                   isGoalie
-                                    ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
+                                    ? isLight ? 'bg-amber-50 text-amber-800 border-amber-200' : 'bg-amber-500/20 text-amber-300 border-amber-500/30'
                                     : player.position === 'D'
-                                    ? 'bg-blue-500/20 text-blue-300 border border-blue-500/30'
-                                    : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+                                    ? isLight ? 'bg-blue-50 text-blue-800 border-blue-200' : 'bg-blue-500/20 text-blue-300 border-blue-500/30'
+                                    : isLight ? 'bg-emerald-50 text-emerald-800 border-emerald-200' : 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30'
                                 }`}
                               >
                                 {player.position}
                               </span>
                             </div>
-                            <div className="flex items-center gap-2 mt-0.5 text-xs text-slate-400">
-                              <span>GM: <strong className="text-slate-200">{player.gm_name}</strong></span>
+                            <div className={`flex items-center gap-2 mt-0.5 text-xs ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>
+                              <span>GM: <strong className={isLight ? 'text-slate-900' : 'text-slate-200'}>{player.gm_name}</strong></span>
                               <span>•</span>
                               <span>Draft: {player.draft_year}</span>
                             </div>
-                            <div className="mt-1 flex items-center gap-2 text-xs font-mono font-semibold text-red-400">
+                            <div className={`mt-1 flex items-center gap-2 text-xs font-mono font-semibold ${isLight ? 'text-red-700' : 'text-red-400'}`}>
                               <span>Max Season GP: {player.max_single_season_gp}</span>
                               <span>•</span>
                               <span>Total GP: {player.total_games}</span>
@@ -802,20 +856,24 @@ export const ProspectLanding: React.FC<ProspectLandingProps> = ({
             {/* ----------------------------------------------------------------- */}
             {/* PANEL 2: On the Radar: Knocking on the Door Card */}
             {/* ----------------------------------------------------------------- */}
-            <div className="rounded-2xl border border-amber-500/30 bg-slate-900/80 p-5 sm:p-6 shadow-xl backdrop-blur-sm flex flex-col">
-              <div className="flex items-center justify-between border-b border-slate-800 pb-4 mb-4">
+            <div className={`rounded-2xl border p-5 sm:p-6 shadow-xl backdrop-blur-sm flex flex-col ${
+              isLight ? 'border-amber-200 bg-white text-slate-900' : 'border-amber-500/30 bg-slate-900/80 text-white'
+            }`}>
+              <div className={`flex items-center justify-between border-b pb-4 mb-4 ${isLight ? 'border-slate-200' : 'border-slate-800'}`}>
                 <div className="flex items-center gap-2.5">
-                  <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-amber-500/15 text-amber-400 ring-1 ring-amber-500/30">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-amber-500/15 text-amber-600 dark:text-amber-400 ring-1 ring-amber-500/30">
                     <TrendingUp className="h-5 w-5" />
                   </div>
                   <div>
-                    <h3 className="text-base font-black text-white flex items-center gap-2">
+                    <h3 className={`text-base font-black flex items-center gap-2 ${isLight ? 'text-slate-900' : 'text-white'}`}>
                       <span>On the Radar: Knocking on the Door</span>
-                      <span className="rounded-full bg-amber-500/20 px-2 py-0.5 text-xs font-bold text-amber-300 border border-amber-500/30">
+                      <span className={`rounded-full px-2 py-0.5 text-xs font-bold border ${
+                        isLight ? 'bg-amber-50 text-amber-800 border-amber-200' : 'bg-amber-500/20 text-amber-300 border-amber-500/30'
+                      }`}>
                         {onTheRadarList.length}
                       </span>
                     </h3>
-                    <p className="text-[11px] text-slate-400">
+                    <p className={`text-[11px] ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>
                       Within 10 GP of reaching promotion trigger (30–39 Season or 55–64 Total GP)
                     </p>
                   </div>
@@ -823,15 +881,17 @@ export const ProspectLanding: React.FC<ProspectLandingProps> = ({
               </div>
 
               {onTheRadarList.length === 0 ? (
-                <div className="flex-1 flex flex-col items-center justify-center py-12 text-center text-slate-500 border border-dashed border-slate-800 rounded-xl bg-slate-950/40">
-                  <Activity className="h-10 w-10 text-slate-600 mb-2" />
-                  <p className="text-sm font-semibold text-slate-300">No Players On Immediate Radar</p>
-                  <p className="text-xs text-slate-500 max-w-xs mt-1">
+                <div className={`flex-1 flex flex-col items-center justify-center py-12 text-center border border-dashed rounded-xl ${
+                  isLight ? 'border-slate-200 bg-slate-50 text-slate-600' : 'border-slate-800 bg-slate-950/40 text-slate-500'
+                }`}>
+                  <Activity className="h-10 w-10 text-slate-500 mb-2" />
+                  <p className={`text-sm font-semibold ${isLight ? 'text-slate-900' : 'text-slate-300'}`}>No Players On Immediate Radar</p>
+                  <p className={`text-xs max-w-xs mt-1 ${isLight ? 'text-slate-600' : 'text-slate-500'}`}>
                     No prospects are currently within 10 games of triggering mandatory promotion.
                   </p>
                 </div>
               ) : (
-                <div className="space-y-3 max-h-[500px] overflow-y-auto pr-1 scrollbar-thin scrollbar-thumb-slate-700">
+                <div className="space-y-3 max-h-[500px] overflow-y-auto pr-1">
                   {onTheRadarList.map((player) => {
                     const isGoalie = (player.position || 'F').toUpperCase() === 'G';
                     const headshotUrl = player.nhl_id
@@ -841,12 +901,16 @@ export const ProspectLanding: React.FC<ProspectLandingProps> = ({
                     return (
                       <div
                         key={player.id}
-                        className="flex flex-col gap-2 rounded-xl border border-slate-800 bg-slate-950/60 p-3.5 hover:border-amber-500/40 transition-colors"
+                        className={`flex flex-col gap-2 rounded-xl border p-3.5 transition-colors ${
+                          isLight ? 'border-slate-200 bg-slate-50/80 hover:border-amber-300' : 'border-slate-800 bg-slate-950/60 hover:border-amber-500/40'
+                        }`}
                       >
                         <div className="flex items-center justify-between gap-2">
                           <div className="flex items-center gap-3">
                             {/* Headshot */}
-                            <div className="relative h-10 w-10 shrink-0 rounded-lg overflow-hidden bg-slate-800 border border-slate-700">
+                            <div className={`relative h-10 w-10 shrink-0 rounded-lg overflow-hidden border ${
+                              isLight ? 'bg-slate-100 border-slate-200' : 'bg-slate-800 border-slate-700'
+                            }`}>
                               {headshotUrl ? (
                                 <img
                                   src={headshotUrl}
@@ -860,7 +924,9 @@ export const ProspectLanding: React.FC<ProspectLandingProps> = ({
                                 />
                               ) : null}
                               <div
-                                className="h-full w-full flex items-center justify-center bg-slate-800 text-[10px] font-black text-slate-400"
+                                className={`h-full w-full flex items-center justify-center text-[10px] font-black ${
+                                  isLight ? 'bg-slate-200 text-slate-700' : 'bg-slate-800 text-slate-400'
+                                }`}
                                 style={{ display: headshotUrl ? 'none' : 'flex' }}
                               >
                                 {player.player_name.slice(0, 2).toUpperCase()}
@@ -869,23 +935,23 @@ export const ProspectLanding: React.FC<ProspectLandingProps> = ({
 
                             <div>
                               <div className="flex items-center gap-2">
-                                <span className="font-bold text-sm text-slate-100">
+                                <span className={`font-bold text-sm ${isLight ? 'text-slate-900' : 'text-slate-100'}`}>
                                   {player.player_name}
                                 </span>
                                 <span
-                                  className={`rounded px-1.5 py-0.2 text-[10px] font-black uppercase ${
+                                  className={`rounded px-1.5 py-0.2 text-[10px] font-black uppercase border ${
                                     isGoalie
-                                      ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
+                                      ? isLight ? 'bg-amber-50 text-amber-800 border-amber-200' : 'bg-amber-500/20 text-amber-300 border-amber-500/30'
                                       : player.position === 'D'
-                                      ? 'bg-blue-500/20 text-blue-300 border border-blue-500/30'
-                                      : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+                                      ? isLight ? 'bg-blue-50 text-blue-800 border-blue-200' : 'bg-blue-500/20 text-blue-300 border-blue-500/30'
+                                      : isLight ? 'bg-emerald-50 text-emerald-800 border-emerald-200' : 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30'
                                   }`}
                                 >
                                   {player.position}
                                 </span>
                               </div>
-                              <div className="flex items-center gap-2 text-[11px] text-slate-400">
-                                <span>GM: <strong className="text-slate-200">{player.gm_name}</strong></span>
+                              <div className={`flex items-center gap-2 text-[11px] ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>
+                                <span>GM: <strong className={isLight ? 'text-slate-900' : 'text-slate-200'}>{player.gm_name}</strong></span>
                                 <span>•</span>
                                 <span>Draft: {player.draft_year}</span>
                               </div>
@@ -894,10 +960,10 @@ export const ProspectLanding: React.FC<ProspectLandingProps> = ({
 
                           {/* Stat summary */}
                           <div className="text-right">
-                            <span className="font-mono text-xs font-bold text-amber-300">
+                            <span className={`font-mono text-xs font-bold ${isLight ? 'text-amber-700' : 'text-amber-300'}`}>
                               {player.metricCurrent} / {player.metricLimit} GP
                             </span>
-                            <div className="text-[10px] text-slate-400 font-mono font-semibold">
+                            <div className={`text-[10px] font-mono font-semibold ${isLight ? 'text-slate-700' : 'text-slate-400'}`}>
                               {player.pct}%
                             </div>
                           </div>
@@ -905,15 +971,15 @@ export const ProspectLanding: React.FC<ProspectLandingProps> = ({
 
                         {/* Visual Tailwind Progress Bar */}
                         <div className="mt-1">
-                          <div className="w-full bg-slate-800 h-2 rounded-full overflow-hidden">
+                          <div className={`w-full h-2 rounded-full overflow-hidden ${isLight ? 'bg-slate-200' : 'bg-slate-800'}`}>
                             <div
                               className="h-full bg-gradient-to-r from-amber-500 to-amber-400 transition-all duration-300 rounded-full"
                               style={{ width: `${player.pct}%` }}
                             />
                           </div>
-                          <div className="flex justify-between items-center text-[10px] text-slate-400 mt-1">
+                          <div className={`flex justify-between items-center text-[10px] mt-1 ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>
                             <span>{player.metricLabel} Metric</span>
-                            <span className="text-amber-400/90 font-medium">
+                            <span className={`font-medium ${isLight ? 'text-amber-700' : 'text-amber-400/90'}`}>
                               {player.metricLimit - player.metricCurrent} GP cushion remaining
                             </span>
                           </div>

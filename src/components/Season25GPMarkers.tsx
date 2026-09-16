@@ -29,6 +29,14 @@ export const Season25GPMarkers: React.FC<Season25GPMarkersProps & { prospect?: a
   className = '',
   prospect,
 }) => {
+  const isLight = (() => {
+    try {
+      return localStorage.getItem('winkos_theme') !== 'dark';
+    } catch {
+      return true;
+    }
+  })();
+
   // Use prospect.season_breakdown if available, otherwise fallback to count
   let effectiveCount = count;
   if (prospect?.season_breakdown) {
@@ -96,7 +104,7 @@ export const Season25GPMarkers: React.FC<Season25GPMarkersProps & { prospect?: a
         title={`25+ GP Seasons: ${safeCount} of ${max} hit${isReached ? ' (Mandatory promotion threshold reached before 200 GP)' : ''}`}
       >
         {showLabel && (
-          <span className="text-[10px] font-semibold text-slate-400 shrink-0">
+          <span className={`text-[10px] font-semibold shrink-0 ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>
             25+ GP:
           </span>
         )}
@@ -117,10 +125,18 @@ export const Season25GPMarkers: React.FC<Season25GPMarkersProps & { prospect?: a
                 } ${
                   isFilled
                     ? isReached
-                      ? 'bg-rose-700/80 text-rose-100 font-bold border border-rose-600/40 ring-1 ring-rose-500/30'
+                      ? isLight
+                        ? 'bg-rose-600 text-white font-bold border border-rose-700 shadow-sm'
+                        : 'bg-rose-700/80 text-rose-100 font-bold border border-rose-600/40 ring-1 ring-rose-500/30'
                       : isWatchlist
-                      ? 'bg-amber-700/70 text-amber-100 font-bold border border-amber-600/40 ring-1 ring-amber-500/30'
+                      ? isLight
+                        ? 'bg-amber-600 text-white font-bold border border-amber-700 shadow-sm'
+                        : 'bg-amber-700/70 text-amber-100 font-bold border border-amber-600/40 ring-1 ring-amber-500/30'
+                      : isLight
+                      ? 'bg-slate-700 text-white font-bold border border-slate-800 shadow-sm'
                       : 'bg-slate-600/70 text-slate-100 font-bold border border-slate-500/40 ring-1 ring-slate-400/30'
+                    : isLight
+                    ? 'bg-white border border-slate-300 text-slate-600 font-medium'
                     : 'bg-slate-800/80 border border-slate-700 text-slate-500 font-medium'
                 }`}
                 aria-label={`Season ${markerNum} 25+ GP: ${isFilled ? 'Reached' : 'Not reached'}`}
@@ -138,10 +154,10 @@ export const Season25GPMarkers: React.FC<Season25GPMarkersProps & { prospect?: a
         <span
           className={`font-mono text-[10px] font-bold ${
             isReached
-              ? 'text-rose-300/90 font-bold'
+              ? isLight ? 'text-rose-700' : 'text-rose-300/90 font-bold'
               : isWatchlist
-              ? 'text-amber-300/90'
-              : 'text-slate-400'
+              ? isLight ? 'text-amber-700' : 'text-amber-300/90'
+              : isLight ? 'text-slate-700' : 'text-slate-400'
           }`}
         >
           {safeCount}/{max}
@@ -154,7 +170,13 @@ export const Season25GPMarkers: React.FC<Season25GPMarkersProps & { prospect?: a
   return (
     <div
       className={`rounded-xl border p-3 transition-colors ${
-        isReached
+        isLight
+          ? isReached
+            ? 'border-rose-300 bg-white shadow-sm'
+            : isWatchlist
+            ? 'border-amber-300 bg-white shadow-sm'
+            : 'border-slate-200 bg-white shadow-sm'
+          : isReached
           ? 'border-rose-900/40 bg-rose-950/20'
           : isWatchlist
           ? 'border-amber-900/35 bg-amber-950/15'
@@ -163,11 +185,11 @@ export const Season25GPMarkers: React.FC<Season25GPMarkersProps & { prospect?: a
     >
       <div className="flex items-center justify-between gap-2 mb-2">
         <div className="flex items-center gap-1.5">
-          <span className="text-xs font-bold text-slate-200">
+          <span className={`text-xs font-bold ${isLight ? 'text-slate-900' : 'text-slate-200'}`}>
             4 Seasons of 25+ GP
           </span>
           <span
-            className="inline-flex text-slate-400 hover:text-slate-300 transition-colors"
+            className={`inline-flex transition-colors ${isLight ? 'text-slate-500 hover:text-slate-700' : 'text-slate-400 hover:text-slate-300'}`}
             title="League Rule: When a prospect reaches 4 distinct NHL seasons of 25+ GP before reaching 200 GP, it triggers mandatory promotion to the active roster."
           >
             <Info className="h-3.5 w-3.5" />
@@ -177,29 +199,37 @@ export const Season25GPMarkers: React.FC<Season25GPMarkersProps & { prospect?: a
         <div className="flex items-center gap-2">
           {/* Status Badge */}
           {isReached ? (
-            <span className="inline-flex items-center gap-1 rounded-full bg-rose-950/50 px-2 py-0.5 text-[10px] font-semibold text-rose-300 border border-rose-800/40">
-              <AlertCircle className="h-3 w-3 text-rose-400/80" />
+            <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold border ${
+              isLight ? 'bg-rose-100 text-rose-800 border-rose-300' : 'bg-rose-950/50 text-rose-300 border-rose-800/40'
+            }`}>
+              <AlertCircle className={`h-3 w-3 ${isLight ? 'text-rose-600' : 'text-rose-400/80'}`} />
               Prompt to Promote
             </span>
           ) : isWatchlist ? (
-            <span className="inline-flex items-center gap-1 rounded-full bg-amber-950/50 px-2 py-0.5 text-[10px] font-semibold text-amber-300 border border-amber-800/40">
-              <Sparkles className="h-2.5 w-2.5 text-amber-400/80" />
+            <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold border ${
+              isLight ? 'bg-amber-100 text-amber-800 border-amber-300' : 'bg-amber-950/50 text-amber-300 border-amber-800/40'
+            }`}>
+              <Sparkles className={`h-2.5 w-2.5 ${isLight ? 'text-amber-600' : 'text-amber-400/80'}`} />
               1 Season Away
             </span>
           ) : (
-            <span className="text-[11px] font-mono font-semibold text-slate-400">
+            <span className={`text-[11px] font-mono font-semibold ${isLight ? 'text-slate-700' : 'text-slate-400'}`}>
               {safeCount} / {max} Hit
             </span>
           )}
 
           {/* Stepper Buttons for testing/adjusting */}
           {showStepper && onCountChange && (
-            <div className="inline-flex items-center rounded-lg bg-slate-800 border border-slate-700 p-0.5 shadow-inner">
+            <div className={`inline-flex items-center rounded-lg border p-0.5 shadow-inner ${
+              isLight ? 'bg-white border-slate-300' : 'bg-slate-800 border-slate-700'
+            }`}>
               <button
                 type="button"
                 onClick={handleDecrement}
                 disabled={safeCount <= 0}
-                className="rounded p-1 text-slate-400 hover:bg-slate-700 hover:text-white disabled:opacity-30 transition-colors"
+                className={`rounded p-1 transition-colors disabled:opacity-30 ${
+                  isLight ? 'text-slate-700 hover:bg-slate-100 hover:text-slate-900' : 'text-slate-400 hover:bg-slate-700 hover:text-white'
+                }`}
                 title="Decrease 25+ GP seasons count"
               >
                 <Minus className="h-3 w-3" />
@@ -208,7 +238,9 @@ export const Season25GPMarkers: React.FC<Season25GPMarkersProps & { prospect?: a
                 type="button"
                 onClick={handleIncrement}
                 disabled={safeCount >= max}
-                className="rounded p-1 text-slate-400 hover:bg-slate-700 hover:text-white disabled:opacity-30 transition-colors"
+                className={`rounded p-1 transition-colors disabled:opacity-30 ${
+                  isLight ? 'text-slate-700 hover:bg-slate-100 hover:text-slate-900' : 'text-slate-400 hover:bg-slate-700 hover:text-white'
+                }`}
                 title="Increase 25+ GP seasons count"
               >
                 <Plus className="h-3 w-3" />
@@ -237,10 +269,18 @@ export const Season25GPMarkers: React.FC<Season25GPMarkersProps & { prospect?: a
                 } ${
                   isFilled
                     ? isReached
-                      ? 'bg-rose-700/85 text-rose-100 font-bold border border-rose-600/50 ring-1 ring-rose-500/40'
+                      ? isLight
+                        ? 'bg-rose-600 text-white font-bold border border-rose-700 shadow-sm'
+                        : 'bg-rose-700/85 text-rose-100 font-bold border border-rose-600/50 ring-1 ring-rose-500/40'
                       : isWatchlist
-                      ? 'bg-amber-700/75 text-amber-100 font-bold border border-amber-600/50 ring-1 ring-amber-500/40'
+                      ? isLight
+                        ? 'bg-amber-600 text-white font-bold border border-amber-700 shadow-sm'
+                        : 'bg-amber-700/75 text-amber-100 font-bold border border-amber-600/50 ring-1 ring-amber-500/40'
+                      : isLight
+                      ? 'bg-slate-700 text-white font-bold border border-slate-800 shadow-sm'
                       : 'bg-slate-600/80 text-slate-100 font-bold border border-slate-500/50 ring-1 ring-slate-400/40'
+                    : isLight
+                    ? 'bg-white border border-slate-300 text-slate-600 hover:border-slate-400'
                     : 'bg-slate-800/90 border border-slate-700 text-slate-400 hover:border-slate-500'
                 }`}
                 title={
@@ -260,7 +300,7 @@ export const Season25GPMarkers: React.FC<Season25GPMarkersProps & { prospect?: a
                 )}
               </button>
 
-              <span className="text-[10px] font-medium text-slate-400 truncate max-w-full text-center">
+              <span className={`text-[10px] font-medium truncate max-w-full text-center ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>
                 {isFilled ? '25+ GP' : `Season ${markerNum}`}
               </span>
             </div>
@@ -270,10 +310,12 @@ export const Season25GPMarkers: React.FC<Season25GPMarkersProps & { prospect?: a
 
       {/* Subtext description / notification */}
       {showSubtext && (
-        <div className="mt-2 pt-2 border-t border-slate-800/80 flex items-center justify-between text-[11px]">
+        <div className={`mt-2 pt-2 border-t flex items-center justify-between text-[11px] ${
+          isLight ? 'border-slate-200' : 'border-slate-800/80'
+        }`}>
           {isReached ? (
-            <div className="flex items-center gap-1.5 text-rose-300/90 font-medium">
-              <AlertCircle className="h-3.5 w-3.5 text-rose-400/80 shrink-0" />
+            <div className={`flex items-center gap-1.5 font-medium ${isLight ? 'text-rose-700' : 'text-rose-300/90'}`}>
+              <AlertCircle className={`h-3.5 w-3.5 shrink-0 ${isLight ? 'text-rose-600' : 'text-rose-400/80'}`} />
               <span>
                 {isUnder200GP
                   ? 'Hit 4 seasons of 25+ GP before 200 GP. Status requires promotion.'
@@ -281,18 +323,18 @@ export const Season25GPMarkers: React.FC<Season25GPMarkersProps & { prospect?: a
               </span>
             </div>
           ) : isWatchlist ? (
-            <div className="flex items-center gap-1.5 text-amber-300/90 font-medium">
-              <Sparkles className="h-3.5 w-3.5 text-amber-400/80 shrink-0" />
+            <div className={`flex items-center gap-1.5 font-medium ${isLight ? 'text-amber-700' : 'text-amber-300/90'}`}>
+              <Sparkles className={`h-3.5 w-3.5 shrink-0 ${isLight ? 'text-amber-600' : 'text-amber-400/80'}`} />
               <span>3 of 4 seasons hit — 1 more season of 25+ GP prompts promotion.</span>
             </div>
           ) : (
-            <div className="text-slate-400">
+            <div className={isLight ? 'text-slate-600' : 'text-slate-400'}>
               <span>{max - safeCount} seasons of 25+ GP remaining before promotion prompt.</span>
             </div>
           )}
 
           {interactive && (
-            <span className="text-[10px] text-slate-500 italic shrink-0">
+            <span className={`text-[10px] italic shrink-0 ${isLight ? 'text-slate-500' : 'text-slate-500'}`}>
               Click circle to simulate
             </span>
           )}
@@ -308,6 +350,14 @@ export const SeasonThresholdMarkers: React.FC<Season25GPMarkersProps & { prospec
   className = '',
   prospect,
 }) => {
+  const isLight = (() => {
+    try {
+      return localStorage.getItem('winkos_theme') !== 'dark';
+    } catch {
+      return true;
+    }
+  })();
+
   let effectiveCount = count;
   if (prospect?.season_breakdown) {
     let breakdown = prospect.season_breakdown;
@@ -330,10 +380,12 @@ export const SeasonThresholdMarkers: React.FC<Season25GPMarkersProps & { prospec
 
   return (
     <div
-      className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-lg bg-slate-900/90 border border-slate-800 ${className}`}
+      className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-lg border ${
+        isLight ? 'bg-white border-slate-200 shadow-sm' : 'bg-slate-900/90 border-slate-800'
+      } ${className}`}
       title={`Seasons with 25+ GP: ${safeCount} of ${max}`}
     >
-      <span className="text-[10px] font-semibold text-slate-400 font-mono tracking-tight">25+ GP:</span>
+      <span className={`text-[10px] font-semibold font-mono tracking-tight ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>25+ GP:</span>
       <div className="flex items-center gap-1">
         {Array.from({ length: max }).map((_, i) => {
           const filled = i + 1 <= safeCount;
@@ -343,11 +395,11 @@ export const SeasonThresholdMarkers: React.FC<Season25GPMarkersProps & { prospec
               className={`h-2 w-2 rounded-full transition-all ${
                 filled
                   ? isReached
-                    ? 'bg-rose-600/80 ring-1 ring-rose-500/40'
+                    ? isLight ? 'bg-rose-600 ring-1 ring-rose-400' : 'bg-rose-600/80 ring-1 ring-rose-500/40'
                     : isWatchlist
-                    ? 'bg-amber-600/80 ring-1 ring-amber-500/40'
-                    : 'bg-slate-500 ring-1 ring-slate-400/40'
-                  : 'bg-slate-700/80 border border-slate-600/60'
+                    ? isLight ? 'bg-amber-600 ring-1 ring-amber-400' : 'bg-amber-600/80 ring-1 ring-amber-500/40'
+                    : isLight ? 'bg-slate-700 ring-1 ring-slate-400' : 'bg-slate-500 ring-1 ring-slate-400/40'
+                  : isLight ? 'bg-slate-200 border border-slate-300' : 'bg-slate-700/80 border border-slate-600/60'
               }`}
             />
           );
@@ -355,7 +407,11 @@ export const SeasonThresholdMarkers: React.FC<Season25GPMarkersProps & { prospec
       </div>
       <span
         className={`text-[10px] font-mono font-bold ${
-          isReached ? 'text-rose-300/90' : isWatchlist ? 'text-amber-300/90' : 'text-slate-400'
+          isReached
+            ? isLight ? 'text-rose-700' : 'text-rose-300/90'
+            : isWatchlist
+            ? isLight ? 'text-amber-700' : 'text-amber-300/90'
+            : isLight ? 'text-slate-700' : 'text-slate-400'
         }`}
       >
         {safeCount}/{max}

@@ -141,6 +141,14 @@ export const PlayerActionOverflowMenu: React.FC<PlayerActionOverflowMenuProps> =
     };
   }, [isOpen, calculatePosition]);
 
+  const isLight = (() => {
+    try {
+      return localStorage.getItem('winkos_theme') !== 'dark';
+    } catch {
+      return true;
+    }
+  })();
+
   const hasRosterActions = isAdmin && Boolean(onTogglePromotion || onToggleProtection);
   const hasManagementActions = Boolean(onSync || (isAdmin && onEdit));
 
@@ -150,8 +158,16 @@ export const PlayerActionOverflowMenu: React.FC<PlayerActionOverflowMenuProps> =
         ref={buttonRef}
         type="button"
         onClick={handleToggle}
-        className={`flex h-8 w-8 items-center justify-center rounded-lg border border-slate-700 bg-slate-800 text-slate-400 hover:text-slate-100 hover:border-slate-600 transition-colors cursor-pointer ${
-          isOpen ? 'bg-slate-700 text-cyan-300 border-cyan-500/50' : ''
+        className={`flex h-8 w-8 items-center justify-center rounded-lg border transition-colors cursor-pointer ${
+          isLight
+            ? 'border-slate-300 bg-slate-100 text-slate-700 hover:text-slate-900 hover:border-slate-400 shadow-sm'
+            : 'border-slate-700 bg-slate-800 text-slate-400 hover:text-slate-100 hover:border-slate-600'
+        } ${
+          isOpen
+            ? isLight
+              ? 'bg-slate-200 text-cyan-800 border-cyan-400'
+              : 'bg-slate-700 text-cyan-300 border-cyan-500/50'
+            : ''
         } ${buttonClassName}`}
         title="More player actions"
         aria-label="More actions"
@@ -172,7 +188,11 @@ export const PlayerActionOverflowMenu: React.FC<PlayerActionOverflowMenuProps> =
               left: `${menuCoords.left}px`,
               zIndex: 9999,
             }}
-            className="w-[216px] rounded-xl border border-slate-700/90 bg-slate-900/95 py-1.5 shadow-2xl backdrop-blur-md ring-1 ring-white/10 animate-in fade-in zoom-in-95 duration-100 select-none"
+            className={`w-[216px] rounded-xl border py-1.5 shadow-2xl backdrop-blur-md animate-in fade-in zoom-in-95 duration-100 select-none ${
+              isLight
+                ? 'border-slate-200 bg-white/95 text-slate-900 ring-1 ring-black/5 shadow-xl'
+                : 'border-slate-700/90 bg-slate-900/95 text-slate-100 ring-1 ring-white/10'
+            }`}
             onClick={(e) => e.stopPropagation()}
           >
             {/* Roster & Eligibility Actions - Admins Only */}
@@ -186,22 +206,30 @@ export const PlayerActionOverflowMenu: React.FC<PlayerActionOverflowMenuProps> =
                 }}
                 className={`flex w-full items-center gap-2.5 px-3 py-2 text-xs font-medium transition-colors cursor-pointer text-left ${
                   isPromoted
-                    ? 'text-slate-300 hover:bg-slate-800 hover:text-amber-300'
+                    ? isLight
+                      ? 'text-slate-800 hover:bg-slate-100 hover:text-amber-700'
+                      : 'text-slate-300 hover:bg-slate-800 hover:text-amber-300'
                     : isMandatoryPromotion
-                    ? 'text-red-300 hover:bg-red-500/15 hover:text-red-200'
+                    ? isLight
+                      ? 'text-red-700 hover:bg-red-50 hover:text-red-800'
+                      : 'text-red-300 hover:bg-red-500/15 hover:text-red-200'
+                    : isLight
+                    ? 'text-slate-800 hover:bg-slate-100 hover:text-emerald-700'
                     : 'text-slate-300 hover:bg-slate-800 hover:text-emerald-300'
                 }`}
               >
                 {isPromoted ? (
                   <>
-                    <ArrowDownCircle className="h-3.5 w-3.5 text-amber-400 shrink-0" />
+                    <ArrowDownCircle className={`h-3.5 w-3.5 shrink-0 ${isLight ? 'text-amber-600' : 'text-amber-400'}`} />
                     <span>Demote to Prospects</span>
                   </>
                 ) : (
                   <>
                     <ArrowUpCircle
                       className={`h-3.5 w-3.5 shrink-0 ${
-                        isMandatoryPromotion ? 'text-red-400' : 'text-emerald-400'
+                        isMandatoryPromotion
+                          ? isLight ? 'text-red-600' : 'text-red-400'
+                          : isLight ? 'text-emerald-600' : 'text-emerald-400'
                       }`}
                     />
                     <span>{isMandatoryPromotion ? 'Promote (Mandatory)' : 'Promote to Roster'}</span>
@@ -217,9 +245,9 @@ export const PlayerActionOverflowMenu: React.FC<PlayerActionOverflowMenuProps> =
                     type="button"
                     disabled
                     title="Ineligible for protection: exceeded maximum NHL games limit"
-                    className="flex w-full items-center gap-2.5 px-3 py-2 text-xs font-medium text-slate-500 transition-colors opacity-60 cursor-not-allowed text-left"
+                    className="flex w-full items-center gap-2.5 px-3 py-2 text-xs font-medium text-slate-400 transition-colors opacity-60 cursor-not-allowed text-left"
                   >
-                    <ShieldAlert className="h-3.5 w-3.5 text-slate-500 shrink-0" />
+                    <ShieldAlert className="h-3.5 w-3.5 text-slate-400 shrink-0" />
                     <span>Protection Ineligible</span>
                   </button>
                 ) : (
@@ -232,18 +260,22 @@ export const PlayerActionOverflowMenu: React.FC<PlayerActionOverflowMenuProps> =
                     }}
                     className={`flex w-full items-center gap-2.5 px-3 py-2 text-xs font-medium transition-colors cursor-pointer text-left ${
                       isProtected
-                        ? 'text-cyan-300 hover:bg-slate-800 hover:text-cyan-200'
+                        ? isLight
+                          ? 'text-cyan-800 hover:bg-slate-100 hover:text-cyan-900'
+                          : 'text-cyan-300 hover:bg-slate-800 hover:text-cyan-200'
+                        : isLight
+                        ? 'text-slate-800 hover:bg-slate-100 hover:text-cyan-800'
                         : 'text-slate-300 hover:bg-slate-800 hover:text-cyan-300'
                     }`}
                   >
                     {isProtected ? (
                       <>
-                        <ShieldOff className="h-3.5 w-3.5 text-cyan-400 shrink-0" />
+                        <ShieldOff className={`h-3.5 w-3.5 shrink-0 ${isLight ? 'text-cyan-600' : 'text-cyan-400'}`} />
                         <span>Remove Protection</span>
                       </>
                     ) : (
                       <>
-                        <ShieldCheck className="h-3.5 w-3.5 text-slate-400 shrink-0" />
+                        <ShieldCheck className={`h-3.5 w-3.5 shrink-0 ${isLight ? 'text-slate-600' : 'text-slate-400'}`} />
                         <span>Protect Player</span>
                       </>
                     )}
@@ -265,18 +297,22 @@ export const PlayerActionOverflowMenu: React.FC<PlayerActionOverflowMenuProps> =
                   }}
                   className={`flex w-full items-center gap-2.5 px-3 py-2 text-xs font-medium transition-colors cursor-pointer text-left ${
                     isTrashed
-                      ? 'text-emerald-300 hover:bg-emerald-950/50 hover:text-emerald-200'
+                      ? isLight
+                        ? 'text-emerald-700 hover:bg-emerald-50 hover:text-emerald-800'
+                        : 'text-emerald-300 hover:bg-emerald-950/50 hover:text-emerald-200'
+                      : isLight
+                      ? 'text-slate-800 hover:bg-slate-100 hover:text-rose-700'
                       : 'text-slate-300 hover:bg-slate-800 hover:text-rose-300'
                   }`}
                 >
                   {isTrashed ? (
                     <>
-                      <RotateCcw className="h-3.5 w-3.5 text-emerald-400 shrink-0" />
+                      <RotateCcw className={`h-3.5 w-3.5 shrink-0 ${isLight ? 'text-emerald-600' : 'text-emerald-400'}`} />
                       <span>Restore from Trashed</span>
                     </>
                   ) : (
                     <>
-                      <Trash2 className="h-3.5 w-3.5 text-rose-400 shrink-0" />
+                      <Trash2 className={`h-3.5 w-3.5 shrink-0 ${isLight ? 'text-rose-600' : 'text-rose-400'}`} />
                       <span>Trash 'em</span>
                     </>
                   )}
@@ -286,7 +322,7 @@ export const PlayerActionOverflowMenu: React.FC<PlayerActionOverflowMenuProps> =
 
             {/* Divider between roster actions and management actions */}
             {hasRosterActions && (hasManagementActions || (isAdmin && onDelete)) && (
-              <div className="my-1 border-t border-slate-800" />
+              <div className={`my-1 border-t ${isLight ? 'border-slate-200' : 'border-slate-800'}`} />
             )}
 
             {/* Commish Feature: Live NHL Sync */}

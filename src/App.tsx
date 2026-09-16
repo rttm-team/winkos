@@ -48,6 +48,23 @@ export default function App() {
   const [isSyncingAll, setIsSyncingAll] = useState<boolean>(false);
   const [globalLastUpdated, setGlobalLastUpdated] = useState<string>('');
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [theme, setTheme] = useState<'light' | 'dark'>(() => {
+    try {
+      return (localStorage.getItem('winkos_theme') as 'light' | 'dark') || 'light';
+    } catch {
+      return 'light';
+    }
+  });
+
+  const toggleTheme = () => {
+    const next = theme === 'light' ? 'dark' : 'light';
+    setTheme(next);
+    try {
+      localStorage.setItem('winkos_theme', next);
+    } catch {}
+  };
+
+  const isLight = theme === 'light';
 
   // 1. Fetch live data & Subscribe
   useEffect(() => {
@@ -934,24 +951,28 @@ export default function App() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-[#0f172a] text-slate-100 font-sans antialiased flex flex-col items-center justify-center space-y-4">
+      <div className={`min-h-screen font-sans antialiased flex flex-col items-center justify-center space-y-4 ${
+        isLight ? 'bg-slate-50 text-slate-900' : 'bg-[#0f172a] text-slate-100'
+      }`}>
         <img
           src="/putin_spin.png"
           alt="Loading..."
           className="h-24 w-24 rounded-full object-cover border-4 border-cyan-500/80 shadow-2xl animate-spin"
           style={{ animationDuration: '3s' }}
         />
-        <p className="text-slate-400 font-semibold tracking-wider text-sm">LOADING WINKO'S HOCKEY POOL...</p>
+        <p className={`font-semibold tracking-wider text-sm ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>LOADING WINKO'S HOCKEY POOL...</p>
       </div>
     );
   }
 
   if (!activeGm) {
     return (
-      <div className="min-h-screen bg-[#0f172a] text-slate-100 font-sans antialiased flex flex-col items-center justify-center space-y-4">
-        <Activity className="h-10 w-10 text-slate-600 mb-2" />
-        <h2 className="text-xl font-bold text-slate-300">No Teams Found</h2>
-        <p className="text-slate-500 max-w-sm text-center">Your Supabase database is connected but no GMs were found in the "gms" table.</p>
+      <div className={`min-h-screen font-sans antialiased flex flex-col items-center justify-center space-y-4 ${
+        isLight ? 'bg-slate-50 text-slate-900' : 'bg-[#0f172a] text-slate-100'
+      }`}>
+        <Activity className={`h-10 w-10 mb-2 ${isLight ? 'text-slate-400' : 'text-slate-600'}`} />
+        <h2 className={`text-xl font-bold ${isLight ? 'text-slate-800' : 'text-slate-300'}`}>No Teams Found</h2>
+        <p className={`max-w-sm text-center ${isLight ? 'text-slate-600' : 'text-slate-500'}`}>Your Supabase database is connected but no GMs were found in the "gms" table.</p>
       </div>
     );
   }
@@ -959,7 +980,9 @@ export default function App() {
   // If navigating to the arcade page, render it directly
   if (view === 'arcade') {
     return (
-      <div className="min-h-screen bg-[#0f172a] text-slate-100 font-sans antialiased selection:bg-cyan-500/30 selection:text-cyan-200">
+      <div className={`min-h-screen font-sans antialiased selection:bg-cyan-500/30 selection:text-cyan-200 ${
+        isLight ? 'bg-slate-50 text-slate-900' : 'bg-[#0f172a] text-slate-100'
+      }`}>
         <Header
           onNavigate={(target) => {
             setView(target);
@@ -967,6 +990,8 @@ export default function App() {
           }}
           onOpenRules={() => setIsRulesModalOpen(true)}
           activeView="arcade"
+          theme={theme}
+          onToggleTheme={toggleTheme}
         />
         <ArcadeComingSoon onBack={() => setView('hub')} />
       </div>
@@ -983,12 +1008,16 @@ export default function App() {
         onAuthenticate={handleAuthenticate}
         onLogout={handleLogout}
         onNavigate={(target: 'prospect-central' | 'prospects' | 'arcade') => setView(target)}
+        theme={theme}
+        onToggleTheme={toggleTheme}
       />
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#0f172a] text-slate-100 font-sans antialiased selection:bg-cyan-500/30 selection:text-cyan-200">
+    <div className={`min-h-screen font-sans antialiased selection:bg-cyan-500/30 selection:text-cyan-200 ${
+      isLight ? 'bg-slate-50 text-slate-900' : 'bg-[#0f172a] text-slate-100'
+    }`}>
       <Header
         onNavigate={(target) => {
           setView(target);
@@ -996,6 +1025,8 @@ export default function App() {
         }}
         onOpenRules={() => setIsRulesModalOpen(true)}
         activeView={view}
+        theme={theme}
+        onToggleTheme={toggleTheme}
       />
 
       {view === 'arcade' && <ArcadeComingSoon onBack={() => setView('hub')} />}
@@ -1004,6 +1035,7 @@ export default function App() {
         <ProspectLanding
           gms={gms}
           isAdmin={isAdmin}
+          theme={theme}
           onSelectGmPool={(gmId) => {
             setSelectedGmId(gmId);
             setPositionFilter('ALL');
@@ -1032,10 +1064,12 @@ export default function App() {
         {/* Action Toolbar above filters */}
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-2">
-            <h2 className="text-xl sm:text-2xl font-black tracking-tight text-slate-100">
+            <h2 className={`text-xl sm:text-2xl font-black tracking-tight ${isLight ? 'text-slate-900' : 'text-slate-100'}`}>
               {activeGm.name}'s Prospect Pool
             </h2>
-            <span className="rounded-full bg-slate-800 px-2.5 py-0.5 text-xs font-semibold text-slate-300 border border-slate-700">
+            <span className={`rounded-full px-2.5 py-0.5 text-xs font-semibold border ${
+              isLight ? 'bg-slate-100 text-slate-700 border-slate-300' : 'bg-slate-800 text-slate-300 border-slate-700'
+            }`}>
               {filteredProspects.length} of {activeGm.prospects.length}
             </span>
           </div>
@@ -1162,16 +1196,20 @@ export default function App() {
         )}
 
         {/* Quick Footer Info / Rule Guide Banner */}
-        <div className="mt-12 rounded-2xl border border-slate-800 bg-[#1e293b]/80 p-5 sm:p-6 text-slate-400 flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div className={`mt-12 rounded-2xl border p-5 sm:p-6 flex flex-col sm:flex-row items-center justify-between gap-4 ${
+          isLight ? 'border-slate-200 bg-white text-slate-700 shadow-md' : 'border-slate-800 bg-[#1e293b]/80 text-slate-400 shadow-xl'
+        }`}>
           <div className="flex items-center gap-3 text-center sm:text-left">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
+            <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border ${
+              isLight ? 'bg-cyan-50 text-cyan-700 border-cyan-200' : 'bg-cyan-500/10 text-cyan-400 border-cyan-500/20'
+            }`}>
               <Shield className="h-5 w-5" />
             </div>
             <div>
-              <div className="text-sm font-bold text-slate-200">
+              <div className={`text-sm font-bold ${isLight ? 'text-slate-900 font-bold' : 'text-slate-200 font-bold'}`}>
                 Winko's Hockey Pool • Prospect Eligibility System
               </div>
-              <div className="text-xs text-slate-400">
+              <div className={`text-xs ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>
                 Skaters: 40 single-season / 65 cumulative GP • Goalies: 20 single-season / 30 cumulative GP
               </div>
             </div>
@@ -1179,9 +1217,13 @@ export default function App() {
 
           <button
             onClick={() => setIsRulesModalOpen(true)}
-            className="flex items-center gap-1.5 rounded-xl border border-slate-700 bg-slate-800 px-4 py-2 text-xs font-semibold text-slate-300 hover:text-cyan-300 hover:border-slate-600 transition-colors shrink-0"
+            className={`flex items-center gap-1.5 rounded-xl border px-4 py-2 text-xs font-semibold transition-colors shrink-0 ${
+              isLight
+                ? 'border-slate-300 bg-slate-50 text-slate-700 hover:text-cyan-700 hover:bg-slate-100'
+                : 'border-slate-700 bg-slate-800 text-slate-300 hover:text-cyan-300 hover:border-slate-600'
+            }`}
           >
-            <Info className="h-3.5 w-3.5 text-cyan-400" />
+            <Info className="h-3.5 w-3.5 text-cyan-600 dark:text-cyan-400" />
             <span>Read League Constitution</span>
           </button>
         </div>

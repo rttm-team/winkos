@@ -50,6 +50,14 @@ export const ProspectListItem: React.FC<ProspectListItemProps> = ({
   onUpdate25PlusSeasons,
   onToggleStatus,
 }) => {
+  const isLight = (() => {
+    try {
+      return localStorage.getItem('winkos_theme') !== 'dark';
+    } catch {
+      return true;
+    }
+  })();
+
   const [imgError, setImgError] = useState(false);
   const ev = evaluateProspect(prospect);
   const isGoalie = prospect.position === 'G';
@@ -110,17 +118,29 @@ export const ProspectListItem: React.FC<ProspectListItemProps> = ({
     <div
       id={`prospect-list-item-${prospect.id}`}
       className={`group rounded-xl border transition-all duration-200 overflow-hidden ${
-        isTrashed
-          ? 'border-slate-800/80 bg-[#151c28]/90 opacity-80 hover:opacity-100 hover:border-slate-700 shadow-sm'
+        isLight
+          ? isTrashed
+            ? 'border-slate-200 bg-slate-100 opacity-70 hover:opacity-100 shadow-sm text-slate-800'
+            : isPromotedAndProtected
+            ? 'border-purple-300 bg-gradient-to-r from-purple-50 to-indigo-50/50 shadow-sm hover:border-purple-400 text-slate-900'
+            : prospect.promoted
+            ? 'border-emerald-300 bg-emerald-50/70 shadow-sm hover:border-emerald-400 text-slate-900'
+            : ev.isMandatoryPromotion
+            ? 'border-rose-300 bg-rose-50/70 shadow-sm hover:border-rose-400 text-slate-900'
+            : ev.isWatchlist
+            ? 'border-amber-300 bg-amber-50/70 shadow-sm hover:border-amber-400 text-slate-900'
+            : 'border-slate-200 bg-white hover:border-slate-300 shadow-sm text-slate-900'
+          : isTrashed
+          ? 'border-slate-800/80 bg-[#151c28]/90 opacity-80 hover:opacity-100 hover:border-slate-700 shadow-sm text-slate-100'
           : isPromotedAndProtected
-          ? 'border-purple-800/50 bg-gradient-to-r from-[#181628] to-[#141524] shadow-sm hover:border-purple-700/60'
+          ? 'border-purple-800/50 bg-gradient-to-r from-[#181628] to-[#141524] shadow-sm hover:border-purple-700/60 text-slate-100'
           : prospect.promoted
-          ? 'border-emerald-800/40 bg-[#182333] shadow-sm hover:border-emerald-700/50'
+          ? 'border-emerald-800/40 bg-[#182333] shadow-sm hover:border-emerald-700/50 text-slate-100'
           : ev.isMandatoryPromotion
-          ? 'border-rose-800/50 bg-[#221a22] shadow-sm hover:border-rose-700/60'
+          ? 'border-rose-800/50 bg-[#221a22] shadow-sm hover:border-rose-700/60 text-slate-100'
           : ev.isWatchlist
-          ? 'border-amber-800/40 bg-[#222128] shadow-sm hover:border-amber-700/50'
-          : 'border-slate-800 bg-[#1e293b]/90 hover:border-slate-700 shadow-sm'
+          ? 'border-amber-800/40 bg-[#222128] shadow-sm hover:border-amber-700/50 text-slate-100'
+          : 'border-slate-800 bg-[#1e293b]/90 hover:border-slate-700 shadow-sm text-slate-100'
       }`}
     >
       {/* Top Accent Stripe */}
@@ -150,11 +170,15 @@ export const ProspectListItem: React.FC<ProspectListItemProps> = ({
             type="button"
             onClick={onToggleExpand}
             aria-expanded={isExpanded}
-            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-slate-800 border border-slate-700 text-slate-400 hover:text-cyan-300 hover:border-slate-600 transition-colors"
+            className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border transition-colors ${
+              isLight
+                ? 'bg-slate-100 border-slate-300 text-slate-700 hover:text-cyan-700 hover:border-slate-400'
+                : 'bg-slate-800 border-slate-700 text-slate-400 hover:text-cyan-300 hover:border-slate-600'
+            }`}
             title={isExpanded ? 'Collapse details' : 'Expand details'}
           >
             {isExpanded ? (
-              <ChevronDown className="h-4 w-4 text-cyan-400" />
+              <ChevronDown className={`h-4 w-4 ${isLight ? 'text-cyan-700' : 'text-cyan-400'}`} />
             ) : (
               <ChevronRight className="h-4 w-4" />
             )}
@@ -202,18 +226,22 @@ export const ProspectListItem: React.FC<ProspectListItemProps> = ({
             <div className="flex items-center gap-2 flex-wrap">
               <span
                 onClick={onToggleExpand}
-                className={`font-bold text-sm sm:text-base text-slate-100 truncate cursor-pointer transition-colors ${
-                  isPromotedAndProtected ? 'hover:text-purple-300' : 'hover:text-cyan-300'
+                className={`font-bold text-sm sm:text-base truncate cursor-pointer transition-colors ${
+                  isLight ? 'text-slate-900' : 'text-slate-100'
+                } ${
+                  isPromotedAndProtected ? (isLight ? 'hover:text-purple-700' : 'hover:text-purple-300') : (isLight ? 'hover:text-cyan-700' : 'hover:text-cyan-300')
                 }`}
               >
                 {prospect.name}
               </span>
 
-              <span className="rounded bg-slate-800 px-1.5 py-0.5 text-[10px] font-extrabold text-cyan-300 border border-slate-700 font-mono shrink-0">
+              <span className={`rounded px-1.5 py-0.5 text-[10px] font-extrabold font-mono shrink-0 border ${
+                isLight ? 'bg-slate-100 text-cyan-800 border-slate-300' : 'bg-slate-800 text-cyan-300 border-slate-700'
+              }`}>
                 {prospect.nhlTeamAbbr}
               </span>
 
-              <span className="text-[11px] text-slate-400 shrink-0">
+              <span className={`text-[11px] shrink-0 ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>
                 {prospect.draftYear} Draft
                 {prospect.age ? ` • Age ${prospect.age}` : ''}
               </span>
@@ -285,13 +313,13 @@ export const ProspectListItem: React.FC<ProspectListItemProps> = ({
         <div className="flex flex-row sm:flex-row items-center gap-3 sm:gap-4 shrink-0 pl-11 lg:pl-0">
           {/* Season GP mini gauge */}
           <div className="w-32 sm:w-36 text-[11px]">
-            <div className="flex justify-between text-slate-400 mb-0.5">
+            <div className={`flex justify-between mb-0.5 ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>
               <span>Season GP</span>
-              <span className="font-mono font-bold text-slate-200">
+              <span className={`font-mono font-bold ${isLight ? 'text-slate-900' : 'text-slate-200'}`}>
                 {safeSeasonGP} / {safeSeasonLimit}
               </span>
             </div>
-            <div className="h-1.5 w-full rounded-full bg-slate-950 overflow-hidden">
+            <div className={`h-1.5 w-full rounded-full overflow-hidden ${isLight ? 'bg-slate-200' : 'bg-slate-950'}`}>
               <div
                 className={`h-full rounded-full ${
                   safeSeasonGP >= safeSeasonLimit
@@ -307,13 +335,13 @@ export const ProspectListItem: React.FC<ProspectListItemProps> = ({
 
           {/* Cumulative GP mini gauge */}
           <div className="w-32 sm:w-36 text-[11px]">
-            <div className="flex justify-between text-slate-400 mb-0.5">
+            <div className={`flex justify-between mb-0.5 ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>
               <span>Career GP</span>
-              <span className="font-mono font-bold text-slate-200">
+              <span className={`font-mono font-bold ${isLight ? 'text-slate-900' : 'text-slate-200'}`}>
                 {safeTotalGP} / {safeCumulativeLimit}
               </span>
             </div>
-            <div className="h-1.5 w-full rounded-full bg-slate-950 overflow-hidden">
+            <div className={`h-1.5 w-full rounded-full overflow-hidden ${isLight ? 'bg-slate-200' : 'bg-slate-950'}`}>
               <div
                 className={`h-full rounded-full ${
                   safeTotalGP >= safeCumulativeLimit
@@ -381,14 +409,16 @@ export const ProspectListItem: React.FC<ProspectListItemProps> = ({
 
       {/* Expanded Subpanel Details */}
       {isExpanded && (
-        <div className="border-t border-slate-800 bg-slate-900/80 p-4 sm:p-5 space-y-4">
+        <div className={`border-t p-4 sm:p-5 space-y-4 ${isLight ? 'border-slate-200 bg-white text-slate-900 shadow-sm' : 'border-slate-800 bg-slate-900/80 text-slate-100'}`}>
           {/* Trashed Prospect Banner */}
           {isTrashed && (
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5 rounded-xl bg-slate-900/90 border border-slate-800 p-3 text-xs text-slate-300">
+            <div className={`flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5 rounded-xl p-3 text-xs border ${
+              isLight ? 'bg-slate-50 border-slate-200 text-slate-800' : 'bg-slate-900/90 border-slate-800 text-slate-300'
+            }`}>
               <div className="flex items-center gap-2">
-                <Trash2 className="h-4 w-4 text-slate-400 shrink-0" />
+                <Trash2 className={`h-4 w-4 shrink-0 ${isLight ? 'text-slate-600' : 'text-slate-400'}`} />
                 <span>
-                  <strong>Trashed Prospect:</strong> Live NHL games tracking is stopped. Player record is safely preserved in database.
+                  <strong className={isLight ? 'text-slate-900' : 'text-slate-100'}>Trashed Prospect:</strong> Live NHL games tracking is stopped. Player record is safely preserved in database.
                 </span>
               </div>
               {onToggleStatus && (
@@ -405,45 +435,47 @@ export const ProspectListItem: React.FC<ProspectListItemProps> = ({
           )}
 
           {/* Top metadata & Sync details bar */}
-          <div className="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-slate-800/80 text-xs">
+          <div className={`flex flex-wrap items-center justify-between gap-2 pb-3 border-b text-xs ${isLight ? 'border-slate-200 text-slate-600' : 'border-slate-800/80 text-slate-400'}`}>
             <div className="flex items-center gap-2 flex-wrap">
               {prospect.nhlPlayerId ? (
-                <span className="font-mono text-[11px] text-slate-300 bg-slate-800/90 px-2 py-0.5 rounded border border-slate-700">
+                <span className={`font-mono text-[11px] px-2 py-0.5 rounded border ${isLight ? 'bg-slate-100 text-slate-700 border-slate-300' : 'bg-slate-800/90 text-slate-300 border-slate-700'}`}>
                   NHL Player ID: #{prospect.nhlPlayerId}
                 </span>
               ) : (
-                <span className="font-mono text-[11px] text-slate-400 bg-slate-800/60 px-2 py-0.5 rounded border border-slate-700/60" title="No official NHL ID assigned (Unlisted)">
+                <span className={`font-mono text-[11px] px-2 py-0.5 rounded border ${isLight ? 'bg-slate-100 text-slate-500 border-slate-300' : 'bg-slate-800/60 text-slate-400 border-slate-700/60'}`} title="No official NHL ID assigned (Unlisted)">
                   No NHL ID
                 </span>
               )}
               {prospect.syncSource && (
-                <span className="text-slate-400">
-                  Source: <strong className="text-slate-300 font-mono">{prospect.syncSource}</strong>
+                <span className={isLight ? 'text-slate-600' : 'text-slate-400'}>
+                  Source: <strong className={`font-mono ${isLight ? 'text-slate-900' : 'text-slate-300'}`}>{prospect.syncSource}</strong>
                 </span>
               )}
             </div>
 
             {prospect.lastSyncedAt && (
-              <div className="flex items-center gap-1 text-[11px] text-slate-400">
+              <div className={`flex items-center gap-1 text-[11px] ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>
                 <Clock className="h-3 w-3 text-slate-500" />
-                <span>Last Updated: <strong className="text-slate-300 font-mono">{prospect.lastSyncedAt}</strong></span>
+                <span>Last Updated: <strong className={`font-mono ${isLight ? 'text-slate-900' : 'text-slate-300'}`}>{prospect.lastSyncedAt}</strong></span>
               </div>
             )}
           </div>
 
           {/* Simulation & GP breakdown box */}
-          <div className="rounded-xl bg-[#1e293b] p-3 sm:p-4 border border-slate-800 flex flex-col md:flex-row items-start md:items-center justify-between gap-3">
+          <div className={`rounded-xl p-3 sm:p-4 border flex flex-col md:flex-row items-start md:items-center justify-between gap-3 ${
+            isLight ? 'bg-white border-slate-200 shadow-sm text-slate-900' : 'bg-[#1e293b] border-slate-800 text-slate-100'
+          }`}>
             <div>
-              <div className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+              <div className={`text-[11px] font-semibold uppercase tracking-wider ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>
                 Total NHL Games Played
               </div>
               <div className="flex items-baseline gap-2 mt-0.5">
-                <span className="text-3xl font-black font-mono text-slate-100">
+                <span className={`text-3xl font-black font-mono ${isLight ? 'text-slate-900' : 'text-slate-100'}`}>
                   {safeTotalGP}
                 </span>
-                <span className="text-xs text-slate-400 font-medium">NHL GP</span>
-                <span className="text-xs text-slate-400 pl-2">
-                  (Season: <strong className="text-slate-200 font-mono">{safeSeasonGP}</strong> + Prior: <strong className="text-slate-200 font-mono">{Number.isFinite(prospect.priorCareerGP) ? Math.max(0, prospect.priorCareerGP) : 0}</strong>)
+                <span className={`text-xs font-medium ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>NHL GP</span>
+                <span className={`text-xs pl-2 ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>
+                  (Season: <strong className={`font-mono ${isLight ? 'text-slate-900' : 'text-slate-200'}`}>{safeSeasonGP}</strong> + Prior: <strong className={`font-mono ${isLight ? 'text-slate-900' : 'text-slate-200'}`}>{Number.isFinite(prospect.priorCareerGP) ? Math.max(0, prospect.priorCareerGP) : 0}</strong>)
                 </span>
               </div>
             </div>
@@ -453,17 +485,17 @@ export const ProspectListItem: React.FC<ProspectListItemProps> = ({
           {/* Rule Threshold Progress Bars */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Rule 1: Single-Season GP */}
-            <div className="rounded-xl bg-[#1e293b] p-3.5 border border-slate-800">
+            <div className={`rounded-xl p-3.5 border ${isLight ? 'bg-white border-slate-200 shadow-sm text-slate-900' : 'bg-[#1e293b] border-slate-800 text-slate-100'}`}>
               <div className="flex items-center justify-between text-xs mb-1.5">
-                <span className="text-slate-300 font-medium">
-                  Single-Season GP <span className="text-[10px] text-slate-400">({isGoalie ? 'Limit: 20' : 'Limit: 40'})</span>
+                <span className={`font-medium ${isLight ? 'text-slate-800' : 'text-slate-300'}`}>
+                  Single-Season GP <span className={`text-[10px] ${isLight ? 'text-slate-500' : 'text-slate-400'}`}>({isGoalie ? 'Limit: 20' : 'Limit: 40'})</span>
                 </span>
-                <span className="font-mono text-xs font-bold text-slate-200">
+                <span className={`font-mono text-xs font-bold ${isLight ? 'text-slate-900' : 'text-slate-200'}`}>
                   {safeSeasonGP} / {safeSeasonLimit} GP
                 </span>
               </div>
 
-              <div className="relative h-2.5 w-full overflow-hidden rounded-full bg-slate-950">
+              <div className={`relative h-2.5 w-full overflow-hidden rounded-full ${isLight ? 'bg-slate-200' : 'bg-slate-950'}`}>
                 <div
                   className={`h-full rounded-full transition-all duration-300 ${
                     safeSeasonGP >= safeSeasonLimit
@@ -477,35 +509,35 @@ export const ProspectListItem: React.FC<ProspectListItemProps> = ({
               </div>
 
               <div className="mt-1.5 flex items-center justify-between text-[11px]">
-                <span className="text-slate-400">
+                <span className={isLight ? 'text-slate-600' : 'text-slate-400'}>
                   {safeSeasonGP >= safeSeasonLimit ? (
-                    <span className="font-semibold text-rose-300/90 flex items-center gap-1">
-                      <AlertCircle className="h-3 w-3 inline text-rose-400/80" /> Threshold Reached
+                    <span className={`font-semibold flex items-center gap-1 ${isLight ? 'text-rose-700' : 'text-rose-300/90'}`}>
+                      <AlertCircle className="h-3 w-3 inline text-rose-500" /> Threshold Reached
                     </span>
                   ) : safeSeasonRemaining <= 5 && safeSeasonRemaining > 0 ? (
-                    <span className="font-semibold text-amber-300/90 flex items-center gap-1">
-                      <Sparkles className="h-3 w-3 inline text-amber-400/80" /> {safeSeasonRemaining} GP until promotion
+                    <span className={`font-semibold flex items-center gap-1 ${isLight ? 'text-amber-700' : 'text-amber-300/90'}`}>
+                      <Sparkles className="h-3 w-3 inline text-amber-500" /> {safeSeasonRemaining} GP until promotion
                     </span>
                   ) : (
                     <span>{safeSeasonRemaining} games cushion</span>
                   )}
                 </span>
-                <span className="font-mono font-semibold text-slate-400">{safeSeasonProgress}%</span>
+                <span className={`font-mono font-semibold ${isLight ? 'text-slate-700' : 'text-slate-400'}`}>{safeSeasonProgress}%</span>
               </div>
             </div>
 
             {/* Rule 2: Cumulative Career GP */}
-            <div className="rounded-xl bg-[#1e293b] p-3.5 border border-slate-800">
+            <div className={`rounded-xl p-3.5 border ${isLight ? 'bg-white border-slate-200 shadow-sm text-slate-900' : 'bg-[#1e293b] border-slate-800 text-slate-100'}`}>
               <div className="flex items-center justify-between text-xs mb-1.5">
-                <span className="text-slate-300 font-medium">
-                  Cumulative Career GP <span className="text-[10px] text-slate-400">({isGoalie ? 'Limit: 30' : 'Limit: 65'})</span>
+                <span className={`font-medium ${isLight ? 'text-slate-800' : 'text-slate-300'}`}>
+                  Cumulative Career GP <span className={`text-[10px] ${isLight ? 'text-slate-500' : 'text-slate-400'}`}>({isGoalie ? 'Limit: 30' : 'Limit: 65'})</span>
                 </span>
-                <span className="font-mono text-xs font-bold text-slate-200">
+                <span className={`font-mono text-xs font-bold ${isLight ? 'text-slate-900' : 'text-slate-200'}`}>
                   {safeTotalGP} / {safeCumulativeLimit} GP
                 </span>
               </div>
 
-              <div className="relative h-2.5 w-full overflow-hidden rounded-full bg-slate-950">
+              <div className={`relative h-2.5 w-full overflow-hidden rounded-full ${isLight ? 'bg-slate-200' : 'bg-slate-950'}`}>
                 <div
                   className={`h-full rounded-full transition-all duration-300 ${
                     safeTotalGP >= safeCumulativeLimit
@@ -519,39 +551,39 @@ export const ProspectListItem: React.FC<ProspectListItemProps> = ({
               </div>
 
               <div className="mt-1.5 flex items-center justify-between text-[11px]">
-                <span className="text-slate-400">
+                <span className={isLight ? 'text-slate-600' : 'text-slate-400'}>
                   {safeTotalGP >= safeCumulativeLimit ? (
-                    <span className="font-semibold text-rose-300/90 flex items-center gap-1">
-                      <AlertCircle className="h-3 w-3 inline text-rose-400/80" /> Threshold Reached
+                    <span className={`font-semibold flex items-center gap-1 ${isLight ? 'text-rose-700' : 'text-rose-300/90'}`}>
+                      <AlertCircle className="h-3 w-3 inline text-rose-500" /> Threshold Reached
                     </span>
                   ) : safeCumulativeRemaining <= 5 && safeCumulativeRemaining > 0 ? (
-                    <span className="font-semibold text-amber-300/90 flex items-center gap-1">
-                      <Sparkles className="h-3 w-3 inline text-amber-400/80" /> {safeCumulativeRemaining} GP until promotion
+                    <span className={`font-semibold flex items-center gap-1 ${isLight ? 'text-amber-700' : 'text-amber-300/90'}`}>
+                      <Sparkles className="h-3 w-3 inline text-amber-500" /> {safeCumulativeRemaining} GP until promotion
                     </span>
                   ) : (
                     <span>{safeCumulativeRemaining} games cushion</span>
                   )}
                 </span>
-                <span className="font-mono font-semibold text-slate-400">{safeCumulativeProgress}%</span>
+                <span className={`font-mono font-semibold ${isLight ? 'text-slate-700' : 'text-slate-400'}`}>{safeCumulativeProgress}%</span>
               </div>
             </div>
           </div>
 
           {/* Rule 3: Protection Cap Limit */}
           {(prospect.promoted || safeTotalGP >= (isGoalie ? 20 : 40)) && (
-            <div className="rounded-xl bg-[#1e293b] p-3.5 border border-slate-800">
-              <div className="flex items-center justify-between text-xs mb-1.5">
-                <span className="text-slate-400 font-medium flex items-center gap-1">
-                  <ShieldCheck className="h-3.5 w-3.5 text-slate-400" />
+            <div className={`rounded-xl p-3.5 border ${isLight ? 'bg-white border-slate-200 shadow-sm text-slate-900' : 'bg-[#1e293b] border-slate-800 text-slate-100'}`}>
+              <div className={`flex items-center justify-between text-xs mb-1.5 ${isLight ? 'text-slate-800' : 'text-slate-300'}`}>
+                <span className={`font-medium flex items-center gap-1 ${isLight ? 'text-slate-700' : 'text-slate-400'}`}>
+                  <ShieldCheck className={`h-3.5 w-3.5 ${isLight ? 'text-slate-600' : 'text-slate-400'}`} />
                   <span>Protection Cap Limit</span>
-                  <span className="text-[10px] text-slate-400">({isGoalie ? 'Goalie: 140 GP' : 'Skater: 200 GP'})</span>
+                  <span className={`text-[10px] ${isLight ? 'text-slate-500' : 'text-slate-400'}`}>({isGoalie ? 'Goalie: 140 GP' : 'Skater: 200 GP'})</span>
                 </span>
-                <span className="font-mono text-xs font-bold text-slate-300">
+                <span className={`font-mono text-xs font-bold ${isLight ? 'text-slate-900' : 'text-slate-300'}`}>
                   {safeTotalGP} / {safeProtectionLimit} GP
                 </span>
               </div>
 
-              <div className="relative h-1.5 w-full overflow-hidden rounded-full bg-slate-950">
+              <div className={`relative h-1.5 w-full overflow-hidden rounded-full ${isLight ? 'bg-slate-200' : 'bg-slate-950'}`}>
                 <div
                   className={`h-full rounded-full transition-all duration-300 ${
                     safeTotalGP >= safeProtectionLimit ? 'bg-rose-600/75' : 'bg-slate-600/70'
@@ -560,10 +592,10 @@ export const ProspectListItem: React.FC<ProspectListItemProps> = ({
                 />
               </div>
 
-              <div className="mt-1 flex items-center justify-between text-[10px] text-slate-400">
+              <div className={`mt-1 flex items-center justify-between text-[10px] ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>
                 <span>
                   {safeTotalGP >= safeProtectionLimit ? (
-                    <span className="text-rose-300/90 font-semibold">Ineligible: exceeded {safeProtectionLimit} GP limit</span>
+                    <span className={`font-semibold ${isLight ? 'text-rose-700' : 'text-rose-300/90'}`}>Ineligible: exceeded {safeProtectionLimit} GP limit</span>
                   ) : (
                     <span>{safeProtectionRemaining} GP cushion remaining</span>
                   )}
@@ -574,7 +606,7 @@ export const ProspectListItem: React.FC<ProspectListItemProps> = ({
           )}
 
           {/* Rule 4: 4 Seasons of 25+ GP Milestone Tracker */}
-          <div className="rounded-xl bg-[#1e293b] p-3.5 border border-slate-800">
+          <div className={`rounded-xl p-3.5 border ${isLight ? 'bg-white border-slate-200 shadow-sm' : 'bg-[#1e293b] border-slate-800'}`}>
             <Season25GPMarkers
               count={ev.seasons25PlusCount}
               max={ev.seasons25PlusTarget}
@@ -590,7 +622,7 @@ export const ProspectListItem: React.FC<ProspectListItemProps> = ({
 
           {/* Notes or Status Report */}
           {prospect.statusNotes && (
-            <p className="text-xs text-slate-400 italic bg-slate-800/40 p-2.5 rounded-lg border border-slate-800">
+            <p className={`text-xs italic p-2.5 rounded-lg border ${isLight ? 'text-slate-700 bg-slate-50 border-slate-200' : 'text-slate-400 bg-slate-800/40 border-slate-800'}`}>
               "{prospect.statusNotes}"
             </p>
           )}
