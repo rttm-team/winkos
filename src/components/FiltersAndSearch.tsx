@@ -188,7 +188,7 @@ export const FiltersAndSearch: React.FC<FiltersAndSearchProps> = ({
               onChange={(e) => setSortOption(e.target.value as ProspectSortOption)}
               className="rounded-xl border border-slate-700/80 bg-slate-800/90 px-3 py-2 text-xs font-bold text-slate-100 focus:border-cyan-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/20 cursor-pointer"
             >
-              <option value="urgency">Urgency / Action Priority</option>
+              <option value="urgency">Default Priority (Promoted+Protected → Needs Promotion → Watchlist → Promoted → In Development)</option>
               <option value="seasonGPDesc">Season GP (High to Low)</option>
               <option value="careerGPDesc">Career GP (High to Low)</option>
               <option value="seasons25PlusDesc">25+ GP Seasons (3/4 → 0/4)</option>

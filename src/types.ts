@@ -355,53 +355,81 @@ export function sortProspects(
     const statusB = (b.status === 'trashed' || b.status === 'inactive') ? 1 : 0;
     if (statusA !== statusB) return statusA - statusB;
 
-    // Promoted prospects should always be moved to the bottom of the active list
-    const promA = a.promoted ? 1 : 0;
-    const promB = b.promoted ? 1 : 0;
-    if (promA !== promB) return promA - promB;
-
-    // Protected prospects should come first among unpromoted
-    if (a.isProtected !== b.isProtected) {
-      return a.isProtected ? -1 : 1;
-    }
-
     switch (sortOption) {
       case 'urgency': {
         const evA = evaluateProspect(a, rules);
         const evB = evaluateProspect(b, rules);
 
-        const getUrgencyScore = (p: Prospect, ev: ProspectEvaluation): number => {
-          if (ev.isMandatoryPromotion) return 1;
-          if (ev.isWatchlist) return 2;
-          if (ev.isProtectionWatchlist) return 3;
-          if (!p.promoted) return 4;
+        const isProtectedA = Boolean(a.isProtected || (a as any).protected);
+        const isProtectedB = Boolean(b.isProtected || (b as any).protected);
+
+        // Requested order:
+        // 1. Promoted + Protected at the top
+        // 2. Needs to be promoted next (the red one)
+        // 3. Watchlist prospects next
+        // 4. then Promoted
+        // 5. then In Development
+        const getUrgencyTier = (p: Prospect, ev: ProspectEvaluation, isProt: boolean): number => {
+          // Tier 1: Promoted + Protected at the top
+          if (p.promoted && isProt) return 1;
+
+          // Tier 2: Needs to be promoted next (the red one)
+          if (!p.promoted && ev.isMandatoryPromotion) return 2;
+
+          // Tier 3: Watchlist prospects next
+          if (!p.promoted && (ev.isWatchlist || ev.isProtectionWatchlist)) return 3;
+
+          // Tier 4: then Promoted (unprotected)
+          if (p.promoted) return 4;
+
+          // Tier 5: then In Development
           return 5;
         };
 
-        const scoreA = getUrgencyScore(a, evA);
-        const scoreB = getUrgencyScore(b, evB);
+        const tierA = getUrgencyTier(a, evA, isProtectedA);
+        const tierB = getUrgencyTier(b, evB, isProtectedB);
 
-        if (scoreA !== scoreB) {
-          return scoreA - scoreB;
+        if (tierA !== tierB) {
+          return tierA - tierB;
         }
 
         // Intra-tier tiebreakers:
-        if (scoreA === 1) {
-          // Mandatory promotion: highest total GP first
-          return evB.totalGP - evA.totalGP;
+        // Tier 1 (Promoted + Protected): highest total GP first, then alphabetical
+        if (tierA === 1) {
+          if (evB.totalGP !== evA.totalGP) return evB.totalGP - evA.totalGP;
+          return a.name.localeCompare(b.name);
         }
-        if (scoreA === 2) {
-          // Watchlist: lowest games remaining to promotion
+
+        // Tier 2 (Needs to be promoted - red badge): highest total GP first, then alphabetical
+        if (tierA === 2) {
+          if (evB.totalGP !== evA.totalGP) return evB.totalGP - evA.totalGP;
+          return a.name.localeCompare(b.name);
+        }
+
+        // Tier 3 (Watchlist): lowest games remaining to promotion/threshold, then highest total GP, then alphabetical
+        if (tierA === 3) {
           const remA = Math.min(evA.seasonGamesRemaining || 99, evA.cumulativeGamesRemaining || 99);
           const remB = Math.min(evB.seasonGamesRemaining || 99, evB.cumulativeGamesRemaining || 99);
           if (remA !== remB) return remA - remB;
-          return evB.totalGP - evA.totalGP;
+          if (evB.totalGP !== evA.totalGP) return evB.totalGP - evA.totalGP;
+          return a.name.localeCompare(b.name);
         }
-        if (scoreA === 3) {
-          // Protection watchlist: lowest protection games remaining
-          return evA.protectionGamesRemaining - evB.protectionGamesRemaining;
+
+        // Tier 4 (Promoted, unprotected): highest total GP first, then alphabetical
+        if (tierA === 4) {
+          if (evB.totalGP !== evA.totalGP) return evB.totalGP - evA.totalGP;
+          return a.name.localeCompare(b.name);
         }
-        // Developing or Promoted: higher total GP first, then alphabetical
+
+        // Tier 5 (In Development): protected first (if unpromoted protected), then highest total GP, then alphabetical
+        if (tierA === 5) {
+          if (isProtectedA !== isProtectedB) {
+            return isProtectedA ? -1 : 1;
+          }
+          if (evB.totalGP !== evA.totalGP) return evB.totalGP - evA.totalGP;
+          return a.name.localeCompare(b.name);
+        }
+
         if (evB.totalGP !== evA.totalGP) {
           return evB.totalGP - evA.totalGP;
         }
