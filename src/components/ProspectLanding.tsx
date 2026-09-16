@@ -74,8 +74,12 @@ export const ProspectLanding: React.FC<ProspectLandingProps> = ({
       ]);
 
       if (lbRes.data) {
+        // Only include genuine GMs (filter out any null or invalid gm_name entries)
+        const validLb = lbRes.data.filter(
+          (row) => row.gm_name && row.gm_name.trim() !== '' && row.gm_name !== '[DELETED]'
+        );
         // Sort by hit_rate_pct desc, then total_nhl_games_produced desc
-        const sortedLb = [...lbRes.data].sort((a, b) => {
+        const sortedLb = [...validLb].sort((a, b) => {
           if (b.hit_rate_pct !== a.hit_rate_pct) {
             return b.hit_rate_pct - a.hit_rate_pct;
           }
@@ -85,7 +89,10 @@ export const ProspectLanding: React.FC<ProspectLandingProps> = ({
       }
 
       if (prosRes.data) {
-        setProspects(prosRes.data as ProspectRow[]);
+        const activePros = (prosRes.data as ProspectRow[]).filter(
+          (p) => p.player_name !== '[DELETED]' && p.gm_name && p.gm_name.trim() !== ''
+        );
+        setProspects(activePros);
       }
     } catch (err) {
       console.error('Error loading Prospect Central data:', err);
