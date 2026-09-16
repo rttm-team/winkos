@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Position, Prospect } from '../types';
-import { X, Edit3, ExternalLink } from 'lucide-react';
+import { Position, Prospect, GeneralManager } from '../types';
+import { X, Edit3, ExternalLink, UserCheck } from 'lucide-react';
 
 interface EditProspectModalProps {
   isOpen: boolean;
@@ -8,7 +8,23 @@ interface EditProspectModalProps {
   onEdit: (prospectId: string, updatedData: Partial<Prospect>) => void;
   prospect: Prospect | null;
   gmName: string;
+  availableGms?: GeneralManager[];
 }
+
+const DEFAULT_GM_LIST: { id: string; name: string; teamName?: string }[] = [
+  { id: '1', name: 'Adam', teamName: "Adam's Team" },
+  { id: '2', name: 'Allan', teamName: "Allan's Team" },
+  { id: '3', name: 'Dan', teamName: "Dan's Team" },
+  { id: '4', name: 'Evan', teamName: "Evan's Team" },
+  { id: '5', name: 'Glenn', teamName: "Glenn's Team" },
+  { id: '6', name: 'Jean', teamName: "Jean's Team" },
+  { id: '7', name: 'Jon', teamName: "Jon's Team" },
+  { id: '8', name: 'Kyle', teamName: "Kyle's Team" },
+  { id: '9', name: 'Mike', teamName: "Mike's Team" },
+  { id: '10', name: 'Nate', teamName: "Nate's Team" },
+  { id: '11', name: 'Sam', teamName: "Sam's Team" },
+  { id: '12', name: 'Seb', teamName: "Seb's Team" },
+];
 
 export const EditProspectModal: React.FC<EditProspectModalProps> = ({
   isOpen,
@@ -16,7 +32,9 @@ export const EditProspectModal: React.FC<EditProspectModalProps> = ({
   onEdit,
   prospect,
   gmName,
+  availableGms,
 }) => {
+  const [selectedGm, setSelectedGm] = useState(gmName);
   const [name, setName] = useState('');
   const [nhlId, setNhlId] = useState('');
   const [position, setPosition] = useState<Position>('F');
@@ -32,8 +50,11 @@ export const EditProspectModal: React.FC<EditProspectModalProps> = ({
   const [isTrashed, setIsTrashed] = useState<boolean>(false);
   const [statusNotes, setStatusNotes] = useState('');
 
+  const gmList = (availableGms && availableGms.length > 0) ? availableGms : DEFAULT_GM_LIST;
+
   useEffect(() => {
     if (prospect) {
+      setSelectedGm(prospect.gm_name || prospect.gmName || gmName || 'Adam');
       setName(prospect.name || '');
       const rawNhlId = prospect.nhl_id ?? prospect.nhlId ?? prospect.nhlPlayerId ?? '';
       setNhlId(rawNhlId ? String(rawNhlId) : '');
@@ -50,7 +71,7 @@ export const EditProspectModal: React.FC<EditProspectModalProps> = ({
       setIsTrashed(prospect.status === 'trashed' || prospect.status === 'inactive');
       setStatusNotes(prospect.statusNotes || '');
     }
-  }, [prospect]);
+  }, [prospect, gmName]);
 
   if (!isOpen || !prospect) return null;
 
@@ -75,6 +96,8 @@ export const EditProspectModal: React.FC<EditProspectModalProps> = ({
       nhl_id: nhlId.trim() || undefined,
       nhlId: nhlId.trim() || undefined,
       nhlPlayerId: nhlId.trim() || undefined,
+      gm_name: selectedGm,
+      gmName: selectedGm,
     });
 
     onClose();
@@ -95,7 +118,7 @@ export const EditProspectModal: React.FC<EditProspectModalProps> = ({
                 Edit Prospect Details
               </h2>
               <p className="text-xs text-slate-400">
-                Updating record for GM {gmName}
+                Editing record for GM <span className="text-amber-300 font-semibold">{selectedGm || gmName}</span>
               </p>
             </div>
           </div>
@@ -108,6 +131,33 @@ export const EditProspectModal: React.FC<EditProspectModalProps> = ({
         </div>
 
         <form onSubmit={handleSubmit} className="mt-5 space-y-4 text-xs">
+          {/* GM Selection Dropdown */}
+          <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-3.5 space-y-1.5">
+            <div className="flex items-center justify-between">
+              <label className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-amber-300">
+                <UserCheck className="h-4 w-4 text-amber-400" />
+                <span>Assigned General Manager (GM)</span>
+              </label>
+              <span className="text-[10px] font-mono text-amber-400 font-semibold">
+                DB column: gm_name
+              </span>
+            </div>
+            <select
+              value={selectedGm}
+              onChange={(e) => setSelectedGm(e.target.value)}
+              className="w-full rounded-xl border border-amber-500/40 bg-slate-800 px-3 py-2 text-sm font-semibold text-white focus:border-amber-400 focus:outline-none focus:ring-1 focus:ring-amber-400 cursor-pointer"
+            >
+              {gmList.map((gm) => (
+                <option key={gm.id || gm.name} value={gm.name}>
+                  {gm.name} {gm.teamName ? `— ${gm.teamName}` : ''}
+                </option>
+              ))}
+            </select>
+            <p className="text-[11px] text-amber-200/70">
+              Change the GM to transfer this prospect to another team. Saving will update the Supabase <code className="font-mono text-amber-300">gm_name</code> column and immediately move the player.
+            </p>
+          </div>
+
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="block font-semibold text-slate-300 mb-1">Player Name *</label>

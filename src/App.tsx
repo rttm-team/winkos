@@ -526,23 +526,64 @@ export default function App() {
       return;
     }
     const isTrashed = updatedData.status === 'trashed' || updatedData.status === 'inactive';
+    const newGmName = updatedData.gm_name || updatedData.gmName;
 
     // 1. Optimistically update local React state FIRST for instant UI and counter response across all GMs
-    setGms((prevGms) =>
-      prevGms.map((gm) => ({
+    setGms((prevGms) => {
+      // Find current prospect to determine if GM changed
+      let oldGmName = '';
+      let targetProspect: Prospect | undefined;
+
+      for (const gm of prevGms) {
+        const found = gm.prospects.find((p) => p.id === prospectId);
+        if (found) {
+          oldGmName = gm.name;
+          targetProspect = found;
+          break;
+        }
+      }
+
+      if (!targetProspect) return prevGms;
+
+      const newTotalGames = updatedData.totalGames !== undefined ? updatedData.totalGames : targetProspect.totalGames;
+      const updatedProspect: Prospect = {
+        ...targetProspect,
+        ...updatedData,
+        totalGames: newTotalGames,
+        total_games: newTotalGames,
+        gm_name: newGmName || targetProspect.gm_name || oldGmName,
+        gmName: newGmName || targetProspect.gmName || oldGmName,
+      };
+
+      // Check if GM changed
+      const gmChanged = Boolean(newGmName && oldGmName && newGmName.trim().toLowerCase() !== oldGmName.trim().toLowerCase());
+
+      if (gmChanged) {
+        return prevGms.map((gm) => {
+          // Remove from old GM
+          if (gm.name.trim().toLowerCase() === oldGmName.trim().toLowerCase()) {
+            return {
+              ...gm,
+              prospects: gm.prospects.filter((p) => p.id !== prospectId),
+            };
+          }
+          // Add to new GM
+          if (gm.name.trim().toLowerCase() === newGmName!.trim().toLowerCase()) {
+            return {
+              ...gm,
+              prospects: [...gm.prospects.filter((p) => p.id !== prospectId), updatedProspect],
+            };
+          }
+          return gm;
+        });
+      }
+
+      // Same GM: update in place
+      return prevGms.map((gm) => ({
         ...gm,
-        prospects: gm.prospects.map((p) => {
-          if (p.id !== prospectId) return p;
-          const newTotalGames = updatedData.totalGames !== undefined ? updatedData.totalGames : p.totalGames;
-          return {
-            ...p,
-            ...updatedData,
-            totalGames: newTotalGames,
-            total_games: newTotalGames,
-          };
-        }),
-      }))
-    );
+        prospects: gm.prospects.map((p) => (p.id === prospectId ? updatedProspect : p)),
+      }));
+    });
 
     // Save status to local storage cache for instant persistence
     if (updatedData.status !== undefined) {
@@ -559,6 +600,9 @@ export default function App() {
       const dbId = !isNaN(Number(prospectId)) ? Number(prospectId) : prospectId;
       const updatePayload: Record<string, any> = {};
 
+      if (newGmName) {
+        updatePayload.gm_name = newGmName;
+      }
       if (updatedData.name !== undefined) {
         updatePayload.player_name = updatedData.name;
       }
@@ -1103,6 +1147,7 @@ export default function App() {
         onEdit={handleEditProspect}
         prospect={editingProspect}
         gmName={activeGm.name}
+        availableGms={gms}
       />
     </div>
   );

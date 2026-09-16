@@ -53,6 +53,8 @@ export interface Prospect {
   age?: number;
   photoUrl?: string;
   statusNotes?: string;
+  gm_name?: string;
+  gmName?: string;
   nhlPlayerId?: string;
   nhl_id?: string | number;
   nhlId?: string | number;
@@ -352,7 +354,12 @@ export function sortProspects(
     const statusB = (b.status === 'trashed' || b.status === 'inactive') ? 1 : 0;
     if (statusA !== statusB) return statusA - statusB;
 
-    // Protected prospects should come first
+    // Promoted prospects should always be moved to the bottom of the active list
+    const promA = a.promoted ? 1 : 0;
+    const promB = b.promoted ? 1 : 0;
+    if (promA !== promB) return promA - promB;
+
+    // Protected prospects should come first among unpromoted
     if (a.isProtected !== b.isProtected) {
       return a.isProtected ? -1 : 1;
     }

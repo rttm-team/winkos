@@ -67,6 +67,8 @@ export const mapProspectRow = (row: any): Prospect => {
     age: row.age,
     photoUrl: row.photo_url ?? row.photoUrl,
     statusNotes: row.status_notes ?? row.statusNotes,
+    gm_name: row.gm_name ?? row.gmName ?? row.gm,
+    gmName: row.gm_name ?? row.gmName ?? row.gm,
     status: (row.is_inactive === true || row.inactive === true || row.status === 'trashed' || row.status === 'inactive' || getStoredProspectStatus(String(row.id), name) === 'trashed') ? 'trashed' : 'active',
     nhl_id: row.nhl_id != null ? String(row.nhl_id) : undefined,
     nhlId: row.nhl_id != null ? String(row.nhl_id) : (row.nhlPlayerId != null ? String(row.nhlPlayerId) : undefined),
