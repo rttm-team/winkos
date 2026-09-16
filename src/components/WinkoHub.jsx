@@ -189,6 +189,7 @@ export default function WinkoHub({
             isArcadeComingSoon={isArcadeComingSoon}
             onPick={(gm) => setPinTarget(gm)}
             onNavigate={onNavigate}
+            isLight={isLight}
           />
         ) : (
           /* ===================== UNLOCKED / AUTHENTICATED ===================== */
@@ -197,6 +198,7 @@ export default function WinkoHub({
             leaderboard={leaderboard}
             isArcadeComingSoon={isArcadeComingSoon}
             onNavigate={onNavigate}
+            isLight={isLight}
           />
         )}
       </div>
@@ -219,19 +221,23 @@ export default function WinkoHub({
 
 /* ---------------------------- Locked view ---------------------------- */
 
-function LockedView({ gms, leaderboard, isArcadeComingSoon, onPick, onNavigate }) {
+function LockedView({ gms, leaderboard, isArcadeComingSoon, onPick, onNavigate, isLight }) {
   return (
     <>
       {/* Hero */}
       <div className="py-8 text-center sm:py-12">
-        <span className="inline-flex items-center gap-2 rounded-full border border-sky-500/30 bg-sky-500/10 px-3 py-1 text-xs font-bold uppercase tracking-[0.2em] text-sky-300">
+        <span className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-bold uppercase tracking-[0.2em] ${
+          isLight ? 'border-sky-300 bg-sky-50 text-sky-700' : 'border-sky-500/30 bg-sky-500/10 text-sky-300'
+        }`}>
           <LockKeyhole className="h-3.5 w-3.5" />
           Secure GM Access
         </span>
-        <h2 className="mx-auto mt-4 max-w-2xl text-3xl font-black leading-tight text-white sm:text-4xl">
+        <h2 className={`mx-auto mt-4 max-w-2xl text-3xl font-black leading-tight sm:text-4xl ${
+          isLight ? 'text-slate-900' : 'text-white'
+        }`}>
           Welcome to Winko&apos;s Hockey Pool
         </h2>
-        <p className="mx-auto mt-3 max-w-xl text-slate-400">
+        <p className={`mx-auto mt-3 max-w-xl ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>
           Select your team and enter your 4-digit PIN to manage your roster and
           stack Winkoins.
         </p>
@@ -239,12 +245,12 @@ function LockedView({ gms, leaderboard, isArcadeComingSoon, onPick, onNavigate }
 
       {/* Team selector */}
       <section>
-        <div className="mb-4 flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-slate-400">
-          <Users className="h-4 w-4 text-sky-400" />
+        <div className={`mb-4 flex items-center gap-2 text-sm font-semibold uppercase tracking-wide ${isLight ? 'text-slate-700' : 'text-slate-400'}`}>
+          <Users className="h-4 w-4 text-sky-500 dark:text-sky-400" />
           Choose Your Team
         </div>
         {gms.length === 0 ? (
-          <div className="rounded-2xl border border-dashed border-slate-800 px-4 py-10 text-center text-sm text-slate-500">
+          <div className={`rounded-2xl border border-dashed px-4 py-10 text-center text-sm ${isLight ? 'border-slate-300 bg-white text-slate-600 shadow-sm' : 'border-slate-800 text-slate-500'}`}>
             No GMs found yet.
           </div>
         ) : (
@@ -254,22 +260,28 @@ function LockedView({ gms, leaderboard, isArcadeComingSoon, onPick, onNavigate }
                 <button
                   type="button"
                   onClick={() => onPick(gm)}
-                  className="group flex w-full items-center justify-between gap-2 rounded-xl border border-slate-800 bg-slate-900/60 px-4 py-3 text-left transition hover:border-sky-500/50 hover:bg-slate-900"
+                  className={`group flex w-full items-center justify-between gap-2 rounded-xl border px-4 py-3 text-left transition cursor-pointer ${
+                    isLight
+                      ? 'border-slate-200 bg-white shadow-sm hover:border-sky-400 hover:bg-sky-50/50'
+                      : 'border-slate-800 bg-slate-900/60 hover:border-sky-500/50 hover:bg-slate-900'
+                  }`}
                 >
                   <span className="flex min-w-0 items-center gap-2">
-                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-sky-500/15 text-xs font-black text-sky-300">
+                    <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-black ${
+                      isLight ? 'bg-sky-100 text-sky-700' : 'bg-sky-500/15 text-sky-300'
+                    }`}>
                       {initialsFor(gm.name)}
                     </span>
                     <span className="min-w-0">
-                      <span className="flex items-center gap-1 truncate font-semibold text-slate-100">
+                      <span className={`flex items-center gap-1 truncate font-semibold ${isLight ? 'text-slate-900' : 'text-slate-100'}`}>
                         {gm.name}
                         {gm.is_commish && (
-                          <Crown className="h-3.5 w-3.5 shrink-0 text-amber-400" />
+                          <Crown className="h-3.5 w-3.5 shrink-0 text-amber-500 dark:text-amber-400" />
                         )}
                       </span>
                     </span>
                   </span>
-                  <Lock className="h-4 w-4 shrink-0 text-slate-500 transition group-hover:text-sky-300" />
+                  <Lock className={`h-4 w-4 shrink-0 transition ${isLight ? 'text-slate-400 group-hover:text-sky-600' : 'text-slate-500 group-hover:text-sky-300'}`} />
                 </button>
               </li>
             ))}
@@ -284,6 +296,7 @@ function LockedView({ gms, leaderboard, isArcadeComingSoon, onPick, onNavigate }
           subtitle="Roster Management & Live NHL Rule Tracking"
           icon={ShieldCheck}
           accent="sky"
+          isLight={isLight}
         />
         <LockedTile
           title="Winko's Arcade"
@@ -291,6 +304,7 @@ function LockedView({ gms, leaderboard, isArcadeComingSoon, onPick, onNavigate }
           icon={Dice5}
           accent="amber"
           badge={isArcadeComingSoon ? 'Coming Soon' : null}
+          isLight={isLight}
         >
           <div className="mt-4">
             <button
@@ -302,11 +316,11 @@ function LockedView({ gms, leaderboard, isArcadeComingSoon, onPick, onNavigate }
               <span>Arcade Coming Soon — View Info</span>
               <ArrowRight className="h-3.5 w-3.5 ml-1" />
             </button>
-            <div className="mb-3 flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-slate-400">
-              <Trophy className="h-4 w-4 text-amber-400" />
+            <div className={`mb-3 flex items-center gap-2 text-xs font-semibold uppercase tracking-wide ${isLight ? 'text-slate-700' : 'text-slate-400'}`}>
+              <Trophy className="h-4 w-4 text-amber-500 dark:text-amber-400" />
               Top GMs
             </div>
-            <LeaderboardList leaderboard={leaderboard} />
+            <LeaderboardList leaderboard={leaderboard} isLight={isLight} />
           </div>
         </LockedTile>
       </main>
@@ -314,37 +328,45 @@ function LockedView({ gms, leaderboard, isArcadeComingSoon, onPick, onNavigate }
   );
 }
 
-function LockedTile({ title, subtitle, icon: Icon, accent = 'sky', badge, children }) {
-  const ring = accent === 'amber' ? 'ring-amber-400/30 bg-amber-400/15 text-amber-300' : 'ring-sky-500/30 bg-sky-500/15 text-sky-300';
+function LockedTile({ title, subtitle, icon: Icon, accent = 'sky', badge, children, isLight }) {
+  const ring = accent === 'amber'
+    ? isLight ? 'ring-amber-300 bg-amber-50 text-amber-700' : 'ring-amber-400/30 bg-amber-400/15 text-amber-300'
+    : isLight ? 'ring-sky-300 bg-sky-50 text-sky-700' : 'ring-sky-500/30 bg-sky-500/15 text-sky-300';
   return (
-    <section className="relative flex flex-col overflow-hidden rounded-2xl border border-slate-800 bg-slate-900/60 p-6">
+    <section className={`relative flex flex-col overflow-hidden rounded-2xl border p-6 ${
+      isLight ? 'border-slate-200 bg-white shadow-sm' : 'border-slate-800 bg-slate-900/60'
+    }`}>
       <div className="flex items-start gap-4">
         <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl ring-1 ${ring}`}>
           <Icon className="h-6 w-6" />
         </div>
         <div>
-          <h3 className="flex items-center gap-2 text-lg font-bold text-white">
+          <h3 className={`flex items-center gap-2 text-lg font-bold ${isLight ? 'text-slate-900' : 'text-white'}`}>
             {title}
             {badge && (
-              <span className="inline-flex items-center gap-1 rounded-md border border-amber-400/30 bg-amber-400/10 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-amber-300">
+              <span className={`inline-flex items-center gap-1 rounded-md border px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide ${
+                isLight ? 'border-amber-300 bg-amber-50 text-amber-700' : 'border-amber-400/30 bg-amber-400/10 text-amber-300'
+              }`}>
                 <Sparkles className="h-3 w-3" />
                 {badge}
               </span>
             )}
           </h3>
-          <p className="text-sm text-slate-400">{subtitle}</p>
+          <p className={`text-sm ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>{subtitle}</p>
         </div>
       </div>
 
       {children}
 
       {/* Lock overlay */}
-      <div className="mt-6 flex flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-slate-700 bg-slate-950/50 px-4 py-8 text-center">
-        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-slate-800 text-slate-400">
+      <div className={`mt-6 flex flex-col items-center justify-center gap-2 rounded-xl border border-dashed px-4 py-8 text-center ${
+        isLight ? 'border-slate-300 bg-slate-50 text-slate-700' : 'border-slate-700 bg-slate-950/50 text-slate-300'
+      }`}>
+        <div className={`flex h-10 w-10 items-center justify-center rounded-full ${isLight ? 'bg-slate-200 text-slate-600' : 'bg-slate-800 text-slate-400'}`}>
           <Lock className="h-5 w-5" />
         </div>
-        <p className="text-sm font-semibold text-slate-300">Select Team &amp; Enter PIN</p>
-        <p className="text-xs text-slate-500">Unlock the hub to access this section.</p>
+        <p className={`text-sm font-semibold ${isLight ? 'text-slate-800' : 'text-slate-300'}`}>Select Team &amp; Enter PIN</p>
+        <p className={`text-xs ${isLight ? 'text-slate-500' : 'text-slate-500'}`}>Unlock the hub to access this section.</p>
       </div>
     </section>
   );
@@ -352,7 +374,7 @@ function LockedTile({ title, subtitle, icon: Icon, accent = 'sky', badge, childr
 
 /* ---------------------------- Unlocked view ---------------------------- */
 
-function UnlockedView({ activeGm, leaderboard, isArcadeComingSoon, onNavigate }) {
+function UnlockedView({ activeGm, leaderboard, isArcadeComingSoon, onNavigate, isLight }) {
   const firstName = activeGm?.name ? activeGm.name.split(' ')[0] : '';
   
   const stats = useMemo(() => {
@@ -402,13 +424,13 @@ function UnlockedView({ activeGm, leaderboard, isArcadeComingSoon, onNavigate })
     <>
       {/* Hero */}
       <div className="py-8 sm:py-10">
-        <p className="text-sm font-semibold uppercase tracking-[0.2em] text-sky-400">
+        <p className={`text-sm font-semibold uppercase tracking-[0.2em] ${isLight ? 'text-sky-700' : 'text-sky-400'}`}>
           Welcome back{firstName ? `, ${firstName}` : ''}
         </p>
-        <h2 className="mt-2 max-w-2xl text-3xl font-black leading-tight text-white sm:text-4xl">
+        <h2 className={`mt-2 max-w-2xl text-3xl font-black leading-tight sm:text-4xl ${isLight ? 'text-slate-900' : 'text-white'}`}>
           Run your roster. Rack up Winkoins.
         </h2>
-        <p className="mt-2 max-w-xl text-slate-400">
+        <p className={`mt-2 max-w-xl ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>
           Track live NHL promotions and jump into the daily arcade — all from one
           command center.
         </p>
@@ -417,16 +439,22 @@ function UnlockedView({ activeGm, leaderboard, isArcadeComingSoon, onNavigate })
       {/* Feature cards */}
       <main className="grid flex-1 grid-cols-1 gap-6 pb-10 lg:grid-cols-2">
         {/* CARD 1 — Prospect Central */}
-        <section className="group relative flex flex-col overflow-hidden rounded-2xl border border-slate-800 bg-slate-900/60 p-6 transition hover:border-sky-500/50 hover:bg-slate-900">
+        <section className={`group relative flex flex-col overflow-hidden rounded-2xl border p-6 transition ${
+          isLight
+            ? 'border-slate-200 bg-white shadow-sm hover:border-sky-300 hover:shadow-md'
+            : 'border-slate-800 bg-slate-900/60 hover:border-sky-500/50 hover:bg-slate-900'
+        }`}>
           <div className="absolute -right-16 -top-16 h-40 w-40 rounded-full bg-sky-500/10 blur-2xl transition group-hover:bg-sky-500/20" />
 
           <div className="relative flex items-start gap-4">
-            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-sky-500/15 text-sky-300 ring-1 ring-sky-500/30">
+            <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl ring-1 ${
+              isLight ? 'bg-sky-50 text-sky-700 ring-sky-300' : 'bg-sky-500/15 text-sky-300 ring-sky-500/30'
+            }`}>
               <ShieldCheck className="h-6 w-6" />
             </div>
             <div>
-              <h3 className="text-lg font-bold text-white">Prospect Central</h3>
-              <p className="text-sm text-slate-400">
+              <h3 className={`text-lg font-bold ${isLight ? 'text-slate-900' : 'text-white'}`}>Prospect Central</h3>
+              <p className={`text-sm ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>
                 Roster Management &amp; Live NHL Rule Tracking
               </p>
             </div>
@@ -438,19 +466,21 @@ function UnlockedView({ activeGm, leaderboard, isArcadeComingSoon, onNavigate })
               value={stats.skaterPercent}
               accent="sky"
               caption={stats.skaterCaption}
+              isLight={isLight}
             />
             <ProgressRow
               label="Goalie Promotions"
               value={stats.goaliePercent}
               accent="amber"
               caption={stats.goalieCaption}
+              isLight={isLight}
             />
           </div>
 
           <ul className="relative mt-6 flex flex-wrap gap-2">
-            <FeatureChip icon={Search} label="Search prospects" />
-            <FeatureChip icon={Filter} label="Position filters" />
-            <FeatureChip icon={RadioTower} label="Real-time sync" />
+            <FeatureChip icon={Search} label="Search prospects" isLight={isLight} />
+            <FeatureChip icon={Filter} label="Position filters" isLight={isLight} />
+            <FeatureChip icon={RadioTower} label="Real-time sync" isLight={isLight} />
           </ul>
 
           <div className="relative mt-auto pt-6 flex flex-col sm:flex-row gap-2.5">
@@ -465,7 +495,11 @@ function UnlockedView({ activeGm, leaderboard, isArcadeComingSoon, onNavigate })
             <button
               type="button"
               onClick={() => onNavigate('prospects')}
-              className="flex items-center justify-center gap-2 rounded-xl border border-slate-700 bg-slate-800 px-4 py-3 text-sm font-bold text-slate-200 transition hover:bg-slate-700 hover:text-white cursor-pointer"
+              className={`flex items-center justify-center gap-2 rounded-xl border px-4 py-3 text-sm font-bold transition cursor-pointer ${
+                isLight
+                  ? 'border-slate-300 bg-slate-100 text-slate-800 hover:bg-slate-200'
+                  : 'border-slate-700 bg-slate-800 text-slate-200 hover:bg-slate-700 hover:text-white'
+              }`}
             >
               <span>My Prospect Pool</span>
             </button>
@@ -473,16 +507,22 @@ function UnlockedView({ activeGm, leaderboard, isArcadeComingSoon, onNavigate })
         </section>
 
         {/* CARD 2 — Winko's Arcade */}
-        <section className="group relative flex flex-col overflow-hidden rounded-2xl border border-slate-800 bg-slate-900/60 p-6 transition hover:border-amber-400/50 hover:bg-slate-900">
+        <section className={`group relative flex flex-col overflow-hidden rounded-2xl border p-6 transition ${
+          isLight
+            ? 'border-slate-200 bg-white shadow-sm hover:border-amber-300 hover:shadow-md'
+            : 'border-slate-800 bg-slate-900/60 hover:border-amber-400/50 hover:bg-slate-900'
+        }`}>
           <div className="absolute -right-16 -top-16 h-40 w-40 rounded-full bg-amber-500/10 blur-2xl transition group-hover:bg-amber-500/20" />
 
           <div className="relative flex items-start gap-4">
-            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-amber-400/15 text-amber-300 ring-1 ring-amber-400/30">
+            <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl ring-1 ${
+              isLight ? 'bg-amber-50 text-amber-700 ring-amber-300' : 'bg-amber-400/15 text-amber-300 ring-amber-400/30'
+            }`}>
               <Dice5 className="h-6 w-6" />
             </div>
             <div>
-              <h3 className="text-lg font-bold text-white">Winko&apos;s Arcade</h3>
-              <p className="text-sm text-slate-400">
+              <h3 className={`text-lg font-bold ${isLight ? 'text-slate-900' : 'text-white'}`}>Winko&apos;s Arcade</h3>
+              <p className={`text-sm ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>
                 Daily Mini-Games &amp; Winkoins Leaderboard
               </p>
             </div>
@@ -490,7 +530,9 @@ function UnlockedView({ activeGm, leaderboard, isArcadeComingSoon, onNavigate })
 
           <div className="relative mt-6">
             {isArcadeComingSoon ? (
-              <span className="inline-flex items-center gap-2 rounded-lg border border-amber-400/30 bg-amber-400/10 px-3 py-1.5 text-sm font-bold text-amber-300">
+              <span className={`inline-flex items-center gap-2 rounded-lg border px-3 py-1.5 text-sm font-bold ${
+                isLight ? 'border-amber-300 bg-amber-50 text-amber-800' : 'border-amber-400/30 bg-amber-400/10 text-amber-300'
+              }`}>
                 <Sparkles className="h-4 w-4" />
                 Coming Soon
               </span>
@@ -507,23 +549,23 @@ function UnlockedView({ activeGm, leaderboard, isArcadeComingSoon, onNavigate })
           </div>
 
           <div className="relative mt-6">
-            <div className="mb-3 flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-slate-400">
-              <Trophy className="h-4 w-4 text-amber-400" />
+            <div className={`mb-3 flex items-center gap-2 text-xs font-semibold uppercase tracking-wide ${isLight ? 'text-slate-700' : 'text-slate-400'}`}>
+              <Trophy className="h-4 w-4 text-amber-500 dark:text-amber-400" />
               Top GMs
             </div>
-            <LeaderboardList leaderboard={leaderboard} />
+            <LeaderboardList leaderboard={leaderboard} isLight={isLight} />
           </div>
 
           <div className="relative mt-auto pt-6">
             <button
               type="button"
               onClick={() => onNavigate('arcade')}
-              className="flex w-full items-center justify-center gap-2 rounded-xl bg-amber-500 px-4 py-3 text-sm font-bold text-slate-950 transition hover:bg-amber-400 cursor-pointer"
+              className="flex w-full items-center justify-center gap-2 rounded-xl bg-amber-500 px-4 py-3 text-sm font-bold text-slate-950 transition hover:bg-amber-400 cursor-pointer shadow-md"
             >
               <Dice5 className="h-4 w-4" />
               <span>Arcade Coming Soon — View Info</span>
             </button>
-            <p className="mt-2 text-center text-xs text-slate-500">
+            <p className={`mt-2 text-center text-xs ${isLight ? 'text-slate-500' : 'text-slate-500'}`}>
               Daily mini-games drop soon — keep stacking Winkoins.
             </p>
           </div>
@@ -550,59 +592,80 @@ function PinModal({ gm, onClose, onSubmit }) {
     const onKey = (e) => {
       if (e.key === 'Escape') onClose();
     };
-    document.addEventListener('keydown', onKey);
-    return () => document.removeEventListener('keydown', onKey);
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
   }, [onClose]);
 
-  const triggerError = (msg) => {
-    setError(msg);
-    setShake(true);
-    setTimeout(() => setShake(false), 400);
+  const setDigit = (idx, val) => {
+    const clean = val.replace(/\D/g, '').slice(-1);
+    const next = [...digits];
+    next[idx] = clean;
+    setDigits(next);
+    if (clean && idx < 3) {
+      inputsRef.current[idx + 1]?.focus();
+    }
+    if (next.every((d) => d !== '')) {
+      const pinStr = next.join('');
+      const ok = onSubmit(pinStr);
+      if (!ok) {
+        setError('Incorrect PIN. Try again.');
+        setShake(true);
+        setTimeout(() => setShake(false), 500);
+        setDigits(['', '', '', '']);
+        inputsRef.current[0]?.focus();
+      }
+    }
   };
 
-  const setDigit = (i, val) => {
-    const v = val.replace(/\D/g, '').slice(-1);
-    setDigits((prev) => {
-      const next = [...prev];
-      next[i] = v;
-      return next;
-    });
-    if (error) setError('');
-    if (v && i < 3) inputsRef.current[i + 1]?.focus();
-  };
-
-  const handleKeyDown = (i, e) => {
-    if (e.key === 'Backspace' && !digits[i] && i > 0) {
-      inputsRef.current[i - 1]?.focus();
-    } else if (e.key === 'ArrowLeft' && i > 0) {
-      inputsRef.current[i - 1]?.focus();
-    } else if (e.key === 'ArrowRight' && i < 3) {
-      inputsRef.current[i + 1]?.focus();
-    } else if (e.key === 'Enter') {
-      submit();
+  const handleKeyDown = (idx, e) => {
+    if (e.key === 'Backspace') {
+      e.preventDefault();
+      const next = [...digits];
+      if (next[idx]) {
+        next[idx] = '';
+        setDigits(next);
+      } else if (idx > 0) {
+        next[idx - 1] = '';
+        setDigits(next);
+        inputsRef.current[idx - 1]?.focus();
+      }
     }
   };
 
   const handlePaste = (e) => {
-    const text = (e.clipboardData.getData('text') || '').replace(/\D/g, '').slice(0, 4);
-    if (!text) return;
     e.preventDefault();
+    const text = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 4);
+    if (!text) return;
     const next = ['', '', '', ''];
-    for (let i = 0; i < text.length; i += 1) next[i] = text[i];
+    for (let i = 0; i < text.length; i++) {
+      next[i] = text[i];
+    }
     setDigits(next);
-    if (error) setError('');
-    inputsRef.current[Math.min(text.length, 3)]?.focus();
+    if (text.length === 4) {
+      const ok = onSubmit(text);
+      if (!ok) {
+        setError('Incorrect PIN. Try again.');
+        setShake(true);
+        setTimeout(() => setShake(false), 500);
+        setDigits(['', '', '', '']);
+        inputsRef.current[0]?.focus();
+      }
+    } else {
+      inputsRef.current[Math.min(text.length, 3)]?.focus();
+    }
   };
 
   const submit = () => {
-    const pin = digits.join('');
-    if (pin.length < 4) {
-      triggerError('Enter all 4 digits.');
+    const pinStr = digits.join('');
+    if (pinStr.length < 4) {
+      setError('Please enter a 4-digit PIN.');
       return;
     }
-    const ok = onSubmit(pin);
+    const ok = onSubmit(pinStr);
     if (!ok) {
-      triggerError('Invalid PIN — try again');
+      setError('Incorrect PIN. Try again.');
+      setShake(true);
+      setTimeout(() => setShake(false), 500);
       setDigits(['', '', '', '']);
       inputsRef.current[0]?.focus();
     }
@@ -610,43 +673,32 @@ function PinModal({ gm, onClose, onSubmit }) {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="pin-modal-title"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 p-4 backdrop-blur-sm"
+      onClick={onClose}
     >
-      {/* Backdrop */}
-      <button
-        type="button"
-        aria-label="Close PIN entry"
-        onClick={onClose}
-        className="absolute inset-0 cursor-default bg-slate-950/80 backdrop-blur-sm"
-      />
-
-      {/* Card */}
       <div
-        className={`relative w-full max-w-sm rounded-2xl border border-slate-700 bg-slate-900 p-6 shadow-2xl shadow-black/60 ${
+        className={`w-full max-w-md rounded-2xl border bg-slate-900 p-6 text-slate-100 shadow-2xl transition-all ${
           shake ? 'animate-[shake_0.4s_ease-in-out]' : ''
         }`}
+        onClick={(e) => e.stopPropagation()}
       >
-        <button
-          type="button"
-          onClick={onClose}
-          className="absolute right-4 top-4 rounded-lg p-1 text-slate-500 transition hover:bg-slate-800 hover:text-slate-200"
-          aria-label="Close"
-        >
-          <X className="h-4 w-4" />
-        </button>
-
-        <div className="flex flex-col items-center text-center">
-          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-sky-400 to-sky-600 text-lg font-black text-slate-950 shadow-lg shadow-sky-500/25">
-            {initialsFor(gm.name)}
+        <div className="flex items-start justify-between">
+          <div className="flex items-center gap-3">
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-sky-500/15 text-sky-400 ring-1 ring-sky-500/30">
+              <Lock className="h-6 w-6" />
+            </div>
+            <div>
+              <h3 className="text-lg font-bold text-white">Enter GM PIN</h3>
+              <p className="text-sm text-slate-400">{gm.name}</p>
+            </div>
           </div>
-          <h3 id="pin-modal-title" className="mt-4 flex items-center gap-1.5 text-lg font-bold text-white">
-            {gm.name}
-            {gm.is_commish && <Crown className="h-4 w-4 text-amber-400" />}
-          </h3>
-          <p className="mt-1 text-sm text-slate-400">Enter your 4-digit PIN</p>
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-lg p-1 text-slate-400 transition hover:bg-slate-800 hover:text-white"
+          >
+            <X className="h-5 w-5" />
+          </button>
         </div>
 
         {/* Digit inputs */}
@@ -681,7 +733,7 @@ function PinModal({ gm, onClose, onSubmit }) {
         <button
           type="button"
           onClick={submit}
-          className="mt-6 flex w-full items-center justify-center gap-2 rounded-xl bg-sky-500 px-4 py-3 text-sm font-bold text-slate-950 transition hover:bg-sky-400"
+          className="mt-6 flex w-full items-center justify-center gap-2 rounded-xl bg-sky-500 px-4 py-3 text-sm font-bold text-slate-950 transition hover:bg-sky-400 cursor-pointer"
         >
           <ShieldCheck className="h-4 w-4" />
           Unlock Hub
@@ -689,7 +741,7 @@ function PinModal({ gm, onClose, onSubmit }) {
         <button
           type="button"
           onClick={onClose}
-          className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-xl px-4 py-2 text-xs font-semibold text-slate-400 transition hover:text-slate-200"
+          className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-xl px-4 py-2 text-xs font-semibold text-slate-400 transition hover:text-slate-200 cursor-pointer"
         >
           <Delete className="h-3.5 w-3.5" />
           Cancel
@@ -711,10 +763,10 @@ function PinModal({ gm, onClose, onSubmit }) {
 
 /* ---------------------------- Shared sub-components ---------------------------- */
 
-function LeaderboardList({ leaderboard }) {
+function LeaderboardList({ leaderboard, isLight }) {
   if (!leaderboard || leaderboard.length === 0) {
     return (
-      <div className="rounded-lg border border-dashed border-slate-800 px-3 py-4 text-center text-sm text-slate-500">
+      <div className={`rounded-lg border border-dashed px-3 py-4 text-center text-sm ${isLight ? 'border-slate-300 text-slate-500' : 'border-slate-800 text-slate-500'}`}>
         No GMs on the board yet.
       </div>
     );
@@ -724,13 +776,15 @@ function LeaderboardList({ leaderboard }) {
       {leaderboard.map((gm, index) => (
         <li
           key={gm.id}
-          className="flex items-center justify-between rounded-lg border border-slate-800 bg-slate-950/40 px-3 py-2"
+          className={`flex items-center justify-between rounded-lg border px-3 py-2 ${
+            isLight ? 'border-slate-200 bg-slate-50 shadow-sm' : 'border-slate-800 bg-slate-950/40'
+          }`}
         >
           <span className="flex items-center gap-3">
             <RankBadge rank={index + 1} />
-            <span className="text-sm font-semibold text-slate-200">{gm.name}</span>
+            <span className={`text-sm font-semibold ${isLight ? 'text-slate-900' : 'text-slate-200'}`}>{gm.name}</span>
           </span>
-          <span className="flex items-center gap-1 text-sm font-bold text-amber-300">
+          <span className={`flex items-center gap-1 text-sm font-bold ${isLight ? 'text-amber-700' : 'text-amber-300'}`}>
             <Coins className="h-3.5 w-3.5" />
             {(gm.winkoins ?? 0).toLocaleString()}
           </span>
@@ -740,33 +794,37 @@ function LeaderboardList({ leaderboard }) {
   );
 }
 
-function ProgressRow({ label, value, caption, accent = 'sky' }) {
-  const barColor = accent === 'amber' ? 'bg-amber-400' : 'bg-sky-500';
+function ProgressRow({ label, value, caption, accent = 'sky', isLight }) {
+  const barColor = accent === 'amber' ? 'bg-amber-500 dark:bg-amber-400' : 'bg-sky-500 dark:bg-sky-400';
   return (
     <div>
       <div className="mb-1.5 flex items-center justify-between text-sm">
-        <span className="font-semibold text-slate-200">{label}</span>
-        <span className="font-bold text-slate-400">{value}%</span>
+        <span className={`font-semibold ${isLight ? 'text-slate-800' : 'text-slate-200'}`}>{label}</span>
+        <span className={`font-bold ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>{value}%</span>
       </div>
-      <div className="h-2 w-full overflow-hidden rounded-full bg-slate-800">
+      <div className={`h-2 w-full overflow-hidden rounded-full ${isLight ? 'bg-slate-200' : 'bg-slate-800'}`}>
         <div
           className={`h-full rounded-full ${barColor} transition-all`}
           style={{ width: `${Math.min(100, Math.max(0, value))}%` }}
         />
       </div>
-      {caption && <p className="mt-1 text-xs text-slate-500">{caption}</p>}
+      {caption && <p className={`mt-1 text-xs ${isLight ? 'text-slate-500' : 'text-slate-500'}`}>{caption}</p>}
     </div>
   );
 }
 
-function FeatureChip({ icon: Icon, label }) {
+function FeatureChip({ icon: Icon, label, isLight }) {
   return (
-    <li className="flex items-center gap-1.5 rounded-lg border border-slate-800 bg-slate-950/40 px-2.5 py-1.5 text-xs font-medium text-slate-300">
-      <Icon className="h-3.5 w-3.5 text-sky-400" />
+    <li className={`flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs font-medium ${
+      isLight ? 'border-slate-200 bg-slate-50 text-slate-700' : 'border-slate-800 bg-slate-950/40 text-slate-300'
+    }`}>
+      <Icon className={`h-3.5 w-3.5 ${isLight ? 'text-sky-600' : 'text-sky-400'}`} />
       {label}
     </li>
   );
 }
+
+
 
 function RankBadge({ rank }) {
   const styles = {
