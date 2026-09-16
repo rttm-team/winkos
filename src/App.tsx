@@ -19,7 +19,7 @@ import { PositionSection } from './components/PositionSection';
 import { RulesModal } from './components/RulesModal';
 import { AddProspectModal } from './components/AddProspectModal';
 import { EditProspectModal } from './components/EditProspectModal';
-import ArcadeComingSoon from './components/ArcadeComingSoon';
+import WinkosChallenges from './components/WinkosChallenges';
 import { ProspectLanding } from './components/ProspectLanding';
 import { syncProspectWithNhlApi, setStored25PlusSeasons } from './services/nhlApi';
 import { supabase, fetchLeagueData, mapProspectRow, addDeletedProspectId } from './lib/supabase';
@@ -992,8 +992,9 @@ export default function App() {
           activeView="arcade"
           theme={theme}
           onToggleTheme={toggleTheme}
+          activeGm={authedGm}
         />
-        <ArcadeComingSoon onBack={() => setView('hub')} />
+        <WinkosChallenges gmName={authedGm?.name || ''} theme={theme} />
       </div>
     );
   }
@@ -1027,9 +1028,8 @@ export default function App() {
         activeView={view}
         theme={theme}
         onToggleTheme={toggleTheme}
+        activeGm={authedGm}
       />
-
-      {view === 'arcade' && <ArcadeComingSoon onBack={() => setView('hub')} />}
 
       {view === 'prospect-central' && (
         <ProspectLanding
@@ -1062,11 +1062,11 @@ export default function App() {
 
           <main className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
         {/* Action Toolbar above filters */}
-        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3 border-b pb-6 dark:border-slate-800/80 border-slate-200">
           <div className="flex items-center gap-2">
-            <h2 className={`text-xl sm:text-2xl font-black tracking-tight ${isLight ? 'text-slate-900' : 'text-slate-100'}`}>
+            <h1 className={`text-4xl sm:text-5xl font-black tracking-tight ${isLight ? 'text-slate-900' : 'text-slate-100'}`}>
               {activeGm.name}'s Prospect Pool
-            </h2>
+            </h1>
             <span className={`rounded-full px-2.5 py-0.5 text-xs font-semibold border ${
               isLight ? 'bg-slate-100 text-slate-700 border-slate-300' : 'bg-slate-800 text-slate-300 border-slate-700'
             }`}>

@@ -289,13 +289,6 @@ export const ProspectLanding: React.FC<ProspectLandingProps> = ({
     <div className={`min-h-screen font-sans antialiased selection:bg-cyan-500/30 selection:text-cyan-200 ${
       isLight ? 'bg-slate-50 text-slate-900' : 'bg-[#0f172a] text-slate-100'
     }`}>
-      {/* Background ambient lighting */}
-      <div className="pointer-events-none fixed inset-0 overflow-hidden">
-        <div className="absolute -top-40 -left-40 h-96 w-96 rounded-full bg-cyan-500/10 blur-3xl" />
-        <div className="absolute top-1/3 -right-40 h-96 w-96 rounded-full bg-blue-600/10 blur-3xl" />
-        <div className="absolute -bottom-40 left-1/4 h-96 w-96 rounded-full bg-amber-500/10 blur-3xl" />
-      </div>
-
       <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-8">
         {/* ========================================================================= */}
         {/* 1. TOP HEADER & CONTROL BAR */}
@@ -304,11 +297,7 @@ export const ProspectLanding: React.FC<ProspectLandingProps> = ({
           isLight ? 'border-slate-200' : 'border-slate-800/80'
         }`}>
           <div>
-            <div className="inline-flex items-center gap-2 rounded-full border border-cyan-500/30 bg-cyan-500/10 px-3 py-1 text-xs font-bold uppercase tracking-wider text-cyan-600 dark:text-cyan-300 mb-2">
-              <Sparkles className="h-3.5 w-3.5 text-cyan-500 dark:text-cyan-400" />
-              <span>Prospect Central Hub</span>
-            </div>
-            <h1 className={`text-2xl sm:text-3xl font-black tracking-tight flex items-center gap-3 ${
+            <h1 className={`text-4xl sm:text-5xl font-black tracking-tight flex items-center gap-3 ${
               isLight ? 'text-slate-900' : 'text-white'
             }`}>
               <span>Winko's Draft &amp; Prospect HQ</span>
@@ -485,7 +474,7 @@ export const ProspectLanding: React.FC<ProspectLandingProps> = ({
             <div>
               <div className="flex items-center gap-2">
                 <Trophy className="h-5 w-5 text-amber-600 dark:text-amber-400" />
-                <h2 className={`text-lg sm:text-xl font-black tracking-tight ${isLight ? 'text-slate-900' : 'text-white'}`}>
+                <h2 className={`text-2xl sm:text-3xl font-black tracking-tight ${isLight ? 'text-slate-900' : 'text-white'}`}>
                   GM Drafting Leaderboard
                 </h2>
               </div>
@@ -695,7 +684,7 @@ export const ProspectLanding: React.FC<ProspectLandingProps> = ({
         <section className="space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
             <div>
-              <h2 className={`text-xl font-black tracking-tight flex items-center gap-2 ${isLight ? 'text-slate-900' : 'text-white'}`}>
+              <h2 className={`text-3xl font-black tracking-tight flex items-center gap-2 ${isLight ? 'text-slate-900' : 'text-white'}`}>
                 <span>Promotion Watchlist</span>
                 {selectedGmFilter !== 'ALL' && (
                   <span className={`text-xs font-semibold px-2 py-0.5 rounded-full border ${

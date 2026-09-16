@@ -226,7 +226,7 @@ export const FiltersAndSearch: React.FC<FiltersAndSearchProps> = ({
                 isLight ? 'border-slate-300 bg-slate-50 text-slate-900' : 'border-slate-700/80 bg-slate-800/90 text-slate-100'
               }`}
             >
-              <option value="urgency">Default Priority (Promoted+Protected → Needs Promotion → Watchlist → Promoted → In Development)</option>
+              <option value="urgency">All</option>
               <option value="seasonGPDesc">Season GP (High to Low)</option>
               <option value="careerGPDesc">Career GP (High to Low)</option>
               <option value="seasons25PlusDesc">25+ GP Seasons (3/4 → 0/4)</option>

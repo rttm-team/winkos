@@ -12,9 +12,10 @@ import {
 interface HeaderProps {
   onNavigate: (view: 'hub' | 'prospect-central' | 'prospects' | 'arcade') => void;
   onOpenRules: () => void;
-  activeView: 'hub' | 'prospect-central' | 'prospects' | 'arcade';
+  activeView: 'hub' | 'prospect-central' | 'prospects' | 'arcade' | string;
   theme: 'light' | 'dark';
   onToggleTheme: () => void;
+  activeGm?: any;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -23,6 +24,7 @@ export const Header: React.FC<HeaderProps> = ({
   activeView,
   theme,
   onToggleTheme,
+  activeGm,
 }) => {
   const isLight = theme === 'light';
 
@@ -55,9 +57,16 @@ export const Header: React.FC<HeaderProps> = ({
               <NavItem icon={Home} label="Hub" onClick={() => onNavigate('hub')} active={activeView === 'hub'} theme={theme} />
               <NavItem icon={LayoutGrid} label="Prospect Central" onClick={() => onNavigate('prospect-central')} active={activeView === 'prospect-central'} theme={theme} />
               <NavItem icon={Users} label="GM Pools" onClick={() => onNavigate('prospects')} active={activeView === 'prospects'} theme={theme} />
-              <NavItem icon={Dice5} label="Arcade" onClick={() => onNavigate('arcade')} active={activeView === 'arcade'} theme={theme} />
+              <NavItem icon={Dice5} label="Challenges" onClick={() => onNavigate('arcade')} active={activeView === 'arcade'} theme={theme} />
               <NavItem icon={Info} label="Rules" onClick={onOpenRules} active={false} theme={theme} />
             </nav>
+            
+            {activeGm && activeGm.winkoins !== undefined && (
+              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-600 dark:text-amber-400 font-bold text-sm ml-2 hidden sm:flex">
+                <span>🪙</span>
+                <span>{(activeGm.winkoins || 0).toLocaleString()} WK</span>
+              </div>
+            )}
 
             <button
               onClick={onToggleTheme}

@@ -97,7 +97,7 @@ export default function WinkoHub({
               <HockeyMark className="h-7 w-7 text-slate-950" />
             </div>
             <div>
-              <h1 className={`text-xl font-extrabold tracking-tight sm:text-2xl ${
+              <h1 className={`text-3xl font-extrabold tracking-tight sm:text-4xl ${
                 isLight ? 'text-slate-900' : 'text-white'
               }`}>
                 Winko&apos;s Hockey Pool Hub
@@ -225,14 +225,8 @@ function LockedView({ gms, leaderboard, isArcadeComingSoon, onPick, onNavigate, 
   return (
     <>
       {/* Hero */}
-      <div className="py-8 text-center sm:py-12">
-        <span className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-bold uppercase tracking-[0.2em] ${
-          isLight ? 'border-sky-300 bg-sky-50 text-sky-700' : 'border-sky-500/30 bg-sky-500/10 text-sky-300'
-        }`}>
-          <LockKeyhole className="h-3.5 w-3.5" />
-          Secure GM Access
-        </span>
-        <h2 className={`mx-auto mt-4 max-w-2xl text-3xl font-black leading-tight sm:text-4xl ${
+      <div className="py-8 text-center sm:py-12 border-b border-slate-200 dark:border-slate-800/80 mb-6">
+        <h2 className={`mx-auto mt-4 max-w-2xl text-5xl font-black leading-tight sm:text-6xl ${
           isLight ? 'text-slate-900' : 'text-white'
         }`}>
           Welcome to Winko&apos;s Hockey Pool
@@ -299,11 +293,10 @@ function LockedView({ gms, leaderboard, isArcadeComingSoon, onPick, onNavigate, 
           isLight={isLight}
         />
         <LockedTile
-          title="Winko's Arcade"
-          subtitle="Daily Mini-Games & Winkoins Leaderboard"
+          title="Winko's Challenges"
+          subtitle="Daily Matchup Picks & Winkoins Leaderboard"
           icon={Dice5}
           accent="amber"
-          badge={isArcadeComingSoon ? 'Coming Soon' : null}
           isLight={isLight}
         >
           <div className="mt-4">
@@ -313,7 +306,7 @@ function LockedView({ gms, leaderboard, isArcadeComingSoon, onPick, onNavigate, 
               className="mb-4 flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-amber-500 to-amber-400 px-4 py-3 text-xs font-black uppercase tracking-wider text-slate-950 transition hover:from-amber-400 hover:to-amber-300 shadow-md shadow-amber-500/20 cursor-pointer"
             >
               <Dice5 className="h-4 w-4" />
-              <span>Arcade Coming Soon — View Info</span>
+              <span>Play Today's Challenge</span>
               <ArrowRight className="h-3.5 w-3.5 ml-1" />
             </button>
             <div className={`mb-3 flex items-center gap-2 text-xs font-semibold uppercase tracking-wide ${isLight ? 'text-slate-700' : 'text-slate-400'}`}>
@@ -423,15 +416,15 @@ function UnlockedView({ activeGm, leaderboard, isArcadeComingSoon, onNavigate, i
   return (
     <>
       {/* Hero */}
-      <div className="py-8 sm:py-10">
-        <p className={`text-sm font-semibold uppercase tracking-[0.2em] ${isLight ? 'text-sky-700' : 'text-sky-400'}`}>
+      <div className="py-6 sm:py-8 border-b pb-6 dark:border-slate-800/80 border-slate-200 mb-8">
+        <p className={`text-sm font-semibold uppercase tracking-[0.2em] mb-2 ${isLight ? 'text-sky-700' : 'text-sky-400'}`}>
           Welcome back{firstName ? `, ${firstName}` : ''}
         </p>
-        <h2 className={`mt-2 max-w-2xl text-3xl font-black leading-tight sm:text-4xl ${isLight ? 'text-slate-900' : 'text-white'}`}>
+        <h2 className={`max-w-2xl text-4xl sm:text-5xl font-black leading-tight ${isLight ? 'text-slate-900' : 'text-white'}`}>
           Run your roster. Rack up Winkoins.
         </h2>
-        <p className={`mt-2 max-w-xl ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>
-          Track live NHL promotions and jump into the daily arcade — all from one
+        <p className={`mt-1 max-w-xl text-xs sm:text-sm ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>
+          Track live NHL promotions and jump into the daily challenges — all from one
           command center.
         </p>
       </div>
@@ -521,31 +514,22 @@ function UnlockedView({ activeGm, leaderboard, isArcadeComingSoon, onNavigate, i
               <Dice5 className="h-6 w-6" />
             </div>
             <div>
-              <h3 className={`text-lg font-bold ${isLight ? 'text-slate-900' : 'text-white'}`}>Winko&apos;s Arcade</h3>
+              <h3 className={`text-lg font-bold ${isLight ? 'text-slate-900' : 'text-white'}`}>Winko&apos;s Challenges</h3>
               <p className={`text-sm ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>
-                Daily Mini-Games &amp; Winkoins Leaderboard
+                Daily Matchup Picks & Winkoins Leaderboard
               </p>
             </div>
           </div>
 
           <div className="relative mt-6">
-            {isArcadeComingSoon ? (
-              <span className={`inline-flex items-center gap-2 rounded-lg border px-3 py-1.5 text-sm font-bold ${
-                isLight ? 'border-amber-300 bg-amber-50 text-amber-800' : 'border-amber-400/30 bg-amber-400/10 text-amber-300'
-              }`}>
-                <Sparkles className="h-4 w-4" />
-                Coming Soon
-              </span>
-            ) : (
-              <span className="inline-flex items-center gap-2 rounded-lg border border-emerald-400/30 bg-emerald-400/10 px-3 py-1.5 text-sm font-bold text-emerald-300">
+              <span className="inline-flex items-center gap-2 rounded-lg border border-emerald-400/30 bg-emerald-400/10 px-3 py-1.5 text-sm font-bold text-emerald-600 dark:text-emerald-300">
                 <span className="relative flex h-2 w-2">
                   <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
                   <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-400" />
                 </span>
-                Today&apos;s Game is Live!
+                Today&apos;s Challenge is Live!
                 <Dice5 className="h-4 w-4" />
               </span>
-            )}
           </div>
 
           <div className="relative mt-6">
@@ -563,10 +547,10 @@ function UnlockedView({ activeGm, leaderboard, isArcadeComingSoon, onNavigate, i
               className="flex w-full items-center justify-center gap-2 rounded-xl bg-amber-500 px-4 py-3 text-sm font-bold text-slate-950 transition hover:bg-amber-400 cursor-pointer shadow-md"
             >
               <Dice5 className="h-4 w-4" />
-              <span>Arcade Coming Soon — View Info</span>
+              <span>Play Today's Challenge</span>
             </button>
             <p className={`mt-2 text-center text-xs ${isLight ? 'text-slate-500' : 'text-slate-500'}`}>
-              Daily mini-games drop soon — keep stacking Winkoins.
+              Pick winners daily to stack up Winkoins.
             </p>
           </div>
         </section>

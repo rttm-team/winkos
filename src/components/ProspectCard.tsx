@@ -330,24 +330,6 @@ export const ProspectCard: React.FC<ProspectCardProps> = ({
               </div>
             </div>
 
-            {/* Action Overflow Menu (Promote, Protect, NHL Sync, Edit, Delete, Trash) */}
-            <div className="shrink-0">
-              <PlayerActionOverflowMenu
-                isAdmin={isAdmin}
-                onSync={onSyncProspect ? () => onSyncProspect(prospect.id) : undefined}
-                onEdit={onEdit ? () => onEdit(prospect) : undefined}
-                onDelete={onDelete ? () => onDelete(prospect.id) : undefined}
-                onTogglePromotion={onTogglePromotion ? () => onTogglePromotion(prospect.id) : undefined}
-                onToggleProtection={() => onToggleProtection(prospect.id)}
-                onToggleStatus={() => onToggleStatus(prospect.id)}
-                isPromoted={prospect.promoted}
-                isProtected={prospect.isProtected}
-                isProtectionEligible={ev.isProtectionEligible}
-                isMandatoryPromotion={ev.isMandatoryPromotion}
-                status={prospect.status}
-                isSyncing={isSyncing}
-              />
-            </div>
           </div>
 
           {/* Status Badges Required by Prompt: 'Promote? (Yes/No)' and 'Protected? (Yes/No)' */}
