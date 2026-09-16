@@ -151,6 +151,31 @@ export const mapProspectRow = (row: any): Prospect => {
   };
 };
 
+const STORED_DELETED_KEY = 'winko_deleted_prospect_ids_v1';
+
+export const getDeletedProspectIds = (): Set<string> => {
+  if (typeof window === 'undefined' || !window.localStorage) return new Set();
+  try {
+    const raw = window.localStorage.getItem(STORED_DELETED_KEY);
+    if (!raw) return new Set();
+    const arr = JSON.parse(raw);
+    return new Set(Array.isArray(arr) ? arr.map(String) : []);
+  } catch {
+    return new Set();
+  }
+};
+
+export const addDeletedProspectId = (id: string | number) => {
+  if (typeof window === 'undefined' || !window.localStorage) return;
+  try {
+    const current = getDeletedProspectIds();
+    current.add(String(id));
+    window.localStorage.setItem(STORED_DELETED_KEY, JSON.stringify(Array.from(current)));
+  } catch (e) {
+    console.warn("Failed to save deleted prospect id to localStorage", e);
+  }
+};
+
 export const fetchLeagueData = async (): Promise<GeneralManager[]> => {
   const { data: gmsData, error: gmsError } = await supabase.from('gms').select('*');
   const { data: prospectsData, error: prospectsError } = await supabase.from('prospects').select('*');
@@ -160,6 +185,8 @@ export const fetchLeagueData = async (): Promise<GeneralManager[]> => {
 
   if (!gmsData) return [];
 
+  const deletedIds = getDeletedProspectIds();
+
   return gmsData.map((gmRow) => {
     // Find all prospects belonging to this GM
     // Works whether foreign key is gm_id, gmId, gm_name, or name match
@@ -168,6 +195,9 @@ export const fetchLeagueData = async (): Promise<GeneralManager[]> => {
 
     let gmProspects = (prospectsData || [])
       .filter((p) => {
+        const idStr = String(p.id ?? '');
+        if (deletedIds.has(idStr)) return false;
+        if (p.player_name === '[DELETED]') return false;
         const pGmName = String(p.gm_name || p.gmName || p.gm || '').trim().toLowerCase();
         const pGmId = String(p.gm_id ?? p.gmId ?? '').trim();
         return (

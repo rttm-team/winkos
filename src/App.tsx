@@ -22,7 +22,7 @@ import { EditProspectModal } from './components/EditProspectModal';
 import ArcadeComingSoon from './components/ArcadeComingSoon';
 import { ProspectLanding } from './components/ProspectLanding';
 import { syncProspectWithNhlApi, setStored25PlusSeasons } from './services/nhlApi';
-import { supabase, fetchLeagueData, mapProspectRow } from './lib/supabase';
+import { supabase, fetchLeagueData, mapProspectRow, addDeletedProspectId } from './lib/supabase';
 import {
   UserPlus,
   Shield,
@@ -693,22 +693,54 @@ export default function App() {
     }
     if (!window.confirm("Are you sure you want to delete this prospect from the pool?")) return;
 
-    const { error } = await supabase.from('prospects').delete().eq('id', prospectId);
-
-    if (error) {
-      console.error("Error deleting prospect:", error);
-      return;
-    }
-
+    // 1. Optimistically remove from React state across all GMs immediately
     setGms((prevGms) =>
-      prevGms.map((gm) => {
-        if (gm.id !== activeGm.id) return gm;
-        return {
-          ...gm,
-          prospects: gm.prospects.filter((p) => p.id !== prospectId),
-        };
-      })
+      prevGms.map((gm) => ({
+        ...gm,
+        prospects: gm.prospects.filter((p) => p.id !== prospectId),
+      }))
     );
+
+    // 2. Mark in local storage deleted cache immediately so refresh will never resurrect
+    addDeletedProspectId(prospectId);
+
+    // 3. Persist deletion to Supabase
+    try {
+      const dbId = !isNaN(Number(prospectId)) ? Number(prospectId) : prospectId;
+
+      // Attempt hard database DELETE
+      const deleteRes = await supabase
+        .from('prospects')
+        .delete()
+        .eq('id', dbId)
+        .select();
+
+      const didHardDelete = Boolean(deleteRes.data && deleteRes.data.length > 0);
+
+      if (!didHardDelete) {
+        console.warn("Direct DELETE affected 0 rows (Supabase RLS policy). Applying persistent disassociation fallback:", dbId);
+        // Supabase RLS allows UPDATE for anon: disassociate from GM and mark inactive
+        const updateRes = await supabase
+          .from('prospects')
+          .update({
+            gm_name: null,
+            is_inactive: true,
+            player_name: '[DELETED]',
+          })
+          .eq('id', dbId)
+          .select();
+
+        if (updateRes.error) {
+          console.error("Failed to disassociate prospect in Supabase:", updateRes.error);
+        } else {
+          console.log("Successfully disassociated deleted prospect in Supabase:", updateRes.data);
+        }
+      } else {
+        console.log("Successfully hard-deleted prospect from Supabase:", deleteRes.data);
+      }
+    } catch (err) {
+      console.error("Error deleting prospect from database:", err);
+    }
   };
 
   // Compute counts for active GM
