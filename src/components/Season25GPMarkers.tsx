@@ -117,10 +117,10 @@ export const Season25GPMarkers: React.FC<Season25GPMarkersProps & { prospect?: a
                 } ${
                   isFilled
                     ? isReached
-                      ? 'bg-red-500 text-white font-black shadow-xs shadow-red-500/50 ring-1 ring-red-400'
+                      ? 'bg-rose-700/80 text-rose-100 font-bold border border-rose-600/40 ring-1 ring-rose-500/30'
                       : isWatchlist
-                      ? 'bg-amber-400 text-slate-950 font-bold shadow-xs shadow-amber-400/40 ring-1 ring-amber-300'
-                      : 'bg-cyan-400 text-slate-950 font-bold shadow-xs shadow-cyan-400/40 ring-1 ring-cyan-300'
+                      ? 'bg-amber-700/70 text-amber-100 font-bold border border-amber-600/40 ring-1 ring-amber-500/30'
+                      : 'bg-slate-600/70 text-slate-100 font-bold border border-slate-500/40 ring-1 ring-slate-400/30'
                     : 'bg-slate-800/80 border border-slate-700 text-slate-500 font-medium'
                 }`}
                 aria-label={`Season ${markerNum} 25+ GP: ${isFilled ? 'Reached' : 'Not reached'}`}
@@ -138,9 +138,9 @@ export const Season25GPMarkers: React.FC<Season25GPMarkersProps & { prospect?: a
         <span
           className={`font-mono text-[10px] font-bold ${
             isReached
-              ? 'text-red-400 font-black'
+              ? 'text-rose-300/90 font-bold'
               : isWatchlist
-              ? 'text-amber-300'
+              ? 'text-amber-300/90'
               : 'text-slate-400'
           }`}
         >
@@ -155,9 +155,9 @@ export const Season25GPMarkers: React.FC<Season25GPMarkersProps & { prospect?: a
     <div
       className={`rounded-xl border p-3 transition-colors ${
         isReached
-          ? 'border-red-500/40 bg-red-950/20'
+          ? 'border-rose-900/40 bg-rose-950/20'
           : isWatchlist
-          ? 'border-amber-500/30 bg-amber-950/15'
+          ? 'border-amber-900/35 bg-amber-950/15'
           : 'border-slate-800 bg-slate-900/60'
       } ${className}`}
     >
@@ -167,7 +167,7 @@ export const Season25GPMarkers: React.FC<Season25GPMarkersProps & { prospect?: a
             4 Seasons of 25+ GP
           </span>
           <span
-            className="inline-flex text-slate-400 hover:text-cyan-300 transition-colors"
+            className="inline-flex text-slate-400 hover:text-slate-300 transition-colors"
             title="League Rule: When a prospect reaches 4 distinct NHL seasons of 25+ GP before reaching 200 GP, it triggers mandatory promotion to the active roster."
           >
             <Info className="h-3.5 w-3.5" />
@@ -177,13 +177,13 @@ export const Season25GPMarkers: React.FC<Season25GPMarkersProps & { prospect?: a
         <div className="flex items-center gap-2">
           {/* Status Badge */}
           {isReached ? (
-            <span className="inline-flex items-center gap-1 rounded-full bg-red-500/20 px-2 py-0.5 text-[10px] font-black text-red-300 border border-red-500/40 animate-pulse">
-              <AlertCircle className="h-3 w-3" />
+            <span className="inline-flex items-center gap-1 rounded-full bg-rose-950/50 px-2 py-0.5 text-[10px] font-semibold text-rose-300 border border-rose-800/40">
+              <AlertCircle className="h-3 w-3 text-rose-400/80" />
               Prompt to Promote
             </span>
           ) : isWatchlist ? (
-            <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/20 px-2 py-0.5 text-[10px] font-bold text-amber-300 border border-amber-500/30">
-              <Sparkles className="h-2.5 w-2.5" />
+            <span className="inline-flex items-center gap-1 rounded-full bg-amber-950/50 px-2 py-0.5 text-[10px] font-semibold text-amber-300 border border-amber-800/40">
+              <Sparkles className="h-2.5 w-2.5 text-amber-400/80" />
               1 Season Away
             </span>
           ) : (
@@ -232,15 +232,15 @@ export const Season25GPMarkers: React.FC<Season25GPMarkersProps & { prospect?: a
                 onClick={() => handleMarkerClick(markerNum)}
                 className={`flex items-center justify-center rounded-full transition-all duration-300 ${circleSizeClasses} ${
                   interactive
-                    ? 'cursor-pointer hover:scale-110 active:scale-95 focus:outline-none focus:ring-2 focus:ring-cyan-400'
+                    ? 'cursor-pointer hover:scale-105 active:scale-95 focus:outline-none focus:ring-2 focus:ring-slate-400'
                     : 'cursor-default'
                 } ${
                   isFilled
                     ? isReached
-                      ? 'bg-gradient-to-br from-red-500 to-red-600 text-white font-black shadow-md shadow-red-500/40 ring-2 ring-red-400/80 scale-105'
+                      ? 'bg-rose-700/85 text-rose-100 font-bold border border-rose-600/50 ring-1 ring-rose-500/40'
                       : isWatchlist
-                      ? 'bg-gradient-to-br from-amber-400 to-amber-500 text-slate-950 font-black shadow-sm shadow-amber-500/40 ring-2 ring-amber-300/80'
-                      : 'bg-gradient-to-br from-cyan-400 to-cyan-500 text-slate-950 font-black shadow-sm shadow-cyan-500/30 ring-1 ring-cyan-300/60'
+                      ? 'bg-amber-700/75 text-amber-100 font-bold border border-amber-600/50 ring-1 ring-amber-500/40'
+                      : 'bg-slate-600/80 text-slate-100 font-bold border border-slate-500/50 ring-1 ring-slate-400/40'
                     : 'bg-slate-800/90 border border-slate-700 text-slate-400 hover:border-slate-500'
                 }`}
                 title={
@@ -272,8 +272,8 @@ export const Season25GPMarkers: React.FC<Season25GPMarkersProps & { prospect?: a
       {showSubtext && (
         <div className="mt-2 pt-2 border-t border-slate-800/80 flex items-center justify-between text-[11px]">
           {isReached ? (
-            <div className="flex items-center gap-1.5 text-red-400 font-bold">
-              <AlertCircle className="h-3.5 w-3.5 shrink-0" />
+            <div className="flex items-center gap-1.5 text-rose-300/90 font-medium">
+              <AlertCircle className="h-3.5 w-3.5 text-rose-400/80 shrink-0" />
               <span>
                 {isUnder200GP
                   ? 'Hit 4 seasons of 25+ GP before 200 GP. Status requires promotion.'
@@ -281,8 +281,8 @@ export const Season25GPMarkers: React.FC<Season25GPMarkersProps & { prospect?: a
               </span>
             </div>
           ) : isWatchlist ? (
-            <div className="flex items-center gap-1.5 text-amber-300 font-medium">
-              <Sparkles className="h-3.5 w-3.5 shrink-0" />
+            <div className="flex items-center gap-1.5 text-amber-300/90 font-medium">
+              <Sparkles className="h-3.5 w-3.5 text-amber-400/80 shrink-0" />
               <span>3 of 4 seasons hit — 1 more season of 25+ GP prompts promotion.</span>
             </div>
           ) : (
@@ -343,10 +343,10 @@ export const SeasonThresholdMarkers: React.FC<Season25GPMarkersProps & { prospec
               className={`h-2 w-2 rounded-full transition-all ${
                 filled
                   ? isReached
-                    ? 'bg-red-500 shadow-sm shadow-red-500/50 ring-1 ring-red-400'
+                    ? 'bg-rose-600/80 ring-1 ring-rose-500/40'
                     : isWatchlist
-                    ? 'bg-amber-400 shadow-sm shadow-amber-400/50 ring-1 ring-amber-300'
-                    : 'bg-cyan-400 shadow-sm shadow-cyan-400/40 ring-1 ring-cyan-300'
+                    ? 'bg-amber-600/80 ring-1 ring-amber-500/40'
+                    : 'bg-slate-500 ring-1 ring-slate-400/40'
                   : 'bg-slate-700/80 border border-slate-600/60'
               }`}
             />
@@ -355,7 +355,7 @@ export const SeasonThresholdMarkers: React.FC<Season25GPMarkersProps & { prospec
       </div>
       <span
         className={`text-[10px] font-mono font-bold ${
-          isReached ? 'text-red-400' : isWatchlist ? 'text-amber-300' : 'text-slate-300'
+          isReached ? 'text-rose-300/90' : isWatchlist ? 'text-amber-300/90' : 'text-slate-400'
         }`}
       >
         {safeCount}/{max}

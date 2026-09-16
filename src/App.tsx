@@ -767,6 +767,7 @@ export default function App() {
     let f = 0;
     let d = 0;
     let g = 0;
+    let promotedProtectedCount = 0;
     let actionRequired = 0;
     let watchlistCount = 0;
     let protectionWatchCount = 0;
@@ -787,6 +788,10 @@ export default function App() {
       // Workflow alerts should only reflect active prospects (not trashed)
       if (!isTrashed) {
         const ev = evaluateProspect(p);
+        const isPromProt = Boolean(p.promoted && (p.isProtected || (p as any).protected));
+        if (isPromProt) {
+          promotedProtectedCount++;
+        }
         if (ev.isMandatoryPromotion) {
           actionRequired++;
         }
@@ -810,6 +815,7 @@ export default function App() {
       f,
       d,
       g,
+      promotedProtected: promotedProtectedCount,
       actionRequired,
       watchlist: watchlistCount,
       protectionWatch: protectionWatchCount,
@@ -837,6 +843,11 @@ export default function App() {
       // If filtering by any other specific status, exclude trashed prospects
       if (statusFilter !== 'ALL' && isTrashed) {
         return false;
+      }
+
+      if (statusFilter === 'PROMOTED_PROTECTED') {
+        const isPromProt = Boolean(p.promoted && (p.isProtected || (p as any).protected));
+        if (!isPromProt) return false;
       }
 
       const ev = evaluateProspect(p);

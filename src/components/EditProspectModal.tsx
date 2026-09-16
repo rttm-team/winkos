@@ -116,7 +116,7 @@ export const EditProspectModal: React.FC<EditProspectModalProps> = ({
       <div className="relative w-full max-w-lg rounded-2xl border border-slate-700 bg-slate-900 p-5 sm:p-6 shadow-2xl text-slate-100 z-10 max-h-[90vh] overflow-y-auto">
         <div className="flex items-start justify-between border-b border-slate-800 pb-4">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-500/20 text-amber-400 border border-amber-500/30">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-950/40 text-amber-400/90 border border-amber-800/40">
               <Edit3 className="h-5 w-5" />
             </div>
             <div>
@@ -124,7 +124,7 @@ export const EditProspectModal: React.FC<EditProspectModalProps> = ({
                 Edit Prospect Details
               </h2>
               <p className="text-xs text-slate-400">
-                Editing record for GM <span className="text-amber-300 font-semibold">{selectedGm || gmName}</span>
+                Editing record for GM <span className="text-amber-300/90 font-medium">{selectedGm || gmName}</span>
               </p>
             </div>
           </div>
@@ -138,20 +138,20 @@ export const EditProspectModal: React.FC<EditProspectModalProps> = ({
 
         <form onSubmit={handleSubmit} className="mt-5 space-y-4 text-xs">
           {/* GM Selection Dropdown */}
-          <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-3.5 space-y-1.5">
+          <div className="rounded-xl border border-amber-800/40 bg-amber-950/20 p-3.5 space-y-1.5">
             <div className="flex items-center justify-between">
-              <label className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-amber-300">
-                <UserCheck className="h-4 w-4 text-amber-400" />
+              <label className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-amber-300/90">
+                <UserCheck className="h-4 w-4 text-amber-400/80" />
                 <span>Assigned General Manager (GM)</span>
               </label>
-              <span className="text-[10px] font-mono text-amber-400 font-semibold">
+              <span className="text-[10px] font-mono text-amber-400/80 font-semibold">
                 DB column: gm_name
               </span>
             </div>
             <select
               value={selectedGm}
               onChange={(e) => setSelectedGm(e.target.value)}
-              className="w-full rounded-xl border border-amber-500/40 bg-slate-800 px-3 py-2 text-sm font-semibold text-white focus:border-amber-400 focus:outline-none focus:ring-1 focus:ring-amber-400 cursor-pointer"
+              className="w-full rounded-xl border border-amber-800/50 bg-slate-800 px-3 py-2 text-sm font-semibold text-white focus:border-amber-700 focus:outline-none focus:ring-1 focus:ring-amber-700 cursor-pointer"
             >
               {gmList.map((gm) => (
                 <option key={gm.id || gm.name} value={gm.name}>
@@ -159,8 +159,8 @@ export const EditProspectModal: React.FC<EditProspectModalProps> = ({
                 </option>
               ))}
             </select>
-            <p className="text-[11px] text-amber-200/70">
-              Change the GM to transfer this prospect to another team. Saving will update the Supabase <code className="font-mono text-amber-300">gm_name</code> column and immediately move the player.
+            <p className="text-[11px] text-amber-200/60">
+              Change the GM to transfer this prospect to another team. Saving will update the Supabase <code className="font-mono text-amber-300/80">gm_name</code> column and immediately move the player.
             </p>
           </div>
 
@@ -362,10 +362,10 @@ export const EditProspectModal: React.FC<EditProspectModalProps> = ({
                     className={`flex-1 flex flex-col items-center justify-center py-1.5 rounded-lg border text-xs font-mono font-bold transition-all ${
                       isSelected
                         ? count >= 4
-                          ? 'border-red-500 bg-red-500/20 text-red-300 ring-1 ring-red-500/50'
+                          ? 'border-rose-800/60 bg-rose-950/40 text-rose-300 ring-1 ring-rose-800/50'
                           : count === 3
-                          ? 'border-amber-500 bg-amber-500/20 text-amber-300 ring-1 ring-amber-500/50'
-                          : 'border-cyan-500 bg-cyan-500/20 text-cyan-300 ring-1 ring-cyan-500/50'
+                          ? 'border-amber-800/60 bg-amber-950/40 text-amber-300 ring-1 ring-amber-800/50'
+                          : 'border-slate-600 bg-slate-800 text-slate-200 ring-1 ring-slate-600'
                         : 'border-slate-700 bg-slate-800/80 text-slate-400 hover:border-slate-600 hover:text-slate-200'
                     }`}
                   >
@@ -429,7 +429,7 @@ export const EditProspectModal: React.FC<EditProspectModalProps> = ({
             </button>
             <button
               type="submit"
-              className="flex items-center gap-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 px-5 py-2 text-xs font-bold text-slate-950 transition-colors shadow-md shadow-amber-500/20"
+              className="flex items-center gap-1.5 rounded-xl bg-amber-600/85 hover:bg-amber-600 px-5 py-2 text-xs font-semibold text-slate-950 transition-colors shadow-sm"
             >
               <Edit3 className="h-4 w-4" />
               <span>Save Changes</span>

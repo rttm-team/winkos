@@ -94,13 +94,17 @@ export const ProspectCard: React.FC<ProspectCardProps> = ({
       prospect.hasEmptyStats === true ||
       (safeTotalGP === 0 && safeSeasonGP === 0));
 
+  const isPromotedAndProtected = Boolean(
+    prospect.promoted && (prospect.isProtected || (prospect as any).protected)
+  );
+
   // Position colors
   const posBadgeColor =
     prospect.position === 'F'
-      ? 'bg-blue-500/20 text-blue-300 border-blue-500/40'
+      ? 'bg-blue-950/40 text-blue-300/90 border-blue-800/40'
       : prospect.position === 'D'
-      ? 'bg-indigo-500/20 text-indigo-300 border-indigo-500/40'
-      : 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40';
+      ? 'bg-indigo-950/40 text-indigo-300/90 border-indigo-800/40'
+      : 'bg-emerald-950/40 text-emerald-300/90 border-emerald-800/40';
 
   // Position full label
   const posFullLabel =
@@ -112,12 +116,14 @@ export const ProspectCard: React.FC<ProspectCardProps> = ({
       className={`group relative flex flex-col justify-between overflow-hidden rounded-2xl border transition-all duration-200 ${
         isTrashed
           ? 'border-slate-800/80 bg-[#151c28]/90 opacity-80 hover:opacity-100 hover:border-slate-700 shadow-sm'
+          : isPromotedAndProtected
+          ? 'border-purple-800/50 bg-gradient-to-b from-[#181628] to-[#141524] shadow-md shadow-black/20 hover:border-purple-700/60'
           : prospect.promoted
-          ? 'border-emerald-500/40 bg-[#1e293b] shadow-md shadow-slate-950/40 hover:border-emerald-500/60'
+          ? 'border-emerald-800/40 bg-[#182333] shadow-md shadow-black/20 hover:border-emerald-700/50'
           : ev.isMandatoryPromotion
-          ? 'border-red-500/60 bg-[#1e293b] shadow-lg shadow-red-950/40 hover:border-red-400'
+          ? 'border-rose-800/50 bg-[#221a22] shadow-md shadow-black/20 hover:border-rose-700/60'
           : ev.isWatchlist
-          ? 'border-amber-500/50 bg-[#1e293b] shadow-lg shadow-amber-950/30 hover:border-amber-400'
+          ? 'border-amber-800/40 bg-[#222128] shadow-md shadow-black/20 hover:border-amber-700/50'
           : 'border-slate-700/70 bg-[#1e293b] hover:border-slate-600 shadow-md shadow-slate-950/40'
       }`}
     >
@@ -126,14 +132,16 @@ export const ProspectCard: React.FC<ProspectCardProps> = ({
         className={`h-1.5 w-full ${
           isTrashed
             ? 'bg-slate-700/40'
+            : isPromotedAndProtected
+            ? 'bg-gradient-to-r from-purple-800/80 via-indigo-800/70 to-purple-800/80'
             : prospect.promoted
-            ? 'bg-gradient-to-r from-emerald-500 via-teal-400 to-cyan-500'
+            ? 'bg-gradient-to-r from-emerald-800/80 via-teal-800/70 to-emerald-800/80'
             : ev.isMandatoryPromotion
-            ? 'bg-gradient-to-r from-red-600 via-rose-500 to-red-600 animate-pulse'
+            ? 'bg-gradient-to-r from-rose-800/80 via-red-800/70 to-rose-800/80'
             : ev.isWatchlist
-            ? 'bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500'
+            ? 'bg-gradient-to-r from-amber-700/80 via-amber-800/70 to-amber-700/80'
             : prospect.isProtected
-            ? 'bg-gradient-to-r from-cyan-500 to-emerald-500'
+            ? 'bg-gradient-to-r from-slate-600/70 to-teal-800/60'
             : 'bg-slate-700'
         }`}
       />
@@ -234,18 +242,32 @@ export const ProspectCard: React.FC<ProspectCardProps> = ({
                   src={proxyImageUrl(prospect.photoUrl)}
                   alt={prospect.name}
                   referrerPolicy="no-referrer"
-                  className="h-12 w-12 rounded-xl object-cover border border-slate-700 bg-slate-800 shrink-0"
+                  className={`h-12 w-12 rounded-xl object-cover border bg-slate-800 shrink-0 ${
+                    isPromotedAndProtected
+                      ? 'border-purple-700/50 shadow-sm'
+                      : 'border-slate-700'
+                  }`}
                   onError={() => setImgError(true)}
                 />
               ) : (
-                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-slate-800 text-base font-black text-cyan-400 border border-slate-700">
+                <div
+                  className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border text-base font-bold ${
+                    isPromotedAndProtected
+                      ? 'bg-purple-950/60 text-purple-300/90 border-purple-800/40 shadow-sm'
+                      : 'bg-slate-800 text-slate-300 border-slate-700'
+                  }`}
+                >
                   {(prospect.name || 'U').split(' ').map((n) => n[0]).join('')}
                 </div>
               )}
 
               <div>
                 <div className="flex items-center gap-2 flex-wrap">
-                  <h3 className="text-lg font-black tracking-tight text-slate-100 group-hover:text-cyan-300 transition-colors">
+                  <h3
+                    className={`text-lg font-black tracking-tight text-slate-100 transition-colors ${
+                      isPromotedAndProtected ? 'group-hover:text-purple-300/90' : 'group-hover:text-slate-200'
+                    }`}
+                  >
                     {prospect.name}
                   </h3>
                   <span
@@ -305,30 +327,40 @@ export const ProspectCard: React.FC<ProspectCardProps> = ({
           {/* Status Badges Required by Prompt: 'Promote? (Yes/No)' and 'Protected? (Yes/No)' */}
           <div className="mt-3.5 flex flex-wrap items-center gap-2">
             {/* Promote? Tag */}
-            {prospect.promoted ? (
+            {isPromotedAndProtected ? (
               <div
-                className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-500/20 px-2.5 py-1 text-xs font-black text-emerald-300 border border-emerald-500/50 shadow-sm"
+                className="inline-flex items-center gap-1.5 rounded-lg bg-purple-950/50 px-2.5 py-1 text-xs font-semibold text-purple-300 border border-purple-800/40"
+                title={`Player is promoted to the active fantasy roster AND protected${prospect.promotionDate ? ` on ${prospect.promotionDate}` : ''}`}
+              >
+                <ShieldCheck className="h-3.5 w-3.5 text-purple-400/80 shrink-0" />
+                <span>
+                  Promoted &amp; Protected {prospect.promotionDate ? `(${prospect.promotionDate})` : '(Active)'}
+                </span>
+              </div>
+            ) : prospect.promoted ? (
+              <div
+                className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-950/50 px-2.5 py-1 text-xs font-semibold text-emerald-300 border border-emerald-800/40"
                 title={`Player has graduated to the active roster${prospect.promotionDate ? ` on ${prospect.promotionDate}` : ''}`}
               >
-                <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400 shrink-0" />
+                <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400/80 shrink-0" />
                 <span>
                   Promote? YES {prospect.promotionDate ? `(${prospect.promotionDate})` : '(Active)'}
                 </span>
               </div>
             ) : ev.isMandatoryPromotion ? (
               <div
-                className="inline-flex items-center gap-1.5 rounded-lg bg-red-500/20 px-2.5 py-1 text-xs font-black text-red-300 border border-red-500/50 shadow-sm animate-pulse"
+                className="inline-flex items-center gap-1.5 rounded-lg bg-rose-950/50 px-2.5 py-1 text-xs font-semibold text-rose-300 border border-rose-800/40"
                 title="Threshold reached. Player must be promoted to the active fantasy roster."
               >
-                <AlertCircle className="h-3.5 w-3.5 text-red-400 shrink-0" />
+                <AlertCircle className="h-3.5 w-3.5 text-rose-400/80 shrink-0" />
                 <span>Promote? YES (Mandatory)</span>
               </div>
             ) : ev.isWatchlist ? (
               <div
-                className="inline-flex items-center gap-1.5 rounded-lg bg-amber-500/20 px-2.5 py-1 text-xs font-extrabold text-amber-300 border border-amber-500/50 shadow-sm"
+                className="inline-flex items-center gap-1.5 rounded-lg bg-amber-950/50 px-2.5 py-1 text-xs font-semibold text-amber-300 border border-amber-800/40"
                 title="Within 5 games of threshold. Prepare for upcoming promotion."
               >
-                <AlertTriangle className="h-3.5 w-3.5 text-amber-400 shrink-0 stroke-[2.5]" />
+                <AlertTriangle className="h-3.5 w-3.5 text-amber-400/80 shrink-0" />
                 <span>Promote? IMMINENT (Watchlist)</span>
               </div>
             ) : (
@@ -341,18 +373,26 @@ export const ProspectCard: React.FC<ProspectCardProps> = ({
             {/* Protected? Tag */}
             {!ev.isProtectionEligible ? (
               <div
-                className="inline-flex items-center gap-1.5 rounded-lg bg-red-950/40 text-red-300 border border-red-800/40 px-2.5 py-1 text-xs font-semibold"
+                className="inline-flex items-center gap-1.5 rounded-lg bg-rose-950/40 text-rose-300 border border-rose-900/40 px-2.5 py-1 text-xs font-medium"
                 title={`Exceeded ${ev.protectionMaxGames} NHL games limit. Ineligible for protection.`}
               >
-                <ShieldAlert className="h-3.5 w-3.5 text-red-400 shrink-0" />
+                <ShieldAlert className="h-3.5 w-3.5 text-rose-400/80 shrink-0" />
                 <span>Protected? NO (Ineligible &gt;{ev.protectionMaxGames} GP)</span>
+              </div>
+            ) : isPromotedAndProtected ? (
+              <div
+                className="inline-flex items-center gap-1.5 rounded-lg bg-purple-950/50 text-purple-300 border border-purple-800/40 px-2.5 py-1 text-xs font-semibold"
+                title="Player is protected in pool"
+              >
+                <ShieldCheck className="h-3.5 w-3.5 text-purple-400/80" />
+                <span>Protected? YES</span>
               </div>
             ) : prospect.isProtected ? (
               <div
-                className="inline-flex items-center gap-1.5 rounded-lg bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 px-2.5 py-1 text-xs font-bold"
+                className="inline-flex items-center gap-1.5 rounded-lg bg-slate-800 text-teal-300/90 border border-teal-800/40 px-2.5 py-1 text-xs font-medium"
                 title="Player is protected in pool"
               >
-                <ShieldCheck className="h-3.5 w-3.5 text-cyan-400" />
+                <ShieldCheck className="h-3.5 w-3.5 text-teal-400/80" />
                 <span>Protected? YES</span>
               </div>
             ) : (
@@ -367,10 +407,10 @@ export const ProspectCard: React.FC<ProspectCardProps> = ({
 
             {isTrashed && (
               <div
-                className="inline-flex items-center gap-1.5 rounded-lg bg-rose-950/80 px-2.5 py-1 text-xs font-bold text-rose-300 border border-rose-800/60 shadow-sm"
+                className="inline-flex items-center gap-1.5 rounded-lg bg-slate-800/90 px-2.5 py-1 text-xs font-medium text-slate-300 border border-slate-700 shadow-sm"
                 title="Player is trashed (tracking paused, log kept in DB)"
               >
-                <Trash2 className="h-3.5 w-3.5 text-rose-400" />
+                <Trash2 className="h-3.5 w-3.5 text-slate-400" />
                 <span>Trashed</span>
               </div>
             )}
@@ -468,10 +508,10 @@ export const ProspectCard: React.FC<ProspectCardProps> = ({
                 <div
                   className={`h-full rounded-full transition-all duration-300 ${
                     safeSeasonGP >= safeSeasonLimit
-                      ? 'bg-red-500 shadow-sm shadow-red-500/50'
+                      ? 'bg-rose-600/75'
                       : safeSeasonRemaining <= 5 && safeSeasonRemaining > 0
-                      ? 'bg-amber-400 shadow-sm shadow-amber-400/50'
-                      : 'bg-gradient-to-r from-emerald-500 to-cyan-400 shadow-sm shadow-cyan-500/20'
+                      ? 'bg-amber-600/75'
+                      : 'bg-teal-700/70'
                   }`}
                   style={{ width: `${safeSeasonProgress}%` }}
                 />
@@ -480,12 +520,12 @@ export const ProspectCard: React.FC<ProspectCardProps> = ({
               <div className="mt-1 flex items-center justify-between text-[11px]">
                 <span className="text-slate-400">
                   {safeSeasonGP >= safeSeasonLimit ? (
-                    <span className="font-bold text-red-400 flex items-center gap-1">
-                      <AlertCircle className="h-3 w-3 inline" /> Threshold Reached ({safeSeasonGP}/{safeSeasonLimit})
+                    <span className="font-semibold text-rose-300/90 flex items-center gap-1">
+                      <AlertCircle className="h-3 w-3 inline text-rose-400/80" /> Threshold Reached ({safeSeasonGP}/{safeSeasonLimit})
                     </span>
                   ) : safeSeasonRemaining <= 5 && safeSeasonRemaining > 0 ? (
-                    <span className="font-bold text-amber-300 flex items-center gap-1">
-                      <Sparkles className="h-3 w-3 inline" /> Only {safeSeasonRemaining} GP until promotion
+                    <span className="font-semibold text-amber-300/90 flex items-center gap-1">
+                      <Sparkles className="h-3 w-3 inline text-amber-400/80" /> Only {safeSeasonRemaining} GP until promotion
                     </span>
                   ) : (
                     <span className="text-slate-400">
@@ -515,10 +555,10 @@ export const ProspectCard: React.FC<ProspectCardProps> = ({
                 <div
                   className={`h-full rounded-full transition-all duration-300 ${
                     safeTotalGP >= safeCumulativeLimit
-                      ? 'bg-red-500 shadow-sm shadow-red-500/50'
+                      ? 'bg-rose-600/75'
                       : safeCumulativeRemaining <= 5 && safeCumulativeRemaining > 0
-                      ? 'bg-amber-400 shadow-sm shadow-amber-400/50'
-                      : 'bg-gradient-to-r from-emerald-500 to-cyan-400 shadow-sm shadow-cyan-500/20'
+                      ? 'bg-amber-600/75'
+                      : 'bg-teal-700/70'
                   }`}
                   style={{ width: `${safeCumulativeProgress}%` }}
                 />
@@ -527,12 +567,12 @@ export const ProspectCard: React.FC<ProspectCardProps> = ({
               <div className="mt-1 flex items-center justify-between text-[11px]">
                 <span className="text-slate-400">
                   {safeTotalGP >= safeCumulativeLimit ? (
-                    <span className="font-bold text-red-400 flex items-center gap-1">
-                      <AlertCircle className="h-3 w-3 inline" /> Threshold Reached ({safeTotalGP}/{safeCumulativeLimit})
+                    <span className="font-semibold text-rose-300/90 flex items-center gap-1">
+                      <AlertCircle className="h-3 w-3 inline text-rose-400/80" /> Threshold Reached ({safeTotalGP}/{safeCumulativeLimit})
                     </span>
                   ) : safeCumulativeRemaining <= 5 && safeCumulativeRemaining > 0 ? (
-                    <span className="font-bold text-amber-300 flex items-center gap-1">
-                      <Sparkles className="h-3 w-3 inline" /> Only {safeCumulativeRemaining} GP until promotion
+                    <span className="font-semibold text-amber-300/90 flex items-center gap-1">
+                      <Sparkles className="h-3 w-3 inline text-amber-400/80" /> Only {safeCumulativeRemaining} GP until promotion
                     </span>
                   ) : (
                     <span className="text-slate-400">
@@ -551,7 +591,7 @@ export const ProspectCard: React.FC<ProspectCardProps> = ({
               <div className="pt-2 border-t border-slate-800/60">
                 <div className="flex items-center justify-between text-xs mb-1.5">
                   <span className="text-slate-400 font-medium flex items-center gap-1">
-                    <ShieldCheck className="h-3 w-3 text-cyan-400" />
+                    <ShieldCheck className="h-3 w-3 text-slate-400" />
                     <span>Protection Cap Limit</span>
                     <span className="text-[10px] text-slate-400">({isGoalie ? 'Goalie: 140 GP' : 'Skater: 200 GP'})</span>
                   </span>
@@ -564,8 +604,8 @@ export const ProspectCard: React.FC<ProspectCardProps> = ({
                   <div
                     className={`h-full rounded-full transition-all duration-300 ${
                       safeTotalGP >= safeProtectionLimit
-                        ? 'bg-red-500 shadow-sm shadow-red-500/50'
-                        : 'bg-gradient-to-r from-cyan-500 to-blue-400'
+                        ? 'bg-rose-600/75'
+                        : 'bg-slate-600/70'
                     }`}
                     style={{ width: `${safeProtectionProgress}%` }}
                   />
@@ -574,7 +614,7 @@ export const ProspectCard: React.FC<ProspectCardProps> = ({
                 <div className="mt-1 flex items-center justify-between text-[10px] text-slate-400">
                   <span>
                     {safeTotalGP >= safeProtectionLimit ? (
-                      <span className="text-red-400 font-bold">Ineligible: exceeded {safeProtectionLimit} GP limit</span>
+                      <span className="text-rose-300/90 font-semibold">Ineligible: exceeded {safeProtectionLimit} GP limit</span>
                     ) : (
                       <span>{safeProtectionRemaining} GP cushion remaining</span>
                     )}

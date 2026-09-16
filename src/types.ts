@@ -86,7 +86,7 @@ export interface GeneralManager {
 }
 
 export type PositionFilter = 'ALL' | 'F' | 'D' | 'G';
-export type StatusFilter = 'ALL' | 'ACTION_REQUIRED' | 'WATCHLIST' | 'PROTECTION_WATCH' | 'PROMOTED' | 'DEVELOPING' | 'TRASHED';
+export type StatusFilter = 'ALL' | 'PROMOTED_PROTECTED' | 'ACTION_REQUIRED' | 'WATCHLIST' | 'PROTECTION_WATCH' | 'PROMOTED' | 'DEVELOPING' | 'TRASHED';
 export type ViewMode = 'list' | 'card';
 
 export type ProspectSortOption =

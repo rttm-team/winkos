@@ -45,8 +45,8 @@ export const RulesModal: React.FC<RulesModalProps> = ({ isOpen, onClose }) => {
         {/* Content */}
         <div className="mt-5 space-y-5 text-sm">
           {/* Skater Rules */}
-          <div className="rounded-xl border border-blue-500/30 bg-blue-950/20 p-4">
-            <div className="flex items-center gap-2 text-blue-300 font-bold text-base mb-2">
+          <div className="rounded-xl border border-blue-900/40 bg-blue-950/20 p-4">
+            <div className="flex items-center gap-2 text-blue-300/90 font-bold text-base mb-2">
               <span>🏒 Skater Promotion Rules (Forwards & Defensemen)</span>
             </div>
             <p className="text-xs text-slate-300 mb-3">
@@ -54,13 +54,13 @@ export const RulesModal: React.FC<RulesModalProps> = ({ isOpen, onClose }) => {
             </p>
             <ul className="space-y-2 text-xs text-slate-300 pl-2">
               <li className="flex items-start gap-2">
-                <div className="mt-1 h-1.5 w-1.5 rounded-full bg-cyan-400 shrink-0" />
+                <div className="mt-1 h-1.5 w-1.5 rounded-full bg-blue-400 shrink-0" />
                 <span>
                   <strong>Single-Season Threshold:</strong> 40 regular season NHL games in a single campaign.
                 </span>
               </li>
               <li className="flex items-start gap-2">
-                <div className="mt-1 h-1.5 w-1.5 rounded-full bg-cyan-400 shrink-0" />
+                <div className="mt-1 h-1.5 w-1.5 rounded-full bg-blue-400 shrink-0" />
                 <span>
                   <strong>Cumulative Career Threshold:</strong> 65 total career regular season NHL games played.
                 </span>
@@ -69,8 +69,8 @@ export const RulesModal: React.FC<RulesModalProps> = ({ isOpen, onClose }) => {
           </div>
 
           {/* Goalie Rules */}
-          <div className="rounded-xl border border-emerald-500/30 bg-emerald-950/20 p-4">
-            <div className="flex items-center gap-2 text-emerald-300 font-bold text-base mb-2">
+          <div className="rounded-xl border border-emerald-900/40 bg-emerald-950/20 p-4">
+            <div className="flex items-center gap-2 text-emerald-300/90 font-bold text-base mb-2">
               <span>🥅 Goalie Promotion Rules</span>
             </div>
             <p className="text-xs text-slate-300 mb-3">
@@ -78,13 +78,13 @@ export const RulesModal: React.FC<RulesModalProps> = ({ isOpen, onClose }) => {
             </p>
             <ul className="space-y-2 text-xs text-slate-300 pl-2">
               <li className="flex items-start gap-2">
-                <div className="mt-1 h-1.5 w-1.5 rounded-full bg-emerald-400 shrink-0" />
+                <div className="mt-1 h-1.5 w-1.5 rounded-full bg-emerald-400/80 shrink-0" />
                 <span>
                   <strong>Single-Season Threshold:</strong> 20 regular season NHL appearances/starts.
                 </span>
               </li>
               <li className="flex items-start gap-2">
-                <div className="mt-1 h-1.5 w-1.5 rounded-full bg-emerald-400 shrink-0" />
+                <div className="mt-1 h-1.5 w-1.5 rounded-full bg-emerald-400/80 shrink-0" />
                 <span>
                   <strong>Cumulative Career Threshold:</strong> 30 total career regular season NHL games played.
                 </span>
@@ -93,9 +93,9 @@ export const RulesModal: React.FC<RulesModalProps> = ({ isOpen, onClose }) => {
           </div>
 
           {/* 4 Seasons of 25+ GP Milestone */}
-          <div className="rounded-xl border border-purple-500/30 bg-purple-950/20 p-4">
-            <div className="flex items-center gap-2 text-purple-300 font-bold text-base mb-2">
-              <Sparkles className="h-4 w-4" />
+          <div className="rounded-xl border border-purple-900/40 bg-purple-950/20 p-4">
+            <div className="flex items-center gap-2 text-purple-300/90 font-bold text-base mb-2">
+              <Sparkles className="h-4 w-4 text-purple-400/80" />
               <span>4 Seasons of 25+ GP Milestone</span>
             </div>
             <p className="text-xs text-slate-300 leading-relaxed">
@@ -105,8 +105,8 @@ export const RulesModal: React.FC<RulesModalProps> = ({ isOpen, onClose }) => {
 
           {/* Roster Protection Rules */}
           <div className="rounded-xl border border-slate-700 bg-slate-800/60 p-4">
-            <div className="flex items-center gap-2 text-cyan-400 font-bold text-base mb-2">
-              <Shield className="h-4 w-4" />
+            <div className="flex items-center gap-2 text-slate-300 font-bold text-base mb-2">
+              <Shield className="h-4 w-4 text-slate-400" />
               <span>Roster Protection Rules</span>
             </div>
             <div className="space-y-2 text-xs text-slate-300 leading-relaxed">
@@ -126,7 +126,7 @@ export const RulesModal: React.FC<RulesModalProps> = ({ isOpen, onClose }) => {
         <div className="mt-6 flex justify-end border-t border-slate-800 pt-4">
           <button
             onClick={onClose}
-            className="rounded-xl bg-cyan-500 hover:bg-cyan-400 px-5 py-2 text-xs font-bold text-slate-950 transition-colors shadow-md shadow-cyan-500/20"
+            className="rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 px-5 py-2 text-xs font-semibold text-slate-200 transition-colors shadow-sm"
           >
             Understood
           </button>

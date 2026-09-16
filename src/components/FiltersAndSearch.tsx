@@ -26,6 +26,7 @@ interface FiltersAndSearchProps {
     f: number;
     d: number;
     g: number;
+    promotedProtected?: number;
     actionRequired: number;
     watchlist: number;
     protectionWatch: number;
@@ -168,6 +169,7 @@ export const FiltersAndSearch: React.FC<FiltersAndSearchProps> = ({
               className="rounded-xl border border-slate-700/80 bg-slate-800/90 px-3 py-2 text-xs font-bold text-slate-100 focus:border-cyan-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/20 cursor-pointer"
             >
               <option value="ALL">All Status</option>
+              <option value="PROMOTED_PROTECTED">Promoted &amp; Protected ({counts.promotedProtected ?? 0})</option>
               <option value="ACTION_REQUIRED">Action Required ({counts.actionRequired})</option>
               <option value="WATCHLIST">Watchlist ({counts.watchlist})</option>
               <option value="PROMOTED">Promoted ({counts.promoted})</option>

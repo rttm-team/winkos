@@ -2,7 +2,7 @@ import React from 'react';
 import { Prospect, PositionGroup, evaluateProspect, ViewMode } from '../types';
 import { ProspectCard } from './ProspectCard';
 import { ProspectListItem } from './ProspectListItem';
-import { Shield, Target, Flame, AlertCircle, ChevronsUpDown, ChevronsDownUp } from 'lucide-react';
+import { Shield, Target, Flame, AlertCircle, ChevronsUpDown, ChevronsDownUp, ShieldCheck } from 'lucide-react';
 
 interface PositionSectionProps {
   title: PositionGroup;
@@ -44,6 +44,7 @@ export const PositionSection: React.FC<PositionSectionProps> = ({
   }
 
   // Calculate alerts in this position group
+  const promotedProtectedCount = prospects.filter((p) => p.promoted && (p.isProtected || (p as any).protected)).length;
   const mandatoryCount = prospects.filter((p) => evaluateProspect(p).isMandatoryPromotion).length;
   const watchCount = prospects.filter((p) => evaluateProspect(p).isWatchlist).length;
 
@@ -107,14 +108,20 @@ export const PositionSection: React.FC<PositionSectionProps> = ({
 
         {/* Section Actions: Alerts Pill + Expand/Collapse Section Toggle */}
         <div className="flex items-center gap-2 text-xs">
+          {promotedProtectedCount > 0 && (
+            <span className="inline-flex items-center gap-1 rounded-md bg-purple-950/50 border border-purple-800/40 px-2 py-0.5 font-medium text-purple-300/90">
+              <ShieldCheck className="h-3 w-3 text-purple-400/80" />
+              <span>{promotedProtectedCount} Promoted &amp; Protected</span>
+            </span>
+          )}
           {mandatoryCount > 0 && (
-            <span className="inline-flex items-center gap-1 rounded-md bg-red-950/70 border border-red-800/60 px-2 py-0.5 font-bold text-red-300">
-              <AlertCircle className="h-3 w-3 text-red-400" />
+            <span className="inline-flex items-center gap-1 rounded-md bg-rose-950/50 border border-rose-800/40 px-2 py-0.5 font-medium text-rose-300/90">
+              <AlertCircle className="h-3 w-3 text-rose-400/80" />
               <span>{mandatoryCount} Mandatory</span>
             </span>
           )}
           {watchCount > 0 && (
-            <span className="inline-flex items-center gap-1 rounded-md bg-amber-950/60 border border-amber-800/60 px-2 py-0.5 font-bold text-amber-300">
+            <span className="inline-flex items-center gap-1 rounded-md bg-amber-950/40 border border-amber-800/40 px-2 py-0.5 font-medium text-amber-300/90">
               <span>{watchCount} On Watch</span>
             </span>
           )}

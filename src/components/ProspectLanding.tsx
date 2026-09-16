@@ -74,9 +74,21 @@ export const ProspectLanding: React.FC<ProspectLandingProps> = ({
       ]);
 
       if (lbRes.data) {
-        // Only include genuine GMs (filter out any null or invalid gm_name entries)
+        // Known authentic 12 GMs
+        const leagueGmSet = new Set(
+          (gms && gms.length > 0
+            ? gms.map((g) => g.name.trim().toLowerCase())
+            : ['adam', 'allan', 'dan', 'evan', 'glenn', 'jean', 'jon', 'kyle', 'mike', 'nate', 'sam', 'seb']
+          )
+        );
+
+        // Only include genuine GMs (filter out any null, orphan, or [DELETED] entries)
         const validLb = lbRes.data.filter(
-          (row) => row.gm_name && row.gm_name.trim() !== '' && row.gm_name !== '[DELETED]'
+          (row) =>
+            row.gm_name &&
+            row.gm_name.trim() !== '' &&
+            row.gm_name !== '[DELETED]' &&
+            leagueGmSet.has(row.gm_name.trim().toLowerCase())
         );
         // Sort by hit_rate_pct desc, then total_nhl_games_produced desc
         const sortedLb = [...validLb].sort((a, b) => {
@@ -575,8 +587,8 @@ export const ProspectLanding: React.FC<ProspectLandingProps> = ({
 
                       {/* Star Players Count */}
                       <td className="py-3 px-4 text-center">
-                        <span className="inline-flex items-center gap-1 font-mono font-bold text-purple-300 bg-purple-500/10 px-2 py-0.5 rounded-md border border-purple-500/20">
-                          <Sparkles className="h-3 w-3 text-purple-400" />
+                        <span className="inline-flex items-center gap-1 font-mono font-bold text-purple-300/90 bg-purple-950/40 px-2 py-0.5 rounded-md border border-purple-800/40">
+                          <Sparkles className="h-3 w-3 text-purple-400/80" />
                           {row.star_players_count || 0}
                         </span>
                       </td>
@@ -587,25 +599,25 @@ export const ProspectLanding: React.FC<ProspectLandingProps> = ({
                           {isScoutMaster && (
                             <span
                               title="Highest Draft Hit Rate %"
-                              className="inline-flex items-center gap-1 rounded-md bg-cyan-500/15 border border-cyan-500/30 px-2 py-0.5 text-[10px] font-bold text-cyan-300"
+                              className="inline-flex items-center gap-1 rounded-md bg-cyan-950/40 border border-cyan-800/40 px-2 py-0.5 text-[10px] font-medium text-cyan-300/90"
                             >
-                              <Target className="h-3 w-3" /> Scout Master
+                              <Target className="h-3 w-3 text-cyan-400/80" /> Scout Master
                             </span>
                           )}
                           {isDiamond && (
                             <span
                               title="Most 100+ NHL Game Stars Produced"
-                              className="inline-flex items-center gap-1 rounded-md bg-purple-500/15 border border-purple-500/30 px-2 py-0.5 text-[10px] font-bold text-purple-300"
+                              className="inline-flex items-center gap-1 rounded-md bg-purple-950/40 border border-purple-800/40 px-2 py-0.5 text-[10px] font-medium text-purple-300/90"
                             >
-                              <Gem className="h-3 w-3" /> Diamond Rough
+                              <Gem className="h-3 w-3 text-purple-400/80" /> Diamond Rough
                             </span>
                           )}
                           {isWorkhorse && (
                             <span
                               title="Most Total NHL Games Produced"
-                              className="inline-flex items-center gap-1 rounded-md bg-amber-500/15 border border-amber-500/30 px-2 py-0.5 text-[10px] font-bold text-amber-300"
+                              className="inline-flex items-center gap-1 rounded-md bg-amber-950/40 border border-amber-800/40 px-2 py-0.5 text-[10px] font-medium text-amber-300/90"
                             >
-                              <Flame className="h-3 w-3" /> Workhorse
+                              <Flame className="h-3 w-3 text-amber-400/80" /> Workhorse
                             </span>
                           )}
                           {!isScoutMaster && !isDiamond && !isWorkhorse && (
