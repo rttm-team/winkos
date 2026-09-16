@@ -248,12 +248,11 @@ export default function WinkosChallenges({ gmName, theme = 'dark' }: { gmName: s
       <div className={`min-h-screen font-sans antialiased selection:bg-cyan-500/30 selection:text-cyan-200 ${
         isLight ? 'bg-slate-50 text-slate-900' : 'bg-[#0f172a] text-slate-100'
       }`}>
-        
-        {/* Navigation Tabs */}
-        <div className={`border-b backdrop-blur-md sticky top-0 z-10 pt-6 pb-4 ${
-          isLight ? 'border-slate-200 bg-slate-50/90' : 'border-slate-800/80 bg-[#0f172a]/90'
-        }`}>
-          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+        <main className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+          {/* Header Block */}
+          <div className={`mb-8 flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between border-b pb-6 ${
+            isLight ? 'border-slate-200' : 'border-slate-800/80'
+          }`}>
             <div>
               <h1 className={`text-4xl sm:text-5xl font-black tracking-tight flex items-center gap-3 ${
                 isLight ? 'text-slate-900' : 'text-white'
@@ -298,10 +297,8 @@ export default function WinkosChallenges({ gmName, theme = 'dark' }: { gmName: s
             </button>
             </div>
           </div>
-        </div>
 
-        {/* Main Content */}
-        <main className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-8">
+          <div className="space-y-8">
           {loading ? (
             <div className="flex flex-col items-center justify-center py-20 text-slate-400">
               <div className="h-8 w-8 animate-spin rounded-full border-4 border-slate-300 dark:border-slate-700 border-t-emerald-500 mb-4" />
@@ -502,6 +499,7 @@ export default function WinkosChallenges({ gmName, theme = 'dark' }: { gmName: s
               )}
             </>
           )}
+          </div>
         </main>
       </div>
     </div>

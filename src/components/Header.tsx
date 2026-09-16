@@ -11,6 +11,8 @@ import {
   LogOut,
   ChevronDown
 } from 'lucide-react';
+import logoLight from '../assets/images/winkos-logo-light.png';
+import logoDark from '../assets/images/winkos-logo-dark.png';
 
 interface HeaderProps {
   onNavigate: (view: 'hub' | 'prospect-central' | 'prospects' | 'arcade') => void;
@@ -70,16 +72,13 @@ export const Header: React.FC<HeaderProps> = ({
           {/* Logo & League Branding */}
           <div
             onClick={() => onNavigate('hub')}
-            className="flex items-center gap-3 cursor-pointer group"
+            className="flex items-center cursor-pointer group"
           >
-            <div className="relative flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-cyan-500 to-blue-600 shadow-md shadow-cyan-500/20 group-hover:scale-105 transition-transform">
-              <span className="text-lg font-black tracking-tight text-white">W</span>
-            </div>
-            <h1 className={`hidden sm:block text-lg font-black tracking-tight transition-colors ${
-              isLight ? 'text-slate-900 group-hover:text-cyan-600' : 'text-slate-100 group-hover:text-cyan-300'
-            }`}>
-              Winko's Hockey Pool
-            </h1>
+            <img 
+              src={isLight ? logoLight : logoDark} 
+              alt="Winko's Hockey Pool" 
+              className="h-10 w-auto object-contain group-hover:scale-105 transition-transform"
+            />
           </div>
 
           {/* Navigation & Theme Toggle */}

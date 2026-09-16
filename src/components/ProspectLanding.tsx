@@ -293,7 +293,7 @@ export const ProspectLanding: React.FC<ProspectLandingProps> = ({
         {/* ========================================================================= */}
         {/* 1. TOP HEADER & CONTROL BAR */}
         {/* ========================================================================= */}
-        <section className={`flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between border-b pb-6 ${
+        <section className={`mb-8 flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between border-b pb-6 ${
           isLight ? 'border-slate-200' : 'border-slate-800/80'
         }`}>
           <div>

@@ -22,6 +22,9 @@ import {
 } from 'lucide-react';
 import { evaluateProspect } from '../types';
 
+import logoLight from '../assets/images/winkos-logo-light.png';
+import logoDark from '../assets/images/winkos-logo-dark.png';
+
 /**
  * WinkoHub - Landing page + PIN auth gate for Winko's Hockey Pool.
  *
@@ -93,20 +96,12 @@ export default function WinkoHub({
             isLight ? 'border-slate-200' : 'border-slate-800/80'
           }`}>
             {/* Brand */}
-            <div className="flex items-center gap-3">
-              <div className="relative flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-sky-400 to-sky-600 shadow-lg shadow-sky-500/25">
-                <HockeyMark className="h-7 w-7 text-slate-950" />
-              </div>
-              <div>
-                <h1 className={`text-3xl font-extrabold tracking-tight sm:text-4xl ${
-                  isLight ? 'text-slate-900' : 'text-white'
-                }`}>
-                  Winko&apos;s Hockey Pool Hub
-                </h1>
-                <p className={`text-xs font-medium ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>
-                  Fantasy Pool Command Center
-                </p>
-              </div>
+            <div className="flex items-center">
+              <img 
+                src={isLight ? logoLight : logoDark} 
+                alt="Winko's Hockey Pool" 
+                className="h-12 w-auto object-contain"
+              />
             </div>
 
             {/* Controls & Theme Toggle */}
@@ -778,20 +773,4 @@ function initialsFor(name) {
   const parts = name.trim().split(/\s+/);
   if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
   return (parts[0][0] + parts[1][0]).toUpperCase();
-}
-
-/* Simple hockey stick + puck mark. */
-function HockeyMark({ className }) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" className={className} aria-hidden="true">
-      <path
-        d="M4 4v9c0 1.5 1 2.5 2.5 2.5H17"
-        stroke="currentColor"
-        strokeWidth="2.2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      <ellipse cx="19" cy="17.5" rx="3" ry="1.6" fill="currentColor" />
-    </svg>
-  );
 }
