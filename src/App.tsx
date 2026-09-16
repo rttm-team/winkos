@@ -545,10 +545,21 @@ export default function App() {
 
       if (!targetProspect) return prevGms;
 
+      const isExplicitNoNhlId = Boolean(
+        updatedData.hasNoNhlId ||
+        updatedData.nhl_id === null ||
+        updatedData.nhlId === null ||
+        updatedData.nhlPlayerId === null
+      );
+
       const newTotalGames = updatedData.totalGames !== undefined ? updatedData.totalGames : targetProspect.totalGames;
       const updatedProspect: Prospect = {
         ...targetProspect,
         ...updatedData,
+        nhl_id: isExplicitNoNhlId ? undefined : (updatedData.nhl_id ?? targetProspect.nhl_id),
+        nhlId: isExplicitNoNhlId ? undefined : (updatedData.nhlId ?? targetProspect.nhlId),
+        nhlPlayerId: isExplicitNoNhlId ? undefined : (updatedData.nhlPlayerId ?? targetProspect.nhlPlayerId),
+        hasNoNhlId: isExplicitNoNhlId ? true : (updatedData.nhl_id ? false : targetProspect.hasNoNhlId),
         totalGames: newTotalGames,
         total_games: newTotalGames,
         gm_name: newGmName || targetProspect.gm_name || oldGmName,
@@ -617,7 +628,14 @@ export default function App() {
         updatePayload.is_inactive = isTrashed;
       }
 
-      if (updatedData.nhl_id !== undefined || updatedData.nhlId !== undefined || updatedData.nhlPlayerId !== undefined) {
+      if (
+        updatedData.hasNoNhlId ||
+        updatedData.nhl_id === null ||
+        updatedData.nhlId === null ||
+        updatedData.nhlPlayerId === null
+      ) {
+        updatePayload.nhl_id = null;
+      } else if (updatedData.nhl_id !== undefined || updatedData.nhlId !== undefined || updatedData.nhlPlayerId !== undefined) {
         const rawNhlId = updatedData.nhl_id ?? updatedData.nhlId ?? updatedData.nhlPlayerId;
         const numId = rawNhlId && !isNaN(Number(rawNhlId)) ? Number(rawNhlId) : null;
         updatePayload.nhl_id = numId;

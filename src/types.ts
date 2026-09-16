@@ -55,9 +55,10 @@ export interface Prospect {
   statusNotes?: string;
   gm_name?: string;
   gmName?: string;
-  nhlPlayerId?: string;
-  nhl_id?: string | number;
-  nhlId?: string | number;
+  nhlPlayerId?: string | null;
+  nhl_id?: string | number | null;
+  nhlId?: string | number | null;
+  hasNoNhlId?: boolean;
   status?: ProspectStatus;
   apiSyncStatus?: 'idle' | 'syncing' | 'synced' | 'fallback' | 'error' | 'no_record';
   lastSyncedAt?: string;

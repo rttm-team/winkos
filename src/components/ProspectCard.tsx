@@ -202,9 +202,13 @@ export const ProspectCard: React.FC<ProspectCardProps> = ({
                 </>
               )}
 
-              {prospect.nhlPlayerId && (
+              {prospect.nhlPlayerId ? (
                 <span className="font-mono text-[10px] text-slate-400 bg-slate-900/90 px-1.5 py-0.5 rounded border border-slate-800">
                   ID: #{prospect.nhlPlayerId}
+                </span>
+              ) : (
+                <span className="font-mono text-[10px] text-slate-500 bg-slate-900/60 px-1.5 py-0.5 rounded border border-slate-800/80" title="No official NHL ID assigned (Unlisted)">
+                  No NHL ID
                 </span>
               )}
             </div>

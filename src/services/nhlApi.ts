@@ -693,7 +693,7 @@ export async function syncProspectWithNhlApi(prospect: Prospect): Promise<NhlPla
 
   // If directNhlId exists, skip searchNhlPlayerId entirely and fetch directly using fetchNhlPlayerLanding
   let resolvedId: string = directNhlId ? String(directNhlId).trim() : '';
-  if (!resolvedId) {
+  if (!resolvedId && !prospect.hasNoNhlId) {
     try {
       const searchRes = await searchNhlPlayerId(prospect.name);
       if (searchRes && searchRes.playerId) {
@@ -718,8 +718,8 @@ export async function syncProspectWithNhlApi(prospect: Prospect): Promise<NhlPla
       timestamp,
       matchFound: false,
       hasEmptyStats: true,
-      statusBadge: 'No NHL Record',
-      statusMessage: 'Unlinked Prospect (Using Supabase stats)',
+      statusBadge: prospect.hasNoNhlId ? 'In Development' : 'No NHL Record',
+      statusMessage: prospect.hasNoNhlId ? 'No NHL ID (Unlisted Prospect)' : 'Unlinked Prospect (Using Supabase stats)',
       seasons25PlusGP: fallback25,
     };
   }

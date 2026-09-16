@@ -382,9 +382,13 @@ export const ProspectListItem: React.FC<ProspectListItemProps> = ({
           {/* Top metadata & Sync details bar */}
           <div className="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-slate-800/80 text-xs">
             <div className="flex items-center gap-2 flex-wrap">
-              {prospect.nhlPlayerId && (
+              {prospect.nhlPlayerId ? (
                 <span className="font-mono text-[11px] text-slate-300 bg-slate-800/90 px-2 py-0.5 rounded border border-slate-700">
                   NHL Player ID: #{prospect.nhlPlayerId}
+                </span>
+              ) : (
+                <span className="font-mono text-[11px] text-slate-400 bg-slate-800/60 px-2 py-0.5 rounded border border-slate-700/60" title="No official NHL ID assigned (Unlisted)">
+                  No NHL ID
                 </span>
               )}
               {prospect.syncSource && (

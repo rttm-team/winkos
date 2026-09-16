@@ -73,6 +73,7 @@ export const mapProspectRow = (row: any): Prospect => {
     nhl_id: row.nhl_id != null ? String(row.nhl_id) : undefined,
     nhlId: row.nhl_id != null ? String(row.nhl_id) : (row.nhlPlayerId != null ? String(row.nhlPlayerId) : undefined),
     nhlPlayerId: row.nhl_id != null ? String(row.nhl_id) : (row.nhl_player_id ?? row.nhlPlayerId),
+    hasNoNhlId: row.nhl_id == null && row.nhlPlayerId == null,
     max_single_season_gp: row.max_single_season_gp != null ? Number(row.max_single_season_gp) : undefined,
     maxSingleSeasonGP: row.max_single_season_gp != null ? Number(row.max_single_season_gp) : undefined,
     apiSyncStatus: row.api_sync_status ?? row.apiSyncStatus ?? 'idle',

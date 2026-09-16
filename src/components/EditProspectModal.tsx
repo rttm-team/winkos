@@ -37,6 +37,7 @@ export const EditProspectModal: React.FC<EditProspectModalProps> = ({
   const [selectedGm, setSelectedGm] = useState(gmName);
   const [name, setName] = useState('');
   const [nhlId, setNhlId] = useState('');
+  const [noNhlId, setNoNhlId] = useState<boolean>(false);
   const [position, setPosition] = useState<Position>('F');
   const [nhlTeam, setNhlTeam] = useState('');
   const [nhlTeamAbbr, setNhlTeamAbbr] = useState('');
@@ -57,7 +58,9 @@ export const EditProspectModal: React.FC<EditProspectModalProps> = ({
       setSelectedGm(prospect.gm_name || prospect.gmName || gmName || 'Adam');
       setName(prospect.name || '');
       const rawNhlId = prospect.nhl_id ?? prospect.nhlId ?? prospect.nhlPlayerId ?? '';
-      setNhlId(rawNhlId ? String(rawNhlId) : '');
+      const hasValidId = Boolean(rawNhlId && String(rawNhlId).trim() !== '' && String(rawNhlId).trim() !== '0');
+      setNhlId(hasValidId ? String(rawNhlId) : '');
+      setNoNhlId(!hasValidId || Boolean(prospect.hasNoNhlId));
       setPosition(prospect.position || 'F');
       setNhlTeam(prospect.nhlTeam || '');
       setNhlTeamAbbr(prospect.nhlTeamAbbr || '');
@@ -79,6 +82,8 @@ export const EditProspectModal: React.FC<EditProspectModalProps> = ({
     e.preventDefault();
     if (!name.trim()) return;
 
+    const finalNhlId = (!noNhlId && nhlId.trim()) ? nhlId.trim() : null;
+
     onEdit(prospect.id, {
       name: name.trim(),
       position,
@@ -93,9 +98,10 @@ export const EditProspectModal: React.FC<EditProspectModalProps> = ({
       isProtected,
       status: isTrashed ? 'trashed' : 'active',
       statusNotes: statusNotes.trim() || undefined,
-      nhl_id: nhlId.trim() || undefined,
-      nhlId: nhlId.trim() || undefined,
-      nhlPlayerId: nhlId.trim() || undefined,
+      nhl_id: finalNhlId,
+      nhlId: finalNhlId,
+      nhlPlayerId: finalNhlId,
+      hasNoNhlId: Boolean(noNhlId || !finalNhlId),
       gm_name: selectedGm,
       gmName: selectedGm,
     });
@@ -172,10 +178,10 @@ export const EditProspectModal: React.FC<EditProspectModalProps> = ({
 
             <div>
               <div className="flex items-center justify-between mb-1">
-                <label className="block font-semibold text-slate-300">
+                <label htmlFor="edit-prospect-nhl-id" className="block font-semibold text-slate-300">
                   NHL Player ID <span className="text-cyan-400 font-mono text-[10px] font-normal">(DB: nhl_id)</span>
                 </label>
-                {nhlId ? (
+                {nhlId && !noNhlId ? (
                   <a
                     href={`https://api-web.nhle.com/v1/player/${nhlId}/landing`}
                     target="_blank"
@@ -188,13 +194,60 @@ export const EditProspectModal: React.FC<EditProspectModalProps> = ({
                   </a>
                 ) : null}
               </div>
+
               <input
+                id="edit-prospect-nhl-id"
                 type="text"
-                value={nhlId}
-                placeholder="e.g. 8481692"
-                onChange={(e) => setNhlId(e.target.value)}
-                className="w-full rounded-xl border border-slate-700 bg-slate-800 px-3 py-2 text-sm font-mono text-cyan-300 focus:border-cyan-500 focus:outline-none placeholder:text-slate-600"
+                value={noNhlId ? '' : nhlId}
+                disabled={noNhlId}
+                placeholder={noNhlId ? 'No NHL ID (Unlisted/Draft Prospect)' : 'e.g. 8481692'}
+                onChange={(e) => {
+                  setNhlId(e.target.value);
+                  if (e.target.value.trim()) {
+                    setNoNhlId(false);
+                  }
+                }}
+                className={`w-full rounded-xl border px-3 py-2 text-sm font-mono transition-colors ${
+                  noNhlId
+                    ? 'border-slate-800 bg-slate-950/70 text-slate-500 cursor-not-allowed italic placeholder:text-slate-600'
+                    : 'border-slate-700 bg-slate-800 text-cyan-300 focus:border-cyan-500 focus:outline-none placeholder:text-slate-600'
+                }`}
               />
+
+              {/* "No NHL ID" Checkbox close to the NHL_id */}
+              <div className="mt-2 flex items-center justify-between bg-slate-800/50 rounded-lg p-2 border border-slate-700/60">
+                <label
+                  htmlFor="checkbox-no-nhl-id"
+                  className="flex items-center gap-2 cursor-pointer select-none"
+                >
+                  <input
+                    id="checkbox-no-nhl-id"
+                    type="checkbox"
+                    checked={noNhlId}
+                    onChange={(e) => {
+                      const checked = e.target.checked;
+                      setNoNhlId(checked);
+                      if (checked) {
+                        setNhlId('');
+                      }
+                    }}
+                    className="h-4 w-4 rounded border-slate-600 bg-slate-800 text-cyan-500 focus:ring-cyan-500 cursor-pointer accent-cyan-500"
+                  />
+                  <span className={`text-xs font-semibold ${noNhlId ? 'text-amber-300' : 'text-slate-300'}`}>
+                    No NHL ID
+                  </span>
+                </label>
+                {noNhlId ? (
+                  <span className="text-[10px] font-mono text-amber-400 bg-amber-400/10 px-2 py-0.5 rounded border border-amber-400/30 font-semibold">
+                    Keeps DB nhl_id empty (NULL)
+                  </span>
+                ) : (
+                  <span className="text-[10px] text-slate-400">
+                    Check if unlisted / no NHL API ID
+                  </span>
+                )}
+              </div>
+
               <p className="mt-1 text-[10px] text-slate-400">
                 Direct Supabase DB column <code className="font-mono text-cyan-300">nhl_id</code> for live NHL stats sync.
               </p>
