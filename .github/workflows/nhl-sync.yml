@@ -1,9 +1,10 @@
-name: Nightly NHL Stats & Promotion Sync
+name: Nightly NHL Stats & Scoring Sync
 
 on:
   schedule:
+    # Runs every night at 3:00 AM EST (08:00 UTC)
     - cron: '0 8 * * *'
-  workflow_dispatch:
+  workflow_dispatch: # Allows manual trigger button in GitHub Actions UI
 
 jobs:
   sync-stats:
@@ -21,14 +22,8 @@ jobs:
       - name: Install dependencies
         run: pip install requests
 
-      - name: Auto-Find Missing NHL IDs
+      - name: Run NHL Sync & Scoring Script
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-        run: python scripts/find_missing_nhl_ids.py
-
-      - name: Run NHL Sync Script
-        env:
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-        run: python scripts/nhl_sync.py
+        run: python sync_nhl_stats.py
