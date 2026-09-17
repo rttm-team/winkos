@@ -40,11 +40,22 @@ def sync_player_stats(prospect):
         career_totals = data.get("careerTotals", {}).get("regularSeason", {})
         total_gp = career_totals.get("gamesPlayed", 0)
         
-        # Scoring & Goalie Stats extraction
+        # Skater Statistics
         goals = career_totals.get("goals", 0)
         assists = career_totals.get("assists", 0)
         points = career_totals.get("points", 0)
+        pim = career_totals.get("pim", 0)
+        plus_minus = career_totals.get("plusMinus", 0)
+        power_play_points = career_totals.get("powerPlayPoints", career_totals.get("powerPlayGoals", 0))
+        shorthanded_points = career_totals.get("shorthandedPoints", career_totals.get("shorthandedGoals", 0))
+        game_winning_goals = career_totals.get("gameWinningGoals", 0)
+        shots = career_totals.get("shots", 0)
+        
+        # Goalie Statistics
         wins = career_totals.get("wins", 0)
+        shutouts = career_totals.get("shutouts", 0)
+        saves = career_totals.get("saves", 0)
+        goals_against = career_totals.get("goalsAgainst", 0)
         raw_save_pct = career_totals.get("savePctg", 0.0)
         save_pct = round(float(raw_save_pct), 3) if raw_save_pct is not None else 0.0
         
@@ -93,7 +104,16 @@ def sync_player_stats(prospect):
             "goals": goals,
             "assists": assists,
             "points": points,
+            "pim": pim,
+            "plus_minus": plus_minus,
+            "power_play_points": power_play_points,
+            "shorthanded_points": shorthanded_points,
+            "game_winning_goals": game_winning_goals,
+            "shots": shots,
             "wins": wins,
+            "shutouts": shutouts,
+            "saves": saves,
+            "goals_against": goals_against,
             "save_pct": save_pct
         }
         
@@ -102,7 +122,7 @@ def sync_player_stats(prospect):
         patch_res = requests.patch(update_url, headers=HEADERS, json=update_payload)
         
         if patch_res.status_code in (200, 204):
-            stat_summary = f"{wins}W, {save_pct:.3f} SV%" if is_goalie else f"{goals}G, {assists}A, {points}P"
+            stat_summary = f"{wins}W, {shutouts}SO" if is_goalie else f"{goals}G, {assists}A, {points}P ({game_winning_goals} GWG, {plus_minus} +/-)"
             print(f"✅ Synced {name}: {total_gp} GP ({stat_summary}) | Promoted: {should_promote}")
         else:
             print(f"❌ Failed to update Supabase for {name}: {patch_res.text}")
@@ -111,7 +131,7 @@ def sync_player_stats(prospect):
         print(f"⚠️ Error syncing {name}: {str(e)}")
 
 def main():
-    print("🚀 Starting Winko's NHL Stats Automated Sync (v5 with Scoring Stats)...")
+    print("🚀 Starting Winko's NHL Stats Automated Sync (v6 with Full Rule Scoring Stats)...")
     prospects = fetch_prospects_with_nhl_ids()
     print(f"Found {len(prospects)} prospects with linked NHL IDs.")
     
