@@ -52,12 +52,23 @@ def sync_player_stats(prospect):
         shots = career_totals.get("shots", 0)
         
         # Goalie Statistics
-        wins = career_totals.get("wins", 0)
-        shutouts = career_totals.get("shutouts", 0)
-        saves = career_totals.get("saves", 0)
-        goals_against = career_totals.get("goalsAgainst", 0)
-        raw_save_pct = career_totals.get("savePctg", 0.0)
+        wins = career_totals.get("wins", career_totals.get("w", 0))
+        shutouts = career_totals.get("shutouts", career_totals.get("shutout", career_totals.get("so", 0)))
+        saves = career_totals.get("saves", career_totals.get("sv", 0))
+        goals_against = career_totals.get("goalsAgainst", career_totals.get("ga", 0))
+        shots_against = career_totals.get("shotsAgainst", career_totals.get("sa", 0))
+        raw_save_pct = career_totals.get("savePctg", career_totals.get("savePct", 0.0))
         save_pct = round(float(raw_save_pct), 3) if raw_save_pct is not None else 0.0
+
+        if saves == 0 and shots_against > 0 and goals_against > 0:
+            saves = shots_against - goals_against
+        elif saves == 0 and goals_against > 0 and save_pct > 0:
+            # save_pct = saves / (saves + goals_against) => saves * (1 - save_pct) = goals_against * save_pct => saves = (goals_against * save_pct) / (1 - save_pct)
+            try:
+                calculated_saves = (goals_against * save_pct) / (1.0 - save_pct)
+                saves = int(round(calculated_saves))
+            except Exception:
+                pass
         
         season_totals = data.get("seasonTotals", [])
         max_single_season_gp = 0
