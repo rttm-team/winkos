@@ -88,8 +88,6 @@ export const ProspectLanding: React.FC<ProspectLandingProps> = ({
   const [leaderboard, setLeaderboard] = useState<GmDraftLeaderboardRow[]>([]);
   const [prospects, setProspects] = useState<ProspectRow[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedGmFilter, setSelectedGmFilter] = useState<string>('ALL'); // 'ALL' or gm_name
-  const [gmDropdownOpen, setGmDropdownOpen] = useState(false);
   const [promotingId, setPromotingId] = useState<number | null>(null);
 
   // Fetch Supabase data: view gm_draft_leaderboard and table prospects
@@ -504,7 +502,6 @@ export const ProspectLanding: React.FC<ProspectLandingProps> = ({
   const needsPromotionList = useMemo(() => {
     return prospects.filter((p) => {
       if (p.promoted) return false;
-      if (selectedGmFilter !== 'ALL' && p.gm_name !== selectedGmFilter) return false;
 
       const pos = (p.position || 'F').toUpperCase();
       const isGoalie = pos === 'G';
@@ -517,7 +514,7 @@ export const ProspectLanding: React.FC<ProspectLandingProps> = ({
         return maxGP >= 40 || totalGP >= 65;
       }
     });
-  }, [prospects, selectedGmFilter]);
+  }, [prospects]);
 
   // Radar prospects (within 10 GP of promotion):
   // Skaters: max_single_season_gp between 30–39 OR total_games between 55–64
@@ -526,7 +523,6 @@ export const ProspectLanding: React.FC<ProspectLandingProps> = ({
     return prospects
       .filter((p) => {
         if (p.promoted) return false;
-        if (selectedGmFilter !== 'ALL' && p.gm_name !== selectedGmFilter) return false;
 
         const pos = (p.position || 'F').toUpperCase();
         const isGoalie = pos === 'G';
@@ -570,7 +566,7 @@ export const ProspectLanding: React.FC<ProspectLandingProps> = ({
         };
       })
       .sort((a, b) => b.pct - a.pct);
-  }, [prospects, selectedGmFilter]);
+  }, [prospects]);
 
   // Map a gm_name to a GM object to navigate to their pool
   const handleOpenGmPool = (gmName: string) => {
@@ -602,79 +598,6 @@ export const ProspectLanding: React.FC<ProspectLandingProps> = ({
             <p className={`text-xs sm:text-sm mt-1 max-w-xl ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>
               League-wide draft hit rates, star producer leaderboards, and real-time NHL promotion threshold tracking.
             </p>
-          </div>
-
-          {/* GM Team Switcher Dropdown */}
-          <div className="relative shrink-0">
-            <div className={`text-[11px] font-semibold uppercase tracking-wider mb-1 ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>
-              Filter Watchlist by GM
-            </div>
-            <button
-              type="button"
-              onClick={() => setGmDropdownOpen(!gmDropdownOpen)}
-              className={`flex items-center justify-between gap-3 min-w-[200px] rounded-xl border px-4 py-2.5 text-sm font-semibold transition-all shadow-md focus:outline-none focus:ring-2 focus:ring-cyan-500/40 cursor-pointer ${
-                isLight
-                  ? 'border-slate-300 bg-white text-slate-800 hover:border-cyan-600 shadow-sm'
-                  : 'border-slate-700 bg-slate-800/90 text-slate-100 hover:border-cyan-500/50 hover:bg-slate-800'
-              }`}
-            >
-              <div className="flex items-center gap-2">
-                <Users className="h-4 w-4 text-cyan-400" />
-                <span>{selectedGmFilter === 'ALL' ? 'All GMs (League-wide)' : `${selectedGmFilter}'s Team`}</span>
-              </div>
-              <ChevronDown
-                className={`h-4 w-4 text-slate-400 transition-transform duration-200 ${
-                  gmDropdownOpen ? 'rotate-180' : ''
-                }`}
-              />
-            </button>
-
-            {gmDropdownOpen && (
-              <>
-                <div
-                  className="fixed inset-0 z-30"
-                  onClick={() => setGmDropdownOpen(false)}
-                />
-                <div className="absolute right-0 mt-2 z-40 w-64 max-h-72 overflow-y-auto rounded-xl border border-slate-700 bg-slate-800/95 p-1.5 shadow-2xl backdrop-blur-md scrollbar-thin scrollbar-thumb-slate-600">
-                  <button
-                    onClick={() => {
-                      setSelectedGmFilter('ALL');
-                      setGmDropdownOpen(false);
-                    }}
-                    className={`w-full flex items-center justify-between rounded-lg px-3 py-2 text-xs font-semibold text-left transition-colors cursor-pointer ${
-                      selectedGmFilter === 'ALL'
-                        ? 'bg-cyan-500/20 text-cyan-300'
-                        : 'text-slate-300 hover:bg-slate-700/60 hover:text-white'
-                    }`}
-                  >
-                    <span>All GMs (League-wide)</span>
-                    {selectedGmFilter === 'ALL' && <CheckCircle2 className="h-3.5 w-3.5 text-cyan-400" />}
-                  </button>
-
-                  <div className="my-1 border-t border-slate-700/60" />
-
-                  {rankedLeaderboard.map((row) => (
-                    <button
-                      key={row.gm_name}
-                      onClick={() => {
-                        setSelectedGmFilter(row.gm_name);
-                        setGmDropdownOpen(false);
-                      }}
-                      className={`w-full flex items-center justify-between rounded-lg px-3 py-2 text-xs font-medium text-left transition-colors cursor-pointer ${
-                        selectedGmFilter === row.gm_name
-                          ? 'bg-cyan-500/20 text-cyan-300 font-semibold'
-                          : 'text-slate-300 hover:bg-slate-700/60 hover:text-white'
-                      }`}
-                    >
-                      <span className="truncate">{row.gm_name}</span>
-                      <span className="font-mono text-[10px] text-amber-400 font-bold">
-                        {row.total_fantasy_points.toLocaleString()} pts
-                      </span>
-                    </button>
-                  ))}
-                </div>
-              </>
-            )}
           </div>
         </section>
 
@@ -923,28 +846,11 @@ export const ProspectLanding: React.FC<ProspectLandingProps> = ({
             <div>
               <h2 className={`text-3xl font-black tracking-tight flex items-center gap-2 ${isLight ? 'text-slate-900' : 'text-white'}`}>
                 <span>Promotion Watchlist</span>
-                {selectedGmFilter !== 'ALL' && (
-                  <span className={`text-xs font-semibold px-2 py-0.5 rounded-full border ${
-                    isLight ? 'bg-cyan-50 text-cyan-800 border-cyan-200' : 'bg-cyan-500/20 text-cyan-300 border-cyan-500/30'
-                  }`}>
-                    Filtered to {selectedGmFilter}
-                  </span>
-                )}
               </h2>
               <p className={`text-xs ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>
                 Real-time tracking of non-promoted players approaching or exceeding league promotion criteria.
               </p>
             </div>
-
-            {selectedGmFilter !== 'ALL' && (
-              <button
-                type="button"
-                onClick={() => setSelectedGmFilter('ALL')}
-                className="self-start sm:self-auto text-xs font-semibold text-cyan-600 dark:text-cyan-400 hover:underline cursor-pointer"
-              >
-                Reset to All GMs
-              </button>
-            )}
           </div>
 
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">

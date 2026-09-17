@@ -10,7 +10,7 @@ import {
   ProspectSortOption,
   sortProspects,
 } from './types';
-import { INITIAL_GMS, setStoredProspectStatus, setStoredScoringStats } from './data/mockData';
+import { INITIAL_GMS, setStoredProspectStatus, setStoredScoringStats, calculateFantasyPoints } from './data/mockData';
 import { Header } from './components/Header';
 import WinkoHub from './components/WinkoHub';
 import { FiltersAndSearch } from './components/FiltersAndSearch';
@@ -31,6 +31,8 @@ import {
   Loader2,
   CheckCircle2,
   Activity,
+  Trophy,
+  Users,
 } from 'lucide-react';
 
 export default function App() {
@@ -127,6 +129,54 @@ export default function App() {
   const activeGm = useMemo(() => {
     return gms.find((g) => g.id === selectedGmId) || gms[0];
   }, [gms, selectedGmId]);
+
+  // GM Leaderboard for active GM stats calculation
+  const gmLeaderboard = useMemo(() => {
+    const list = gms.map((gm) => {
+      let pts = 0;
+      let goals = 0;
+      let assists = 0;
+      let wins = 0;
+      let promoted = 0;
+      gm.prospects.forEach((p) => {
+        pts += calculateFantasyPoints(p);
+        goals += Number(p.goals || 0);
+        assists += Number(p.assists || 0);
+        if (p.position === 'G') wins += Number(p.wins || 0);
+        if (p.promoted) promoted++;
+      });
+      return {
+        id: gm.id,
+        name: gm.name,
+        teamName: gm.teamName,
+        total_fantasy_points: pts,
+        goals,
+        assists,
+        wins,
+        total_prospects: gm.prospects.length,
+        promoted_count: promoted,
+      };
+    });
+    list.sort((a, b) => b.total_fantasy_points - a.total_fantasy_points || b.goals - a.goals);
+    return list;
+  }, [gms]);
+
+  const activeGmStats = useMemo(() => {
+    const found = gmLeaderboard.find((g) => g.id === activeGm.id);
+    const rank = gmLeaderboard.findIndex((g) => g.id === activeGm.id) + 1;
+    const totalP = found?.total_prospects || activeGm.prospects.length;
+    const promotedP = found?.promoted_count || activeGm.prospects.filter((p) => p.promoted).length;
+    return {
+      total_prospects: totalP,
+      promoted_count: promotedP,
+      hit_rate: totalP > 0 ? Math.round((promotedP / totalP) * 100) : 0,
+      total_fantasy_points: found?.total_fantasy_points || activeGm.prospects.reduce((s, p) => s + calculateFantasyPoints(p), 0),
+      goals: found?.goals || activeGm.prospects.reduce((s, p) => s + Number(p.goals || 0), 0),
+      assists: found?.assists || activeGm.prospects.reduce((s, p) => s + Number(p.assists || 0), 0),
+      wins: found?.wins || activeGm.prospects.reduce((s, p) => s + (p.position === 'G' ? Number(p.wins || 0) : 0), 0),
+      rank: rank || 1,
+    };
+  }, [gmLeaderboard, activeGm]);
 
   // The GM currently authenticated via PIN (null until they unlock)
   const authedGm = useMemo(
@@ -1182,6 +1232,93 @@ export default function App() {
             </button>
           </div>
         </div>
+
+        {/* 3 GM-Specific Stat Cards */}
+        <section className="grid grid-cols-1 gap-4 sm:grid-cols-3 mb-8">
+          {/* Card 1: Total Prospects on Roster */}
+          <div className={`relative overflow-hidden rounded-2xl border p-5 backdrop-blur-sm shadow-md transition ${
+            isLight ? 'border-slate-200 bg-white hover:border-cyan-400 text-slate-900' : 'border-slate-800 bg-slate-900/60 hover:border-cyan-500/40 text-white'
+          }`}>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className={`text-xs font-semibold uppercase tracking-wider ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>
+                  {activeGm.name}'s Prospects
+                </p>
+                <div className="mt-2 flex items-baseline gap-2">
+                  <span className={`text-3xl font-black font-mono ${isLight ? 'text-slate-900' : 'text-white'}`}>
+                    {activeGmStats.total_prospects}
+                  </span>
+                  <span className="text-xs font-semibold text-cyan-600 dark:text-cyan-400">Active Roster</span>
+                </div>
+              </div>
+              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-cyan-500/15 text-cyan-600 dark:text-cyan-400 ring-1 ring-cyan-500/30">
+                <Users className="h-6 w-6" />
+              </div>
+            </div>
+            <div className={`mt-4 flex items-center gap-1.5 text-xs ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>
+              <Activity className="h-3.5 w-3.5 text-cyan-600 dark:text-cyan-400" />
+              <span>Total prospects tracked in manager pool</span>
+            </div>
+          </div>
+
+          {/* Card 2: Promoted / Graduated */}
+          <div className={`relative overflow-hidden rounded-2xl border p-5 backdrop-blur-sm shadow-md transition ${
+            isLight ? 'border-slate-200 bg-white hover:border-emerald-400 text-slate-900' : 'border-slate-800 bg-slate-900/60 hover:border-emerald-500/40 text-white'
+          }`}>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className={`text-xs font-semibold uppercase tracking-wider ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>
+                  {activeGm.name}'s Graduated
+                </p>
+                <div className="mt-2 flex items-baseline gap-2">
+                  <span className={`text-3xl font-black font-mono ${isLight ? 'text-emerald-700' : 'text-emerald-400'}`}>
+                    {activeGmStats.promoted_count}
+                  </span>
+                  <span className={`text-xs font-semibold ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>
+                    ({activeGmStats.hit_rate}% hit rate)
+                  </span>
+                </div>
+              </div>
+              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 ring-1 ring-emerald-500/30">
+                <CheckCircle2 className="h-6 w-6" />
+              </div>
+            </div>
+            <div className={`mt-4 flex items-center gap-1.5 text-xs ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>
+              <Shield className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
+              <span>Promoted to official Winko active roster</span>
+            </div>
+          </div>
+
+          {/* Card 3: Rule 5 Fantasy Points & Rank */}
+          <div className={`relative overflow-hidden rounded-2xl border p-5 backdrop-blur-sm shadow-md transition ${
+            isLight ? 'border-slate-200 bg-white hover:border-amber-400 text-slate-900' : 'border-slate-800 bg-slate-900/60 hover:border-amber-500/40 text-white'
+          }`}>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className={`text-xs font-semibold uppercase tracking-wider ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>
+                  {activeGm.name}'s Fantasy Score
+                </p>
+                <div className="mt-2 flex items-baseline gap-2">
+                  <span className={`text-3xl font-black font-mono ${isLight ? 'text-amber-600' : 'text-amber-400'}`}>
+                    {activeGmStats.total_fantasy_points.toLocaleString()} PTS
+                  </span>
+                  <span className="text-xs font-bold text-amber-600 dark:text-amber-400">
+                    Rank #{activeGmStats.rank}
+                  </span>
+                </div>
+              </div>
+              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-amber-500/15 text-amber-600 dark:text-amber-400 ring-1 ring-amber-500/30">
+                <Trophy className="h-6 w-6" />
+              </div>
+            </div>
+            <div className={`mt-4 flex items-center gap-1.5 text-xs ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>
+              <Sparkles className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
+              <span>
+                Stats: {activeGmStats.goals}G, {activeGmStats.assists}A, {activeGmStats.wins}W
+              </span>
+            </div>
+          </div>
+        </section>
 
         {/* 4. Filters & Search */}
         <FiltersAndSearch
