@@ -28,7 +28,16 @@ export interface NhlPlayerStatsResult {
   assists?: number;
   points?: number;
   wins?: number;
+  shutouts?: number;
+  saves?: number;
+  goals_against?: number;
   save_pct?: number;
+  pim?: number;
+  plus_minus?: number;
+  power_play_points?: number;
+  shorthanded_points?: number;
+  game_winning_goals?: number;
+  shots?: number;
 }
 
 // Cached league prospects lookup by normalized name from winkos_full_league_data.json
@@ -527,7 +536,16 @@ export function parseNhlLandingStats(landingData: any, playerPos?: string): {
   assists?: number;
   points?: number;
   wins?: number;
+  shutouts?: number;
+  saves?: number;
+  goals_against?: number;
   save_pct?: number;
+  pim?: number;
+  plus_minus?: number;
+  power_play_points?: number;
+  shorthanded_points?: number;
+  game_winning_goals?: number;
+  shots?: number;
 } {
   if (!landingData || typeof landingData !== 'object') {
     return {
@@ -560,11 +578,23 @@ export function parseNhlLandingStats(landingData: any, playerPos?: string): {
   let assists: number | undefined;
   let points: number | undefined;
   let wins: number | undefined;
+  let shutouts: number | undefined;
+  let saves: number | undefined;
+  let goals_against: number | undefined;
   let save_pct: number | undefined;
+  let pim: number | undefined;
+  let plus_minus: number | undefined;
+  let power_play_points: number | undefined;
+  let shorthanded_points: number | undefined;
+  let game_winning_goals: number | undefined;
+  let shots: number | undefined;
 
   const regTotals = landingData.careerTotals?.regularSeason || landingData.featuredStats?.regularSeason?.career || landingData.featuredStats?.regularSeason?.subSeason;
   if (isGoalie) {
     if (typeof regTotals?.wins === 'number') wins = regTotals.wins;
+    if (typeof regTotals?.shutouts === 'number') shutouts = regTotals.shutouts;
+    if (typeof regTotals?.saves === 'number') saves = regTotals.saves;
+    if (typeof regTotals?.goalsAgainst === 'number') goals_against = regTotals.goalsAgainst;
     const rawSv = regTotals?.savePctg ?? regTotals?.savePct ?? regTotals?.save_pct;
     if (typeof rawSv === 'number') save_pct = rawSv;
   } else {
@@ -575,6 +605,12 @@ export function parseNhlLandingStats(landingData: any, playerPos?: string): {
     } else if (goals !== undefined || assists !== undefined) {
       points = (goals || 0) + (assists || 0);
     }
+    if (typeof regTotals?.pim === 'number') pim = regTotals.pim;
+    if (typeof regTotals?.plusMinus === 'number') plus_minus = regTotals.plusMinus;
+    if (typeof regTotals?.powerPlayPoints === 'number') power_play_points = regTotals.powerPlayPoints;
+    if (typeof regTotals?.shorthandedPoints === 'number') shorthanded_points = regTotals.shorthandedPoints;
+    if (typeof regTotals?.gameWinningGoals === 'number') game_winning_goals = regTotals.gameWinningGoals;
+    if (typeof regTotals?.shots === 'number') shots = regTotals.shots;
   }
 
   // 1. Try featuredStats for regular season
@@ -666,7 +702,16 @@ export function parseNhlLandingStats(landingData: any, playerPos?: string): {
     assists,
     points,
     wins,
+    shutouts,
+    saves,
+    goals_against,
     save_pct,
+    pim,
+    plus_minus,
+    power_play_points,
+    shorthanded_points,
+    game_winning_goals,
+    shots,
   };
 }
 
@@ -831,7 +876,16 @@ export async function syncProspectWithNhlApi(prospect: Prospect): Promise<NhlPla
       assists: parsed.assists,
       points: parsed.points,
       wins: parsed.wins,
+      shutouts: parsed.shutouts,
+      saves: parsed.saves,
+      goals_against: parsed.goals_against,
       save_pct: parsed.save_pct,
+      pim: parsed.pim,
+      plus_minus: parsed.plus_minus,
+      power_play_points: parsed.power_play_points,
+      shorthanded_points: parsed.shorthanded_points,
+      game_winning_goals: parsed.game_winning_goals,
+      shots: parsed.shots,
     };
   } catch (err: any) {
     const { currentSeasonGP, priorCareerGP, totalGP } = getSafeGamesPlayed(cachedTotal);

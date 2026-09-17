@@ -368,6 +368,20 @@ export default function App() {
       if (parsedNhlId !== null) {
         updatePayload.nhl_id = parsedNhlId;
       }
+      if (result.goals !== undefined) updatePayload.goals = result.goals;
+      if (result.assists !== undefined) updatePayload.assists = result.assists;
+      if (result.points !== undefined) updatePayload.points = result.points;
+      if (result.wins !== undefined) updatePayload.wins = result.wins;
+      if (result.shutouts !== undefined) updatePayload.shutouts = result.shutouts;
+      if (result.saves !== undefined) updatePayload.saves = result.saves;
+      if (result.goals_against !== undefined) updatePayload.goals_against = result.goals_against;
+      if (result.save_pct !== undefined) updatePayload.save_pct = result.save_pct;
+      if (result.pim !== undefined) updatePayload.pim = result.pim;
+      if (result.plus_minus !== undefined) updatePayload.plus_minus = result.plus_minus;
+      if (result.power_play_points !== undefined) updatePayload.power_play_points = result.power_play_points;
+      if (result.shorthanded_points !== undefined) updatePayload.shorthanded_points = result.shorthanded_points;
+      if (result.game_winning_goals !== undefined) updatePayload.game_winning_goals = result.game_winning_goals;
+      if (result.shots !== undefined) updatePayload.shots = result.shots;
 
       console.log(`[Supabase] Syncing prospect #${dbId} (${currentProspect.name}):`, updatePayload);
       const { data, error: syncDbErr } = await supabase.from('prospects')
@@ -499,6 +513,20 @@ export default function App() {
           if (parsedNhlId !== null) {
             updatePayload.nhl_id = parsedNhlId;
           }
+          if (resObj.result.goals !== undefined) updatePayload.goals = resObj.result.goals;
+          if (resObj.result.assists !== undefined) updatePayload.assists = resObj.result.assists;
+          if (resObj.result.points !== undefined) updatePayload.points = resObj.result.points;
+          if (resObj.result.wins !== undefined) updatePayload.wins = resObj.result.wins;
+          if (resObj.result.shutouts !== undefined) updatePayload.shutouts = resObj.result.shutouts;
+          if (resObj.result.saves !== undefined) updatePayload.saves = resObj.result.saves;
+          if (resObj.result.goals_against !== undefined) updatePayload.goals_against = resObj.result.goals_against;
+          if (resObj.result.save_pct !== undefined) updatePayload.save_pct = resObj.result.save_pct;
+          if (resObj.result.pim !== undefined) updatePayload.pim = resObj.result.pim;
+          if (resObj.result.plus_minus !== undefined) updatePayload.plus_minus = resObj.result.plus_minus;
+          if (resObj.result.power_play_points !== undefined) updatePayload.power_play_points = resObj.result.power_play_points;
+          if (resObj.result.shorthanded_points !== undefined) updatePayload.shorthanded_points = resObj.result.shorthanded_points;
+          if (resObj.result.game_winning_goals !== undefined) updatePayload.game_winning_goals = resObj.result.game_winning_goals;
+          if (resObj.result.shots !== undefined) updatePayload.shots = resObj.result.shots;
           await supabase.from('prospects')
             .update(updatePayload)
             .eq('id', dbId);
