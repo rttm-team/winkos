@@ -165,7 +165,7 @@ function LockedView({ gms, leaderboard, isArcadeComingSoon, onPick, onNavigate, 
   return (
     <>
       {/* Hero */}
-      <div className="py-8 text-center sm:py-12 border-b border-slate-200 dark:border-slate-800/80 mb-6">
+      <div className={`py-8 text-center sm:py-12 border-b mb-6 ${isLight ? 'border-slate-200' : 'border-slate-800/80'}`}>
         <h2 className={`mx-auto mt-4 max-w-2xl text-5xl font-black leading-tight sm:text-6xl ${
           isLight ? 'text-slate-900' : 'text-white'
         }`}>
@@ -356,7 +356,7 @@ function UnlockedView({ activeGm, leaderboard, isArcadeComingSoon, onNavigate, i
   return (
     <>
       {/* Hero */}
-      <div className="py-6 sm:py-8 border-b pb-6 dark:border-slate-800/80 border-slate-200 mb-8">
+      <div className={`py-6 sm:py-8 border-b pb-6 mb-8 ${isLight ? 'border-slate-200' : 'border-slate-800/80'}`}>
         <p className={`text-sm font-semibold uppercase tracking-[0.2em] mb-2 ${isLight ? 'text-sky-700' : 'text-sky-400'}`}>
           Welcome back{firstName ? `, ${firstName}` : ''}
         </p>

@@ -5,20 +5,24 @@ import {
   Users,
   CheckCircle2,
   TrendingUp,
-  Target,
-  Gem,
-  Flame,
   AlertTriangle,
   ChevronDown,
-  Sparkles,
   ExternalLink,
   Shield,
   ArrowRight,
   Medal,
   Activity,
   Award,
+  Sparkles,
+  Flame,
 } from 'lucide-react';
 import { GeneralManager } from '../types';
+import {
+  getStoredScoringStats,
+  getBaselineScoringStats,
+  calculateFantasyPoints,
+  INITIAL_GMS,
+} from '../data/mockData';
 
 export interface GmDraftLeaderboardRow {
   gm_name: string;
@@ -26,7 +30,16 @@ export interface GmDraftLeaderboardRow {
   promoted_count: number;
   hit_rate_pct: number;
   total_nhl_games_produced: number;
-  star_players_count: number;
+  star_players_count?: number;
+  total_points?: number;
+  total_wins?: number;
+  total_fantasy_points?: number;
+  goals?: number;
+  assists?: number;
+  wins?: number;
+  shutouts?: number;
+  gp?: number;
+  winkoins?: number;
 }
 
 export interface ProspectRow {
@@ -41,6 +54,21 @@ export interface ProspectRow {
   promoted: boolean;
   protected: boolean;
   nhl_id: number | string | null;
+  goals?: number;
+  assists?: number;
+  points?: number;
+  pp_points?: number;
+  sh_points?: number;
+  gwg?: number;
+  plus_minus?: number;
+  pim?: number;
+  shots?: number;
+  wins?: number;
+  shutouts?: number;
+  saves?: number;
+  goals_against?: number;
+  save_pct?: number;
+  fantasy_points?: number;
 }
 
 interface ProspectLandingProps {
@@ -71,9 +99,7 @@ export const ProspectLanding: React.FC<ProspectLandingProps> = ({
 
       const [lbRes, prosRes] = await Promise.all([
         supabase.from('gm_draft_leaderboard').select('*'),
-        supabase
-          .from('prospects')
-          .select('id, gm_name, player_name, position, draft_year, total_games, max_single_season_gp, qualifying_seasons, promoted, protected, nhl_id'),
+        supabase.from('prospects').select('*'),
       ]);
 
       if (lbRes.data) {
@@ -104,9 +130,60 @@ export const ProspectLanding: React.FC<ProspectLandingProps> = ({
       }
 
       if (prosRes.data) {
-        const activePros = (prosRes.data as ProspectRow[]).filter(
-          (p) => p.player_name !== '[DELETED]' && p.gm_name && p.gm_name.trim() !== ''
-        );
+        const activePros = (prosRes.data as any[])
+          .filter((p) => p.player_name !== '[DELETED]' && p.gm_name && p.gm_name.trim() !== '')
+          .map((p) => {
+            const stored = getStoredScoringStats(String(p.id), p.player_name);
+            const baseline = stored || getBaselineScoringStats(p.player_name, p.position, p.total_games || 0);
+            const goals = p.goals != null && !isNaN(Number(p.goals)) ? Number(p.goals) : baseline.goals;
+            const assists = p.assists != null && !isNaN(Number(p.assists)) ? Number(p.assists) : baseline.assists;
+            const points = p.points != null && !isNaN(Number(p.points)) ? Number(p.points) : baseline.points;
+            const pp_points = p.pp_points != null && !isNaN(Number(p.pp_points)) ? Number(p.pp_points) : baseline.pp_points;
+            const sh_points = p.sh_points != null && !isNaN(Number(p.sh_points)) ? Number(p.sh_points) : baseline.sh_points;
+            const gwg = p.gwg != null && !isNaN(Number(p.gwg)) ? Number(p.gwg) : baseline.gwg;
+            const plus_minus = p.plus_minus != null && !isNaN(Number(p.plus_minus)) ? Number(p.plus_minus) : baseline.plus_minus;
+            const pim = p.pim != null && !isNaN(Number(p.pim)) ? Number(p.pim) : baseline.pim;
+            const shots = p.shots != null && !isNaN(Number(p.shots)) ? Number(p.shots) : baseline.shots;
+            const wins = p.wins != null && !isNaN(Number(p.wins)) ? Number(p.wins) : baseline.wins;
+            const shutouts = p.shutouts != null && !isNaN(Number(p.shutouts)) ? Number(p.shutouts) : baseline.shutouts;
+            const saves = p.saves != null && !isNaN(Number(p.saves)) ? Number(p.saves) : baseline.saves;
+            const goals_against = p.goals_against != null && !isNaN(Number(p.goals_against)) ? Number(p.goals_against) : baseline.goals_against;
+            const save_pct = p.save_pct != null && !isNaN(Number(p.save_pct)) ? Number(p.save_pct) : baseline.save_pct;
+
+            const fantasy_points = calculateFantasyPoints({
+              goals,
+              assists,
+              pp_points,
+              sh_points,
+              gwg,
+              plus_minus,
+              pim,
+              shots,
+              wins,
+              shutouts,
+              saves,
+              goals_against,
+            });
+
+            return {
+              ...p,
+              goals,
+              assists,
+              points,
+              pp_points,
+              sh_points,
+              gwg,
+              plus_minus,
+              pim,
+              shots,
+              wins,
+              shutouts,
+              saves,
+              goals_against,
+              save_pct,
+              fantasy_points,
+            } as ProspectRow;
+          });
         setProspects(activePros);
       }
     } catch (err) {
@@ -140,36 +217,235 @@ export const ProspectLanding: React.FC<ProspectLandingProps> = ({
     };
   }, [prospects, leaderboard]);
 
-  // Determine special badge leaders
-  const badgeLeaders = useMemo(() => {
-    if (leaderboard.length === 0) return { scoutMaster: '', diamondRough: '', workhorse: '' };
-
-    let maxHitRate = -1;
-    let scoutMaster = '';
-
-    let maxStars = -1;
-    let diamondRough = '';
-
-    let maxGames = -1;
-    let workhorse = '';
-
-    leaderboard.forEach((gm) => {
-      if (gm.hit_rate_pct > maxHitRate) {
-        maxHitRate = gm.hit_rate_pct;
-        scoutMaster = gm.gm_name;
+  // Primary Aggregated GM Standings ranked by Rule 5 Total Fantasy Points
+  const rankedLeaderboard = useMemo(() => {
+    const sourceGms = gms && gms.length > 0 ? gms : INITIAL_GMS;
+    const allGmsMap = new Map<
+      string,
+      {
+        gm_name: string;
+        teamName: string;
+        winkoins: number;
+        avatarColor: string;
+        avatarInitials: string;
+        gmId: string;
+        hit_rate_pct: number;
+        promoted_count: number;
+        total_prospects: number;
       }
-      if ((gm.star_players_count || 0) > maxStars) {
-        maxStars = gm.star_players_count || 0;
-        diamondRough = gm.gm_name;
-      }
-      if ((gm.total_nhl_games_produced || 0) > maxGames) {
-        maxGames = gm.total_nhl_games_produced || 0;
-        workhorse = gm.gm_name;
+    >();
+
+    sourceGms.forEach((gm) => {
+      const key = gm.name.trim().toLowerCase();
+      allGmsMap.set(key, {
+        gm_name: gm.name,
+        teamName: gm.teamName || `${gm.name}'s Franchise`,
+        winkoins: gm.winkoinBalance ?? gm.winkoins ?? 0,
+        avatarColor: gm.avatarColor || 'from-slate-600 to-slate-800',
+        avatarInitials: gm.avatarInitials || gm.name.slice(0, 2).toUpperCase(),
+        gmId: gm.id,
+        hit_rate_pct: 0,
+        promoted_count: 0,
+        total_prospects: 0,
+      });
+    });
+
+    (leaderboard || []).forEach((row) => {
+      const key = row.gm_name.trim().toLowerCase();
+      const existing = allGmsMap.get(key);
+      if (existing) {
+        existing.hit_rate_pct = row.hit_rate_pct ?? existing.hit_rate_pct;
+        existing.promoted_count = row.promoted_count ?? existing.promoted_count;
+        existing.total_prospects = row.total_prospects ?? existing.total_prospects;
+      } else {
+        allGmsMap.set(key, {
+          gm_name: row.gm_name,
+          teamName: `${row.gm_name}'s Franchise`,
+          winkoins: row.winkoins ?? 0,
+          avatarColor: 'from-slate-600 to-slate-800',
+          avatarInitials: row.gm_name.slice(0, 2).toUpperCase(),
+          gmId: `gm-${row.gm_name.toLowerCase()}`,
+          hit_rate_pct: row.hit_rate_pct ?? 0,
+          promoted_count: row.promoted_count ?? 0,
+          total_prospects: row.total_prospects ?? 0,
+        });
       }
     });
 
-    return { scoutMaster, diamondRough, workhorse };
-  }, [leaderboard]);
+    // Aggregate prospects per GM
+    const gmProspectsMap = new Map<string, Map<string, any>>();
+
+    sourceGms.forEach((gm) => {
+      const key = gm.name.trim().toLowerCase();
+      const pMap = gmProspectsMap.get(key) || new Map<string, any>();
+      (gm.prospects || []).forEach((p) => {
+        const pKey = p.name.trim().toLowerCase();
+        pMap.set(pKey, {
+          name: p.name,
+          position: p.position,
+          total_games: p.totalGames || p.total_games || 0,
+          promoted: p.promoted,
+          goals: p.goals,
+          assists: p.assists,
+          points: p.points,
+          pp_points: p.pp_points ?? p.power_play_points,
+          sh_points: p.sh_points ?? p.shorthanded_points,
+          gwg: p.gwg ?? p.game_winning_goals,
+          plus_minus: p.plus_minus,
+          pim: p.pim ?? p.penalty_minutes,
+          shots: p.shots ?? p.shots_on_goal,
+          wins: p.wins,
+          shutouts: p.shutouts,
+          saves: p.saves,
+          goals_against: p.goals_against,
+          save_pct: p.save_pct,
+          fantasy_points: p.fantasy_points,
+        });
+      });
+      gmProspectsMap.set(key, pMap);
+    });
+
+    (prospects || []).forEach((p) => {
+      const key = (p.gm_name || '').trim().toLowerCase();
+      if (!key) return;
+      const pMap = gmProspectsMap.get(key) || new Map<string, any>();
+      const pKey = p.player_name.trim().toLowerCase();
+      const existing = pMap.get(pKey);
+      if (!existing) {
+        pMap.set(pKey, {
+          name: p.player_name,
+          position: p.position,
+          total_games: p.total_games || 0,
+          promoted: p.promoted,
+          goals: p.goals,
+          assists: p.assists,
+          points: p.points,
+          pp_points: p.pp_points,
+          sh_points: p.sh_points,
+          gwg: p.gwg,
+          plus_minus: p.plus_minus,
+          pim: p.pim,
+          shots: p.shots,
+          wins: p.wins,
+          shutouts: p.shutouts,
+          saves: p.saves,
+          goals_against: p.goals_against,
+          save_pct: p.save_pct,
+          fantasy_points: p.fantasy_points,
+        });
+      } else {
+        pMap.set(pKey, {
+          ...existing,
+          total_games: Math.max(existing.total_games || 0, p.total_games || 0),
+          promoted: existing.promoted || p.promoted,
+          goals: p.goals != null ? p.goals : existing.goals,
+          assists: p.assists != null ? p.assists : existing.assists,
+          pp_points: p.pp_points != null ? p.pp_points : existing.pp_points,
+          sh_points: p.sh_points != null ? p.sh_points : existing.sh_points,
+          gwg: p.gwg != null ? p.gwg : existing.gwg,
+          plus_minus: p.plus_minus != null ? p.plus_minus : existing.plus_minus,
+          pim: p.pim != null ? p.pim : existing.pim,
+          shots: p.shots != null ? p.shots : existing.shots,
+          wins: p.wins != null ? p.wins : existing.wins,
+          shutouts: p.shutouts != null ? p.shutouts : existing.shutouts,
+          saves: p.saves != null ? p.saves : existing.saves,
+          goals_against: p.goals_against != null ? p.goals_against : existing.goals_against,
+          fantasy_points: p.fantasy_points != null ? p.fantasy_points : existing.fantasy_points,
+        });
+      }
+      gmProspectsMap.set(key, pMap);
+    });
+
+    // 3. For each GM, calculate aggregates
+    const result: Array<{
+      gm_name: string;
+      teamName: string;
+      winkoins: number;
+      avatarColor: string;
+      avatarInitials: string;
+      gmId: string;
+      total_fantasy_points: number;
+      goals: number;
+      assists: number;
+      wins: number;
+      shutouts: number;
+      gp: number;
+      promoted_count: number;
+      total_prospects: number;
+      hit_rate_pct: number;
+    }> = [];
+
+    allGmsMap.forEach((gmData, gmKey) => {
+      const pMap = gmProspectsMap.get(gmKey) || new Map<string, any>();
+      let total_fantasy_points = 0;
+      let goals = 0;
+      let assists = 0;
+      let wins = 0;
+      let shutouts = 0;
+      let gp = 0;
+      let localPromoted = 0;
+      let localTotal = 0;
+
+      pMap.forEach((p) => {
+        localTotal++;
+        if (p.promoted) localPromoted++;
+
+        const pGoals = Number(p.goals ?? 0) || 0;
+        const pAssists = Number(p.assists ?? 0) || 0;
+        const pWins = p.position === 'G' ? (Number(p.wins ?? 0) || 0) : 0;
+        const pShutouts = p.position === 'G' ? (Number(p.shutouts ?? 0) || 0) : 0;
+        const pGP = Number(p.total_games ?? 0) || 0;
+
+        goals += pGoals;
+        assists += pAssists;
+        wins += pWins;
+        shutouts += pShutouts;
+        gp += pGP;
+
+        // Compute Rule 5 points for this prospect
+        const prospectFP = calculateFantasyPoints(p);
+        total_fantasy_points += prospectFP;
+      });
+
+      const finalTotalProspects = Math.max(gmData.total_prospects, localTotal);
+      const finalPromoted = Math.max(gmData.promoted_count, localPromoted);
+      const finalHitRate =
+        gmData.hit_rate_pct > 0
+          ? gmData.hit_rate_pct
+          : finalTotalProspects > 0
+          ? Math.round((finalPromoted / finalTotalProspects) * 100)
+          : 0;
+
+      result.push({
+        ...gmData,
+        total_fantasy_points,
+        goals,
+        assists,
+        wins,
+        shutouts,
+        gp,
+        promoted_count: finalPromoted,
+        total_prospects: finalTotalProspects,
+        hit_rate_pct: finalHitRate,
+      });
+    });
+
+    // 4. Primary Metric & Sorting:
+    // Rank GMs by total_fantasy_points in descending order!
+    result.sort((a, b) => {
+      if (b.total_fantasy_points !== a.total_fantasy_points) {
+        return b.total_fantasy_points - a.total_fantasy_points;
+      }
+      if (b.goals !== a.goals) {
+        return b.goals - a.goals;
+      }
+      return b.gp - a.gp;
+    });
+
+    return result;
+  }, [gms, leaderboard, prospects]);
+
+  const topGm = rankedLeaderboard.length > 0 ? rankedLeaderboard[0] : null;
 
   // Handle Promoting player in Supabase
   const handlePromotePlayer = async (prospect: ProspectRow) => {
@@ -356,7 +632,7 @@ export const ProspectLanding: React.FC<ProspectLandingProps> = ({
 
                   <div className="my-1 border-t border-slate-700/60" />
 
-                  {leaderboard.map((row) => (
+                  {rankedLeaderboard.map((row) => (
                     <button
                       key={row.gm_name}
                       onClick={() => {
@@ -370,8 +646,8 @@ export const ProspectLanding: React.FC<ProspectLandingProps> = ({
                       }`}
                     >
                       <span className="truncate">{row.gm_name}</span>
-                      <span className="font-mono text-[10px] text-slate-400">
-                        {row.hit_rate_pct}% hit
+                      <span className="font-mono text-[10px] text-amber-400 font-bold">
+                        {row.total_fantasy_points.toLocaleString()} pts
                       </span>
                     </button>
                   ))}
@@ -437,29 +713,30 @@ export const ProspectLanding: React.FC<ProspectLandingProps> = ({
             </div>
           </div>
 
-          {/* Card 3: League Avg Hit Rate */}
+          {/* Card 3: Fantasy Points Leader */}
           <div className={`relative overflow-hidden rounded-2xl border p-5 backdrop-blur-sm shadow-md transition ${
             isLight ? 'border-slate-200 bg-white hover:border-amber-400 text-slate-900' : 'border-slate-800 bg-slate-900/60 hover:border-amber-500/40 text-white'
           }`}>
             <div className="flex items-center justify-between">
               <div>
                 <p className={`text-xs font-semibold uppercase tracking-wider ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>
-                  League Avg Hit Rate
+                  Fantasy Points Leader
                 </p>
                 <div className="mt-2 flex items-baseline gap-2">
-                  <span className={`text-3xl font-black font-mono ${isLight ? 'text-amber-700' : 'text-amber-300'}`}>
-                    {loading ? '...' : `${quickStats.avgHitRate}%`}
+                  <span className={`text-3xl font-black font-mono ${isLight ? 'text-amber-600' : 'text-amber-400'}`}>
+                    {loading ? '...' : `${(topGm?.total_fantasy_points || 0).toLocaleString()} PTS`}
                   </span>
-                  <span className="text-xs font-semibold text-amber-600 dark:text-amber-400">Draft Production</span>
                 </div>
               </div>
               <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-amber-500/15 text-amber-600 dark:text-amber-400 ring-1 ring-amber-500/30">
-                <TrendingUp className="h-6 w-6" />
+                <Trophy className="h-6 w-6" />
               </div>
             </div>
             <div className={`mt-4 flex items-center gap-1.5 text-xs ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>
-              <Trophy className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
-              <span>Highest GM sits at {leaderboard[0]?.hit_rate_pct ?? '--'}%</span>
+              <Sparkles className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
+              <span>
+                1st: <strong className={isLight ? 'text-slate-900 font-bold' : 'text-white font-bold'}>{topGm?.gm_name || '--'}</strong> ({topGm?.goals || 0}G, {topGm?.assists || 0}A, {topGm?.wins || 0}W)
+              </span>
             </div>
           </div>
         </section>
@@ -483,24 +760,7 @@ export const ProspectLanding: React.FC<ProspectLandingProps> = ({
               </p>
             </div>
 
-            {/* Badges Legend */}
-            <div className="flex flex-wrap items-center gap-2 text-[11px]">
-              <span className={`inline-flex items-center gap-1 rounded-md border px-2 py-0.5 font-semibold ${
-                isLight ? 'bg-cyan-50 border-cyan-200 text-cyan-800' : 'bg-cyan-500/10 border-cyan-500/30 text-cyan-300'
-              }`}>
-                <Target className="h-3 w-3 text-cyan-600 dark:text-cyan-400" /> Scout Master (Hit Rate)
-              </span>
-              <span className={`inline-flex items-center gap-1 rounded-md border px-2 py-0.5 font-semibold ${
-                isLight ? 'bg-purple-50 border-purple-200 text-purple-800' : 'bg-purple-500/10 border-purple-500/30 text-purple-300'
-              }`}>
-                <Gem className="h-3 w-3 text-purple-600 dark:text-purple-400" /> Diamond Rough (Stars)
-              </span>
-              <span className={`inline-flex items-center gap-1 rounded-md border px-2 py-0.5 font-semibold ${
-                isLight ? 'bg-amber-50 border-amber-200 text-amber-800' : 'bg-amber-500/10 border-amber-500/30 text-amber-300'
-              }`}>
-                <Flame className="h-3 w-3 text-amber-600 dark:text-amber-400" /> The Workhorse (NHL GP)
-              </span>
-            </div>
+            {/* Left title and subtitle */}
           </div>
 
           {/* Sleek Table */}
@@ -514,18 +774,15 @@ export const ProspectLanding: React.FC<ProspectLandingProps> = ({
                   <th className="py-3.5 px-4">General Manager</th>
                   <th className="py-3.5 px-4 text-center">Draft Hit Rate</th>
                   <th className="py-3.5 px-4 text-center">Promoted / Drafted</th>
-                  <th className="py-3.5 px-4 text-center">Total NHL Games</th>
-                  <th className="py-3.5 px-4 text-center">Stars (100+ GP)</th>
-                  <th className="py-3.5 px-4">Scout Accolades</th>
+                  <th className="py-3.5 px-4 text-center">Total GP</th>
+                  <th className="py-3.5 px-4 text-center">Rule 5 FP</th>
+                  <th className="py-3.5 px-4 text-center">Goals / Wins</th>
                   <th className="py-3.5 px-4 text-right">Pool</th>
                 </tr>
               </thead>
               <tbody className={`font-medium ${isLight ? 'divide-y divide-slate-200 text-slate-800' : 'divide-y divide-slate-800/60 text-slate-200'}`}>
-                {leaderboard.map((row, idx) => {
+                {rankedLeaderboard.map((row, idx) => {
                   const rank = idx + 1;
-                  const isScoutMaster = row.gm_name === badgeLeaders.scoutMaster;
-                  const isDiamond = row.gm_name === badgeLeaders.diamondRough;
-                  const isWorkhorse = row.gm_name === badgeLeaders.workhorse;
 
                   return (
                     <tr
@@ -598,58 +855,19 @@ export const ProspectLanding: React.FC<ProspectLandingProps> = ({
                         <span className={isLight ? 'text-slate-600' : 'text-slate-400'}>{row.total_prospects}</span>
                       </td>
 
-                      {/* Total NHL Games Produced */}
+                      {/* Total GP */}
                       <td className={`py-3 px-4 text-center font-mono font-bold ${isLight ? 'text-slate-900' : 'text-slate-200'}`}>
-                        {row.total_nhl_games_produced?.toLocaleString() || 0}
+                        {row.gp.toLocaleString()}
                       </td>
 
-                      {/* Star Players Count */}
-                      <td className="py-3 px-4 text-center">
-                        <span className={`inline-flex items-center gap-1 font-mono font-bold px-2 py-0.5 rounded-md border ${
-                          isLight ? 'bg-purple-50 text-purple-800 border-purple-200' : 'bg-purple-950/40 text-purple-300/90 border-purple-800/40'
-                        }`}>
-                          <Sparkles className="h-3 w-3 text-purple-600 dark:text-purple-400/80" />
-                          {row.star_players_count || 0}
-                        </span>
+                      {/* Rule 5 Fantasy Points */}
+                      <td className={`py-3 px-4 text-center font-mono font-black text-amber-500 dark:text-amber-400`}>
+                        {row.total_fantasy_points.toLocaleString()} PTS
                       </td>
 
-                      {/* Scout Badges */}
-                      <td className="py-3 px-4">
-                        <div className="flex flex-wrap items-center gap-1.5">
-                          {isScoutMaster && (
-                            <span
-                              title="Highest Draft Hit Rate %"
-                              className={`inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-[10px] font-medium ${
-                                isLight ? 'bg-cyan-50 border-cyan-200 text-cyan-800' : 'bg-cyan-950/40 border-cyan-800/40 text-cyan-300/90'
-                              }`}
-                            >
-                              <Target className="h-3 w-3 text-cyan-600 dark:text-cyan-400/80" /> Scout Master
-                            </span>
-                          )}
-                          {isDiamond && (
-                            <span
-                              title="Most 100+ NHL Game Stars Produced"
-                              className={`inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-[10px] font-medium ${
-                                isLight ? 'bg-purple-50 border-purple-200 text-purple-800' : 'bg-purple-950/40 border-purple-800/40 text-purple-300/90'
-                              }`}
-                            >
-                              <Gem className="h-3 w-3 text-purple-600 dark:text-purple-400/80" /> Diamond Rough
-                            </span>
-                          )}
-                          {isWorkhorse && (
-                            <span
-                              title="Most Total NHL Games Produced"
-                              className={`inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-[10px] font-medium ${
-                                isLight ? 'bg-amber-50 border-amber-200 text-amber-800' : 'bg-amber-950/40 border-amber-800/40 text-amber-300/90'
-                              }`}
-                            >
-                              <Flame className="h-3 w-3 text-amber-600 dark:text-amber-400/80" /> Workhorse
-                            </span>
-                          )}
-                          {!isScoutMaster && !isDiamond && !isWorkhorse && (
-                            <span className="text-slate-500 text-[11px]">—</span>
-                          )}
-                        </div>
+                      {/* Goals / Wins */}
+                      <td className={`py-3 px-4 text-center font-mono text-xs ${isLight ? 'text-slate-700' : 'text-slate-300'}`}>
+                        <span className="font-bold text-cyan-600 dark:text-cyan-400">{row.goals}G</span> / <span className="font-bold text-emerald-600 dark:text-emerald-400">{row.wins}W</span>
                       </td>
 
                       {/* Quick jump to GM pool */}

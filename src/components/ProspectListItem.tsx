@@ -84,6 +84,24 @@ export const ProspectListItem: React.FC<ProspectListItemProps> = ({
   const safeCumulativeRemaining = Math.max(0, safeCumulativeLimit - safeTotalGP);
   const safeProtectionRemaining = Math.max(0, safeProtectionLimit - safeTotalGP);
 
+  // NHL Scoring stats (with fallback to 0 or .000 if missing or null)
+  const safeGoals = typeof prospect.goals === 'number' && !isNaN(prospect.goals) ? prospect.goals : 0;
+  const safeAssists = typeof prospect.assists === 'number' && !isNaN(prospect.assists) ? prospect.assists : 0;
+  const safePoints = typeof prospect.points === 'number' && !isNaN(prospect.points)
+    ? prospect.points
+    : (prospect.goals != null || prospect.assists != null ? safeGoals + safeAssists : 0);
+  const safeWins = typeof prospect.wins === 'number' && !isNaN(prospect.wins) ? prospect.wins : 0;
+
+  const formatSavePct = (val?: number | null): string => {
+    if (val == null || isNaN(Number(val)) || Number(val) === 0) {
+      return '.000';
+    }
+    const num = Number(val) > 1 ? Number(val) / 100 : Number(val);
+    const fixed = num.toFixed(3);
+    return fixed.startsWith('0') ? fixed.substring(1) : fixed;
+  };
+  const safeSavePct = formatSavePct(prospect.save_pct);
+
   // Subtle badge conditions
   const isNoNhlRecord =
     prospect.syncBadge === 'No NHL Record' ||
@@ -244,6 +262,31 @@ export const ProspectListItem: React.FC<ProspectListItemProps> = ({
               <span className={`text-[11px] shrink-0 ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>
                 {prospect.draftYear} Draft
                 {prospect.age ? ` • Age ${prospect.age}` : ''}
+              </span>
+
+              {/* NHL Scoring Stats badge in list header */}
+              <span className={`inline-flex items-center gap-1.5 rounded-md px-2 py-0.5 text-xs font-mono border shrink-0 ${
+                isLight ? 'bg-slate-100 text-slate-700 border-slate-200' : 'bg-slate-800 text-slate-300 border-slate-700'
+              }`}>
+                {isGoalie ? (
+                  <>
+                    <span>{safeWins} W</span>
+                    <span className={isLight ? 'text-slate-400' : 'text-slate-500'}>•</span>
+                    <strong className={`font-bold ${isLight ? 'text-slate-950 font-black' : 'text-white'}`}>
+                      {safeSavePct} SV%
+                    </strong>
+                  </>
+                ) : (
+                  <>
+                    <span>{safeGoals}G</span>
+                    <span className="mx-0.5"> </span>
+                    <span>{safeAssists}A</span>
+                    <span className={isLight ? 'text-slate-400' : 'text-slate-500'}>•</span>
+                    <strong className={`font-bold ${isLight ? 'text-slate-950 font-black' : 'text-white'}`}>
+                      {safePoints} PTS
+                    </strong>
+                  </>
+                )}
               </span>
             </div>
 
@@ -462,7 +505,7 @@ export const ProspectListItem: React.FC<ProspectListItemProps> = ({
           </div>
 
           {/* Simulation & GP breakdown box */}
-          <div className={`rounded-xl p-3 sm:p-4 border flex flex-col md:flex-row items-start md:items-center justify-between gap-3 ${
+          <div className={`rounded-xl p-3 sm:p-4 border flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 ${
             isLight ? 'bg-white border-slate-200 shadow-sm text-slate-900' : 'bg-[#1e293b] border-slate-800 text-slate-100'
           }`}>
             <div>
@@ -480,6 +523,34 @@ export const ProspectListItem: React.FC<ProspectListItemProps> = ({
               </div>
             </div>
 
+            {/* Right-aligned scoring stats block */}
+            <div className="text-left sm:text-right flex flex-col items-start sm:items-end justify-center">
+              {isGoalie ? (
+                <div className={`text-xs sm:text-sm font-mono tracking-tight flex items-center justify-end ${isLight ? 'text-slate-700' : 'text-slate-300'}`}>
+                  <span>{safeWins} W</span>
+                  <span className={`mx-2 ${isLight ? 'text-slate-400' : 'text-slate-500'}`}>•</span>
+                  <strong className={`font-bold ${isLight ? 'text-slate-950 font-black' : 'text-white'}`}>
+                    {safeSavePct} SV%
+                  </strong>
+                </div>
+              ) : (
+                <div className={`text-xs sm:text-sm font-mono tracking-tight flex items-center justify-end ${isLight ? 'text-slate-700' : 'text-slate-300'}`}>
+                  <span>{safeGoals}G</span>
+                  <span className="mx-1.5"> </span>
+                  <span>{safeAssists}A</span>
+                  <span className={`mx-2 ${isLight ? 'text-slate-400' : 'text-slate-500'}`}>•</span>
+                  <strong className={`font-bold ${isLight ? 'text-slate-950 font-black' : 'text-white'}`}>
+                    {safePoints} PTS
+                  </strong>
+                </div>
+              )}
+
+              <div className={`text-[10px] sm:text-[11px] mt-1 space-x-1.5 ${isLight ? 'text-slate-500' : 'text-slate-400'}`}>
+                <span>Current: <strong className={`font-mono ${isLight ? 'text-slate-800' : 'text-slate-200'}`}>{safeSeasonGP}</strong> GP</span>
+                <span>•</span>
+                <span>Prior: <strong className={`font-mono ${isLight ? 'text-slate-800' : 'text-slate-200'}`}>{Number.isFinite(prospect.priorCareerGP) ? Math.max(0, prospect.priorCareerGP) : 0}</strong> GP</span>
+              </div>
+            </div>
           </div>
 
           {/* Rule Threshold Progress Bars */}

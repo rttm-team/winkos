@@ -87,6 +87,24 @@ export const ProspectCard: React.FC<ProspectCardProps> = ({
   const safeCumulativeRemaining = Math.max(0, safeCumulativeLimit - safeTotalGP);
   const safeProtectionRemaining = Math.max(0, safeProtectionLimit - safeTotalGP);
 
+  // NHL Scoring stats (with fallback to 0 or .000 if missing or null)
+  const safeGoals = typeof prospect.goals === 'number' && !isNaN(prospect.goals) ? prospect.goals : 0;
+  const safeAssists = typeof prospect.assists === 'number' && !isNaN(prospect.assists) ? prospect.assists : 0;
+  const safePoints = typeof prospect.points === 'number' && !isNaN(prospect.points)
+    ? prospect.points
+    : (prospect.goals != null || prospect.assists != null ? safeGoals + safeAssists : 0);
+  const safeWins = typeof prospect.wins === 'number' && !isNaN(prospect.wins) ? prospect.wins : 0;
+
+  const formatSavePct = (val?: number | null): string => {
+    if (val == null || isNaN(Number(val)) || Number(val) === 0) {
+      return '.000';
+    }
+    const num = Number(val) > 1 ? Number(val) / 100 : Number(val);
+    const fixed = num.toFixed(3);
+    return fixed.startsWith('0') ? fixed.substring(1) : fixed;
+  };
+  const safeSavePct = formatSavePct(prospect.save_pct);
+
   // Subtle badge conditions
   const isNoNhlRecord =
     prospect.syncBadge === 'No NHL Record' ||
@@ -492,7 +510,7 @@ export const ProspectCard: React.FC<ProspectCardProps> = ({
           </div>
 
           {/* Total NHL Games Played Display */}
-          <div className={`mt-4 rounded-xl p-3.5 border flex items-center justify-between ${
+          <div className={`mt-4 rounded-xl p-3.5 border flex items-center justify-between gap-3 ${
             isLight ? 'bg-white border-slate-200 text-slate-900 shadow-sm' : 'bg-slate-900/80 border-slate-800/80 text-slate-100'
           }`}>
             <div>
@@ -507,12 +525,32 @@ export const ProspectCard: React.FC<ProspectCardProps> = ({
               </div>
             </div>
 
-            <div className={`text-right text-[11px] space-y-0.5 ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>
-              <div>
-                Current Season: <strong className={`font-mono ${isLight ? 'text-slate-900' : 'text-slate-200'}`}>{safeSeasonGP}</strong> GP
-              </div>
-              <div>
-                Prior Career: <strong className={`font-mono ${isLight ? 'text-slate-900' : 'text-slate-200'}`}>{Number.isFinite(prospect.priorCareerGP) ? Math.max(0, prospect.priorCareerGP) : 0}</strong> GP
+            {/* Right-aligned scoring stats & GP breakdown */}
+            <div className="text-right flex flex-col items-end justify-center">
+              {isGoalie ? (
+                <div className={`text-xs sm:text-sm font-mono tracking-tight flex items-center justify-end ${isLight ? 'text-slate-700' : 'text-slate-300'}`}>
+                  <span>{safeWins} W</span>
+                  <span className={`mx-2 ${isLight ? 'text-slate-400' : 'text-slate-500'}`}>•</span>
+                  <strong className={`font-bold ${isLight ? 'text-slate-950 font-black' : 'text-white'}`}>
+                    {safeSavePct} SV%
+                  </strong>
+                </div>
+              ) : (
+                <div className={`text-xs sm:text-sm font-mono tracking-tight flex items-center justify-end ${isLight ? 'text-slate-700' : 'text-slate-300'}`}>
+                  <span>{safeGoals}G</span>
+                  <span className="mx-1.5"> </span>
+                  <span>{safeAssists}A</span>
+                  <span className={`mx-2 ${isLight ? 'text-slate-400' : 'text-slate-500'}`}>•</span>
+                  <strong className={`font-bold ${isLight ? 'text-slate-950 font-black' : 'text-white'}`}>
+                    {safePoints} PTS
+                  </strong>
+                </div>
+              )}
+
+              <div className={`text-right text-[10px] sm:text-[11px] mt-1 space-x-1.5 ${isLight ? 'text-slate-500' : 'text-slate-400'}`}>
+                <span>Current: <strong className={`font-mono ${isLight ? 'text-slate-800' : 'text-slate-200'}`}>{safeSeasonGP}</strong> GP</span>
+                <span>•</span>
+                <span>Prior: <strong className={`font-mono ${isLight ? 'text-slate-800' : 'text-slate-200'}`}>{Number.isFinite(prospect.priorCareerGP) ? Math.max(0, prospect.priorCareerGP) : 0}</strong> GP</span>
               </div>
             </div>
           </div>

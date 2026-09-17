@@ -70,6 +70,26 @@ export interface Prospect {
   seasons25PlusGP?: number; // count from 0 to 4 of seasons with 25+ GP
   seasons25PlusHistory?: Array<{ season: string; gp: number; hit: boolean }>;
   season_breakdown?: Array<{ season: string; gp: number; qualifies: boolean }>;
+  goals?: number;
+  assists?: number;
+  points?: number;
+  pp_points?: number;
+  power_play_points?: number;
+  sh_points?: number;
+  shorthanded_points?: number;
+  gwg?: number;
+  game_winning_goals?: number;
+  plus_minus?: number;
+  pim?: number;
+  penalty_minutes?: number;
+  shots?: number;
+  shots_on_goal?: number;
+  wins?: number;
+  shutouts?: number;
+  saves?: number;
+  goals_against?: number;
+  save_pct?: number;
+  fantasy_points?: number;
 }
 
 export interface GeneralManager {

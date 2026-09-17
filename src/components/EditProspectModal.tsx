@@ -9,6 +9,7 @@ interface EditProspectModalProps {
   prospect: Prospect | null;
   gmName: string;
   availableGms?: GeneralManager[];
+  theme?: 'light' | 'dark';
 }
 
 const DEFAULT_GM_LIST: { id: string; name: string; teamName?: string }[] = [
@@ -33,7 +34,10 @@ export const EditProspectModal: React.FC<EditProspectModalProps> = ({
   prospect,
   gmName,
   availableGms,
+  theme = 'dark',
 }) => {
+  const isLight = theme === 'light';
+
   const [selectedGm, setSelectedGm] = useState(gmName);
   const [name, setName] = useState('');
   const [nhlId, setNhlId] = useState('');
@@ -51,7 +55,7 @@ export const EditProspectModal: React.FC<EditProspectModalProps> = ({
   const [isTrashed, setIsTrashed] = useState<boolean>(false);
   const [statusNotes, setStatusNotes] = useState('');
 
-  const gmList = (availableGms && availableGms.length > 0) ? availableGms : DEFAULT_GM_LIST;
+  const gmList = availableGms && availableGms.length > 0 ? availableGms : DEFAULT_GM_LIST;
 
   useEffect(() => {
     if (prospect) {
@@ -82,19 +86,25 @@ export const EditProspectModal: React.FC<EditProspectModalProps> = ({
     e.preventDefault();
     if (!name.trim()) return;
 
-    const finalNhlId = (!noNhlId && nhlId.trim()) ? nhlId.trim() : null;
+    const finalNhlId = !noNhlId && nhlId.trim() ? nhlId.trim() : null;
+    const currentGP = Number(currentSeasonGP) || 0;
+    const priorGP = Number(priorCareerGP) || 0;
+    const totalGP = currentGP + priorGP;
 
     onEdit(prospect.id, {
       name: name.trim(),
       position,
       nhlTeam: nhlTeam.trim() || 'Unassigned',
-      nhlTeamAbbr: (nhlTeamAbbr.trim() || nhlTeam.substring(0, 3)).toUpperCase() || 'NHL',
+      nhlTeamAbbr: (nhlTeamAbbr.trim() || (nhlTeam.trim() ? nhlTeam.trim().substring(0, 3) : 'NHL')).toUpperCase(),
       draftYear: Number(draftYear) || 2024,
       draftRound: Number(draftRound) || 1,
       draftPick: Number(draftPick) || 1,
-      currentSeasonGP: Number(currentSeasonGP) || 0,
-      priorCareerGP: Number(priorCareerGP) || 0,
+      currentSeasonGP: currentGP,
+      priorCareerGP: priorGP,
+      totalGames: totalGP,
+      total_games: totalGP,
       seasons25PlusGP: Number(seasons25PlusGP) || 0,
+      qualifying_seasons: Number(seasons25PlusGP) || 0,
       isProtected,
       status: isTrashed ? 'trashed' : 'active',
       statusNotes: statusNotes.trim() || undefined,
@@ -111,26 +121,64 @@ export const EditProspectModal: React.FC<EditProspectModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6">
-      <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm" onClick={onClose} />
+      <div
+        className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm transition-opacity"
+        onClick={onClose}
+      />
 
-      <div className="relative w-full max-w-lg rounded-2xl border border-slate-700 bg-slate-900 p-5 sm:p-6 shadow-2xl text-slate-100 z-10 max-h-[90vh] overflow-y-auto">
-        <div className="flex items-start justify-between border-b border-slate-800 pb-4">
+      <div
+        className={`relative w-full max-w-lg rounded-2xl border p-5 sm:p-6 shadow-2xl z-10 max-h-[90vh] overflow-y-auto transition-colors ${
+          isLight
+            ? 'border-slate-200 bg-white text-slate-800'
+            : 'border-slate-700 bg-slate-900 text-slate-100'
+        }`}
+      >
+        <div
+          className={`flex items-start justify-between border-b pb-4 ${
+            isLight ? 'border-slate-200' : 'border-slate-800'
+          }`}
+        >
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-950/40 text-amber-400/90 border border-amber-800/40">
+            <div
+              className={`flex h-10 w-10 items-center justify-center rounded-xl border ${
+                isLight
+                  ? 'border-amber-200 bg-amber-50 text-amber-700'
+                  : 'border-amber-800/40 bg-amber-950/40 text-amber-400/90'
+              }`}
+            >
               <Edit3 className="h-5 w-5" />
             </div>
             <div>
-              <h2 className="text-lg font-black tracking-tight text-white">
+              <h2
+                className={`text-lg font-black tracking-tight ${
+                  isLight ? 'text-slate-900' : 'text-white'
+                }`}
+              >
                 Edit Prospect Details
               </h2>
-              <p className="text-xs text-slate-400">
-                Editing record for GM <span className="text-amber-300/90 font-medium">{selectedGm || gmName}</span>
+              <p
+                className={`text-xs ${
+                  isLight ? 'text-slate-500' : 'text-slate-400'
+                }`}
+              >
+                Editing record for GM{' '}
+                <span
+                  className={`font-medium ${
+                    isLight ? 'text-amber-800' : 'text-amber-300/90'
+                  }`}
+                >
+                  {selectedGm || gmName}
+                </span>
               </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-800 hover:text-white transition-colors"
+            className={`rounded-lg p-1.5 transition-colors ${
+              isLight
+                ? 'text-slate-400 hover:bg-slate-100 hover:text-slate-700'
+                : 'text-slate-400 hover:bg-slate-800 hover:text-white'
+            }`}
           >
             <X className="h-5 w-5" />
           </button>
@@ -138,20 +186,44 @@ export const EditProspectModal: React.FC<EditProspectModalProps> = ({
 
         <form onSubmit={handleSubmit} className="mt-5 space-y-4 text-xs">
           {/* GM Selection Dropdown */}
-          <div className="rounded-xl border border-amber-800/40 bg-amber-950/20 p-3.5 space-y-1.5">
+          <div
+            className={`rounded-xl border p-3.5 space-y-1.5 ${
+              isLight
+                ? 'border-amber-200/90 bg-amber-50/70'
+                : 'border-amber-800/40 bg-amber-950/20'
+            }`}
+          >
             <div className="flex items-center justify-between">
-              <label className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-amber-300/90">
-                <UserCheck className="h-4 w-4 text-amber-400/80" />
+              <label
+                className={`flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider ${
+                  isLight ? 'text-amber-900' : 'text-amber-300/90'
+                }`}
+              >
+                <UserCheck
+                  className={`h-4 w-4 ${
+                    isLight ? 'text-amber-600' : 'text-amber-400/80'
+                  }`}
+                />
                 <span>Assigned General Manager (GM)</span>
               </label>
-              <span className="text-[10px] font-mono text-amber-400/80 font-semibold">
-                DB column: gm_name
+              <span
+                className={`text-[10px] font-mono px-2 py-0.5 rounded border font-semibold ${
+                  isLight
+                    ? 'border-amber-200 bg-amber-100/70 text-amber-800'
+                    : 'border-amber-800/60 bg-amber-950/50 text-amber-400/90'
+                }`}
+              >
+                DB: gm_name
               </span>
             </div>
             <select
               value={selectedGm}
               onChange={(e) => setSelectedGm(e.target.value)}
-              className="w-full rounded-xl border border-amber-800/50 bg-slate-800 px-3 py-2 text-sm font-semibold text-white focus:border-amber-700 focus:outline-none focus:ring-1 focus:ring-amber-700 cursor-pointer"
+              className={`w-full rounded-xl border px-3 py-2 text-sm font-semibold focus:outline-none focus:ring-1 cursor-pointer transition-colors ${
+                isLight
+                  ? 'border-amber-300 bg-white text-slate-800 focus:border-amber-500 focus:ring-amber-500'
+                  : 'border-amber-800/50 bg-slate-800 text-white focus:border-amber-700 focus:ring-amber-700'
+              }`}
             >
               {gmList.map((gm) => (
                 <option key={gm.id || gm.name} value={gm.name}>
@@ -159,34 +231,64 @@ export const EditProspectModal: React.FC<EditProspectModalProps> = ({
                 </option>
               ))}
             </select>
-            <p className="text-[11px] text-amber-200/60">
-              Change the GM to transfer this prospect to another team. Saving will update the Supabase <code className="font-mono text-amber-300/80">gm_name</code> column and immediately move the player.
+            <p
+              className={`text-[11px] ${
+                isLight ? 'text-amber-800/80' : 'text-amber-200/60'
+              }`}
+            >
+              Change the GM to transfer this prospect to another team. Saving will update the Supabase <code className={`font-mono ${isLight ? 'text-amber-900 font-semibold' : 'text-amber-300/80'}`}>gm_name</code> column and immediately move the player.
             </p>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="block font-semibold text-slate-300 mb-1">Player Name *</label>
+              <label
+                className={`block font-semibold mb-1 ${
+                  isLight ? 'text-slate-700' : 'text-slate-300'
+                }`}
+              >
+                Player Name *
+              </label>
               <input
                 type="text"
                 required
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                className="w-full rounded-xl border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-white focus:border-cyan-500 focus:outline-none"
+                className={`w-full rounded-xl border px-3 py-2 text-sm focus:outline-none transition-colors ${
+                  isLight
+                    ? 'border-slate-300 bg-slate-50 text-slate-900 focus:border-cyan-600 focus:bg-white'
+                    : 'border-slate-700 bg-slate-800 text-white focus:border-cyan-500'
+                }`}
               />
             </div>
 
             <div>
               <div className="flex items-center justify-between mb-1">
-                <label htmlFor="edit-prospect-nhl-id" className="block font-semibold text-slate-300">
-                  NHL Player ID <span className="text-cyan-400 font-mono text-[10px] font-normal">(DB: nhl_id)</span>
+                <label
+                  htmlFor="edit-prospect-nhl-id"
+                  className={`block font-semibold ${
+                    isLight ? 'text-slate-700' : 'text-slate-300'
+                  }`}
+                >
+                  NHL Player ID{' '}
+                  <span
+                    className={`font-mono text-[10px] font-normal ${
+                      isLight ? 'text-cyan-700' : 'text-cyan-400'
+                    }`}
+                  >
+                    (DB: nhl_id)
+                  </span>
                 </label>
                 {nhlId && !noNhlId ? (
                   <a
                     href={`https://api-web.nhle.com/v1/player/${nhlId}/landing`}
                     target="_blank"
                     rel="noreferrer"
-                    className="text-[10px] text-cyan-400 hover:text-cyan-300 underline inline-flex items-center gap-0.5"
+                    className={`text-[10px] underline inline-flex items-center gap-0.5 ${
+                      isLight
+                        ? 'text-cyan-700 hover:text-cyan-800'
+                        : 'text-cyan-400 hover:text-cyan-300'
+                    }`}
                     title="Inspect live NHL API data in new tab"
                   >
                     <span>Test API</span>
@@ -200,7 +302,11 @@ export const EditProspectModal: React.FC<EditProspectModalProps> = ({
                 type="text"
                 value={noNhlId ? '' : nhlId}
                 disabled={noNhlId}
-                placeholder={noNhlId ? 'No NHL ID (Unlisted/Draft Prospect)' : 'e.g. 8481692'}
+                placeholder={
+                  noNhlId
+                    ? 'No NHL ID (Unlisted/Draft Prospect)'
+                    : 'e.g. 8481692'
+                }
                 onChange={(e) => {
                   setNhlId(e.target.value);
                   if (e.target.value.trim()) {
@@ -209,13 +315,23 @@ export const EditProspectModal: React.FC<EditProspectModalProps> = ({
                 }}
                 className={`w-full rounded-xl border px-3 py-2 text-sm font-mono transition-colors ${
                   noNhlId
-                    ? 'border-slate-800 bg-slate-950/70 text-slate-500 cursor-not-allowed italic placeholder:text-slate-600'
+                    ? isLight
+                      ? 'border-slate-200 bg-slate-100 text-slate-400 cursor-not-allowed italic placeholder:text-slate-400'
+                      : 'border-slate-800 bg-slate-950/70 text-slate-500 cursor-not-allowed italic placeholder:text-slate-600'
+                    : isLight
+                    ? 'border-slate-300 bg-slate-50 text-cyan-800 focus:bg-white focus:border-cyan-600 focus:outline-none placeholder:text-slate-400'
                     : 'border-slate-700 bg-slate-800 text-cyan-300 focus:border-cyan-500 focus:outline-none placeholder:text-slate-600'
                 }`}
               />
 
               {/* "No NHL ID" Checkbox close to the NHL_id */}
-              <div className="mt-2 flex items-center justify-between bg-slate-800/50 rounded-lg p-2 border border-slate-700/60">
+              <div
+                className={`mt-2 flex items-center justify-between rounded-lg p-2 border transition-colors ${
+                  isLight
+                    ? 'border-slate-200 bg-slate-50'
+                    : 'border-slate-700/60 bg-slate-800/50'
+                }`}
+              >
                 <label
                   htmlFor="checkbox-no-nhl-id"
                   className="flex items-center gap-2 cursor-pointer select-none"
@@ -231,36 +347,78 @@ export const EditProspectModal: React.FC<EditProspectModalProps> = ({
                         setNhlId('');
                       }
                     }}
-                    className="h-4 w-4 rounded border-slate-600 bg-slate-800 text-cyan-500 focus:ring-cyan-500 cursor-pointer accent-cyan-500"
+                    className="h-4 w-4 rounded border-slate-400 bg-slate-100 text-cyan-600 focus:ring-cyan-500 cursor-pointer accent-cyan-600"
                   />
-                  <span className={`text-xs font-semibold ${noNhlId ? 'text-amber-300' : 'text-slate-300'}`}>
+                  <span
+                    className={`text-xs font-semibold ${
+                      noNhlId
+                        ? isLight
+                          ? 'text-amber-800'
+                          : 'text-amber-300'
+                        : isLight
+                        ? 'text-slate-700'
+                        : 'text-slate-300'
+                    }`}
+                  >
                     No NHL ID
                   </span>
                 </label>
                 {noNhlId ? (
-                  <span className="text-[10px] font-mono text-amber-400 bg-amber-400/10 px-2 py-0.5 rounded border border-amber-400/30 font-semibold">
+                  <span
+                    className={`text-[10px] font-mono px-2 py-0.5 rounded border font-semibold ${
+                      isLight
+                        ? 'border-amber-200 bg-amber-100 text-amber-800'
+                        : 'border-amber-400/30 bg-amber-400/10 text-amber-400'
+                    }`}
+                  >
                     Keeps DB nhl_id empty (NULL)
                   </span>
                 ) : (
-                  <span className="text-[10px] text-slate-400">
+                  <span
+                    className={`text-[10px] ${
+                      isLight ? 'text-slate-500' : 'text-slate-400'
+                    }`}
+                  >
                     Check if unlisted / no NHL API ID
                   </span>
                 )}
               </div>
 
-              <p className="mt-1 text-[10px] text-slate-400">
-                Direct Supabase DB column <code className="font-mono text-cyan-300">nhl_id</code> for live NHL stats sync.
+              <p
+                className={`mt-1 text-[10px] ${
+                  isLight ? 'text-slate-500' : 'text-slate-400'
+                }`}
+              >
+                Direct Supabase DB column{' '}
+                <code
+                  className={`font-mono ${
+                    isLight ? 'text-cyan-700' : 'text-cyan-300'
+                  }`}
+                >
+                  nhl_id
+                </code>{' '}
+                for live NHL stats sync.
               </p>
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block font-semibold text-slate-300 mb-1">Position *</label>
+              <label
+                className={`block font-semibold mb-1 ${
+                  isLight ? 'text-slate-700' : 'text-slate-300'
+                }`}
+              >
+                Position *
+              </label>
               <select
                 value={position}
                 onChange={(e) => setPosition(e.target.value as Position)}
-                className="w-full rounded-xl border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-white focus:border-cyan-500 focus:outline-none"
+                className={`w-full rounded-xl border px-3 py-2 text-sm focus:outline-none transition-colors ${
+                  isLight
+                    ? 'border-slate-300 bg-slate-50 text-slate-800 focus:bg-white focus:border-cyan-600'
+                    : 'border-slate-700 bg-slate-800 text-white focus:border-cyan-500'
+                }`}
               >
                 <option value="F">Forward (F)</option>
                 <option value="D">Defenseman (D)</option>
@@ -269,52 +427,96 @@ export const EditProspectModal: React.FC<EditProspectModalProps> = ({
             </div>
 
             <div>
-              <label className="block font-semibold text-slate-300 mb-1">NHL Team</label>
+              <label
+                className={`block font-semibold mb-1 ${
+                  isLight ? 'text-slate-700' : 'text-slate-300'
+                }`}
+              >
+                NHL Team
+              </label>
               <input
                 type="text"
                 value={nhlTeam}
                 onChange={(e) => setNhlTeam(e.target.value)}
-                className="w-full rounded-xl border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-white focus:border-cyan-500 focus:outline-none"
+                className={`w-full rounded-xl border px-3 py-2 text-sm focus:outline-none transition-colors ${
+                  isLight
+                    ? 'border-slate-300 bg-slate-50 text-slate-800 placeholder:text-slate-400 focus:bg-white focus:border-cyan-600'
+                    : 'border-slate-700 bg-slate-800 text-white placeholder:text-slate-500 focus:border-cyan-500'
+                }`}
               />
             </div>
           </div>
 
           <div className="grid grid-cols-3 gap-3">
             <div>
-              <label className="block font-semibold text-slate-300 mb-1">Draft Year</label>
+              <label
+                className={`block font-semibold mb-1 ${
+                  isLight ? 'text-slate-700' : 'text-slate-300'
+                }`}
+              >
+                Draft Year
+              </label>
               <input
                 type="number"
                 value={draftYear}
                 onChange={(e) => setDraftYear(Number(e.target.value))}
-                className="w-full rounded-xl border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-white focus:border-cyan-500 focus:outline-none"
+                className={`w-full rounded-xl border px-3 py-2 text-sm focus:outline-none transition-colors ${
+                  isLight
+                    ? 'border-slate-300 bg-slate-50 text-slate-800 focus:bg-white focus:border-cyan-600'
+                    : 'border-slate-700 bg-slate-800 text-white focus:border-cyan-500'
+                }`}
               />
             </div>
             <div>
-              <label className="block font-semibold text-slate-300 mb-1">Draft Round</label>
+              <label
+                className={`block font-semibold mb-1 ${
+                  isLight ? 'text-slate-700' : 'text-slate-300'
+                }`}
+              >
+                Draft Round
+              </label>
               <input
                 type="number"
                 min="1"
                 max="7"
                 value={draftRound}
                 onChange={(e) => setDraftRound(Number(e.target.value))}
-                className="w-full rounded-xl border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-white focus:border-cyan-500 focus:outline-none"
+                className={`w-full rounded-xl border px-3 py-2 text-sm focus:outline-none transition-colors ${
+                  isLight
+                    ? 'border-slate-300 bg-slate-50 text-slate-800 focus:bg-white focus:border-cyan-600'
+                    : 'border-slate-700 bg-slate-800 text-white focus:border-cyan-500'
+                }`}
               />
             </div>
             <div>
-              <label className="block font-semibold text-slate-300 mb-1">Overall Pick</label>
+              <label
+                className={`block font-semibold mb-1 ${
+                  isLight ? 'text-slate-700' : 'text-slate-300'
+                }`}
+              >
+                Overall Pick
+              </label>
               <input
                 type="number"
                 min="1"
                 value={draftPick}
                 onChange={(e) => setDraftPick(Number(e.target.value))}
-                className="w-full rounded-xl border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-white focus:border-cyan-500 focus:outline-none"
+                className={`w-full rounded-xl border px-3 py-2 text-sm focus:outline-none transition-colors ${
+                  isLight
+                    ? 'border-slate-300 bg-slate-50 text-slate-800 focus:bg-white focus:border-cyan-600'
+                    : 'border-slate-700 bg-slate-800 text-white focus:border-cyan-500'
+                }`}
               />
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block font-semibold text-slate-300 mb-1">
+              <label
+                className={`block font-semibold mb-1 ${
+                  isLight ? 'text-slate-700' : 'text-slate-300'
+                }`}
+              >
                 Current Season GP
               </label>
               <input
@@ -322,12 +524,20 @@ export const EditProspectModal: React.FC<EditProspectModalProps> = ({
                 min="0"
                 value={currentSeasonGP}
                 onChange={(e) => setCurrentSeasonGP(Number(e.target.value))}
-                className="w-full rounded-xl border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-white focus:border-cyan-500 focus:outline-none"
+                className={`w-full rounded-xl border px-3 py-2 text-sm focus:outline-none transition-colors ${
+                  isLight
+                    ? 'border-slate-300 bg-slate-50 text-slate-800 focus:bg-white focus:border-cyan-600'
+                    : 'border-slate-700 bg-slate-800 text-white focus:border-cyan-500'
+                }`}
               />
             </div>
 
             <div>
-              <label className="block font-semibold text-slate-300 mb-1">
+              <label
+                className={`block font-semibold mb-1 ${
+                  isLight ? 'text-slate-700' : 'text-slate-300'
+                }`}
+              >
                 Prior Career NHL GP
               </label>
               <input
@@ -335,18 +545,36 @@ export const EditProspectModal: React.FC<EditProspectModalProps> = ({
                 min="0"
                 value={priorCareerGP}
                 onChange={(e) => setPriorCareerGP(Number(e.target.value))}
-                className="w-full rounded-xl border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-white focus:border-cyan-500 focus:outline-none"
+                className={`w-full rounded-xl border px-3 py-2 text-sm focus:outline-none transition-colors ${
+                  isLight
+                    ? 'border-slate-300 bg-slate-50 text-slate-800 focus:bg-white focus:border-cyan-600'
+                    : 'border-slate-700 bg-slate-800 text-white focus:border-cyan-500'
+                }`}
               />
             </div>
           </div>
 
           {/* 4 Seasons of 25+ GP Milestone Tracker */}
-          <div className="rounded-xl border border-slate-800 bg-slate-950/60 p-3.5 space-y-2">
+          <div
+            className={`rounded-xl border p-3.5 space-y-2 ${
+              isLight
+                ? 'border-slate-200 bg-slate-50/70'
+                : 'border-slate-800 bg-slate-950/60'
+            }`}
+          >
             <div className="flex items-center justify-between">
-              <label className="block text-xs font-bold uppercase tracking-wider text-slate-300">
+              <label
+                className={`block text-xs font-bold uppercase tracking-wider ${
+                  isLight ? 'text-slate-700' : 'text-slate-300'
+                }`}
+              >
                 Seasons with 25+ NHL GP
               </label>
-              <span className="font-mono text-xs font-bold text-cyan-400">
+              <span
+                className={`font-mono text-xs font-bold ${
+                  isLight ? 'text-cyan-700' : 'text-cyan-400'
+                }`}
+              >
                 {seasons25PlusGP} / 4 Seasons
               </span>
             </div>
@@ -359,18 +587,26 @@ export const EditProspectModal: React.FC<EditProspectModalProps> = ({
                     key={count}
                     type="button"
                     onClick={() => setSeasons25PlusGP(count)}
-                    className={`flex-1 flex flex-col items-center justify-center py-1.5 rounded-lg border text-xs font-mono font-bold transition-all ${
+                    className={`flex-1 flex flex-col items-center justify-center py-1.5 rounded-lg border text-xs font-mono font-bold transition-all cursor-pointer ${
                       isSelected
                         ? count >= 4
-                          ? 'border-rose-800/60 bg-rose-950/40 text-rose-300 ring-1 ring-rose-800/50'
+                          ? isLight
+                            ? 'border-rose-300 bg-rose-50 text-rose-700 ring-1 ring-rose-400'
+                            : 'border-rose-800/60 bg-rose-950/40 text-rose-300 ring-1 ring-rose-800/50'
                           : count === 3
-                          ? 'border-amber-800/60 bg-amber-950/40 text-amber-300 ring-1 ring-amber-800/50'
+                          ? isLight
+                            ? 'border-amber-300 bg-amber-50 text-amber-800 ring-1 ring-amber-400'
+                            : 'border-amber-800/60 bg-amber-950/40 text-amber-300 ring-1 ring-amber-800/50'
+                          : isLight
+                          ? 'border-cyan-300 bg-cyan-50 text-cyan-800 ring-1 ring-cyan-400'
                           : 'border-slate-600 bg-slate-800 text-slate-200 ring-1 ring-slate-600'
+                        : isLight
+                        ? 'border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-100'
                         : 'border-slate-700 bg-slate-800/80 text-slate-400 hover:border-slate-600 hover:text-slate-200'
                     }`}
                   >
                     <span>{count}</span>
-                    <span className="text-[9px] font-sans font-normal opacity-70">
+                    <span className="text-[9px] font-sans font-normal opacity-75">
                       {count === 4 ? 'Promote' : count === 0 ? 'None' : `${count} yr`}
                     </span>
                   </button>
@@ -378,7 +614,11 @@ export const EditProspectModal: React.FC<EditProspectModalProps> = ({
               })}
             </div>
 
-            <p className="text-[11px] text-slate-400 leading-tight">
+            <p
+              className={`text-[11px] leading-tight ${
+                isLight ? 'text-slate-500' : 'text-slate-400'
+              }`}
+            >
               Tracks seasons with 25+ GP (0 to 4). When 4 seasons are reached before 200 total GP, the player status changes to prompt for promotion.
             </p>
           </div>
@@ -389,9 +629,14 @@ export const EditProspectModal: React.FC<EditProspectModalProps> = ({
               id="edit-protected-check"
               checked={isProtected}
               onChange={(e) => setIsProtected(e.target.checked)}
-              className="h-4 w-4 rounded border-slate-700 bg-slate-800 text-cyan-500 focus:ring-cyan-500 cursor-pointer"
+              className="h-4 w-4 rounded border-slate-300 bg-white text-cyan-600 focus:ring-cyan-500 cursor-pointer accent-cyan-600"
             />
-            <label htmlFor="edit-protected-check" className="font-semibold text-slate-300 cursor-pointer">
+            <label
+              htmlFor="edit-protected-check"
+              className={`font-semibold cursor-pointer select-none ${
+                isLight ? 'text-slate-700' : 'text-slate-300'
+              }`}
+            >
               Protect prospect (Protected? YES)
             </label>
           </div>
@@ -402,34 +647,57 @@ export const EditProspectModal: React.FC<EditProspectModalProps> = ({
               id="edit-trashed-check"
               checked={isTrashed}
               onChange={(e) => setIsTrashed(e.target.checked)}
-              className="h-4 w-4 rounded border-slate-700 bg-slate-800 text-rose-500 focus:ring-rose-500 cursor-pointer"
+              className="h-4 w-4 rounded border-slate-300 bg-white text-rose-600 focus:ring-rose-500 cursor-pointer accent-rose-600"
             />
-            <label htmlFor="edit-trashed-check" className="font-semibold text-rose-300/90 cursor-pointer">
+            <label
+              htmlFor="edit-trashed-check"
+              className={`font-semibold cursor-pointer select-none ${
+                isLight ? 'text-rose-700' : 'text-rose-300/90'
+              }`}
+            >
               Mark as Trashed (stop tracking games played; keeps DB record)
             </label>
           </div>
 
           <div>
-            <label className="block font-semibold text-slate-300 mb-1">Scouting Notes</label>
+            <label
+              className={`block font-semibold mb-1 ${
+                isLight ? 'text-slate-700' : 'text-slate-300'
+              }`}
+            >
+              Scouting Notes
+            </label>
             <input
               type="text"
               value={statusNotes}
               onChange={(e) => setStatusNotes(e.target.value)}
-              className="w-full rounded-xl border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-white focus:border-cyan-500 focus:outline-none"
+              className={`w-full rounded-xl border px-3 py-2 text-sm focus:outline-none transition-colors ${
+                isLight
+                  ? 'border-slate-300 bg-slate-50 text-slate-800 placeholder:text-slate-400 focus:bg-white focus:border-cyan-600'
+                  : 'border-slate-700 bg-slate-800 text-white placeholder:text-slate-500 focus:border-cyan-500'
+              }`}
             />
           </div>
 
-          <div className="mt-6 flex justify-end gap-2 border-t border-slate-800 pt-4">
+          <div
+            className={`mt-6 flex justify-end gap-2 border-t pt-4 ${
+              isLight ? 'border-slate-200' : 'border-slate-800'
+            }`}
+          >
             <button
               type="button"
               onClick={onClose}
-              className="rounded-xl border border-slate-700 px-4 py-2 text-xs font-semibold text-slate-300 hover:bg-slate-800"
+              className={`rounded-xl border px-4 py-2 text-xs font-semibold transition-colors ${
+                isLight
+                  ? 'border-slate-300 text-slate-700 hover:bg-slate-100'
+                  : 'border-slate-700 text-slate-300 hover:bg-slate-800'
+              }`}
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="flex items-center gap-1.5 rounded-xl bg-amber-600/85 hover:bg-amber-600 px-5 py-2 text-xs font-semibold text-slate-950 transition-colors shadow-sm"
+              className="flex items-center gap-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 px-5 py-2 text-xs font-bold text-slate-950 transition-colors shadow-sm cursor-pointer"
             >
               <Edit3 className="h-4 w-4" />
               <span>Save Changes</span>

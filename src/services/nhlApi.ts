@@ -24,6 +24,11 @@ export interface NhlPlayerStatsResult {
   qualifying_seasons?: number;
   shouldPromote?: boolean;
   losesProtection?: boolean;
+  goals?: number;
+  assists?: number;
+  points?: number;
+  wins?: number;
+  save_pct?: number;
 }
 
 // Cached league prospects lookup by normalized name from winkos_full_league_data.json
@@ -518,6 +523,11 @@ export function parseNhlLandingStats(landingData: any, playerPos?: string): {
   max_single_season_gp: number;
   seasons25PlusHistory: Array<{ season: string; gp: number; hit: boolean }>;
   season_breakdown: Array<{ season: string; gp: number; qualifies: boolean }>;
+  goals?: number;
+  assists?: number;
+  points?: number;
+  wins?: number;
+  save_pct?: number;
 } {
   if (!landingData || typeof landingData !== 'object') {
     return {
@@ -545,6 +555,27 @@ export function parseNhlLandingStats(landingData: any, playerPos?: string): {
   // Skater threshold: 25 GP; Goalie threshold: 15 GP
   const isGoalie = (playerPos === 'G') || (landingData.position === 'G');
   const threshold = isGoalie ? 15 : 25;
+
+  let goals: number | undefined;
+  let assists: number | undefined;
+  let points: number | undefined;
+  let wins: number | undefined;
+  let save_pct: number | undefined;
+
+  const regTotals = landingData.careerTotals?.regularSeason || landingData.featuredStats?.regularSeason?.career || landingData.featuredStats?.regularSeason?.subSeason;
+  if (isGoalie) {
+    if (typeof regTotals?.wins === 'number') wins = regTotals.wins;
+    const rawSv = regTotals?.savePctg ?? regTotals?.savePct ?? regTotals?.save_pct;
+    if (typeof rawSv === 'number') save_pct = rawSv;
+  } else {
+    if (typeof regTotals?.goals === 'number') goals = regTotals.goals;
+    if (typeof regTotals?.assists === 'number') assists = regTotals.assists;
+    if (typeof regTotals?.points === 'number') {
+      points = regTotals.points;
+    } else if (goals !== undefined || assists !== undefined) {
+      points = (goals || 0) + (assists || 0);
+    }
+  }
 
   // 1. Try featuredStats for regular season
   if (landingData.featuredStats?.regularSeason) {
@@ -631,6 +662,11 @@ export function parseNhlLandingStats(landingData: any, playerPos?: string): {
     max_single_season_gp,
     seasons25PlusHistory: season_breakdown.map(s => ({ season: s.season, gp: s.gp, hit: s.qualifies })),
     season_breakdown,
+    goals,
+    assists,
+    points,
+    wins,
+    save_pct,
   };
 }
 
@@ -791,6 +827,11 @@ export async function syncProspectWithNhlApi(prospect: Prospect): Promise<NhlPla
       seasons25PlusGP: parsed.seasons25PlusGP,
       seasons25PlusHistory: parsed.seasons25PlusHistory,
       season_breakdown: parsed.season_breakdown,
+      goals: parsed.goals,
+      assists: parsed.assists,
+      points: parsed.points,
+      wins: parsed.wins,
+      save_pct: parsed.save_pct,
     };
   } catch (err: any) {
     const { currentSeasonGP, priorCareerGP, totalGP } = getSafeGamesPlayed(cachedTotal);

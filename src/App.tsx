@@ -10,7 +10,7 @@ import {
   ProspectSortOption,
   sortProspects,
 } from './types';
-import { INITIAL_GMS, setStoredProspectStatus } from './data/mockData';
+import { INITIAL_GMS, setStoredProspectStatus, setStoredScoringStats } from './data/mockData';
 import { Header } from './components/Header';
 import WinkoHub from './components/WinkoHub';
 import { FiltersAndSearch } from './components/FiltersAndSearch';
@@ -64,6 +64,14 @@ export default function App() {
   };
 
   const isLight = theme === 'light';
+
+  useEffect(() => {
+    if (theme === 'dark') {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  }, [theme]);
 
   // 1. Fetch live data & Subscribe
   useEffect(() => {
@@ -323,10 +331,26 @@ export default function App() {
             seasons25PlusGP: seasonsCount,
             seasons25PlusHistory: result.seasons25PlusHistory ?? p.seasons25PlusHistory,
             season_breakdown: result.season_breakdown ?? p.season_breakdown,
+            goals: result.goals ?? p.goals,
+            assists: result.assists ?? p.assists,
+            points: result.points ?? p.points,
+            wins: result.wins ?? p.wins,
+            save_pct: result.save_pct ?? p.save_pct,
           };
         }),
       }))
     );
+
+    // Keep scoring stats in localStorage sync
+    if (result.goals !== undefined || result.assists !== undefined || result.wins !== undefined || result.points !== undefined) {
+      setStoredScoringStats(String(prospectId), currentProspect.name, {
+        goals: result.goals,
+        assists: result.assists,
+        points: result.points,
+        wins: result.wins,
+        save_pct: result.save_pct,
+      });
+    }
 
     // Persist new fields to Supabase
     try {
@@ -430,6 +454,11 @@ export default function App() {
                 seasons25PlusGP: seasonsCount,
                 seasons25PlusHistory: result.seasons25PlusHistory ?? p.seasons25PlusHistory,
                 season_breakdown: result.season_breakdown ?? p.season_breakdown,
+                goals: result.goals ?? p.goals,
+                assists: result.assists ?? p.assists,
+                points: result.points ?? p.points,
+                wins: result.wins ?? p.wins,
+                save_pct: result.save_pct ?? p.save_pct,
               };
             }),
           };
@@ -450,6 +479,15 @@ export default function App() {
           // Keep localStorage cache in sync
           if (p?.name) {
             setStored25PlusSeasons(resObj.prospectId, p.name, qualSeasons);
+            if (resObj.result.goals !== undefined || resObj.result.assists !== undefined || resObj.result.wins !== undefined || resObj.result.points !== undefined) {
+              setStoredScoringStats(String(resObj.prospectId), p.name, {
+                goals: resObj.result.goals,
+                assists: resObj.result.assists,
+                points: resObj.result.points,
+                wins: resObj.result.wins,
+                save_pct: resObj.result.save_pct,
+              });
+            }
           }
 
           const updatePayload: Record<string, any> = {
@@ -476,47 +514,87 @@ export default function App() {
   }, [activeGm]);
 
   // Handle adding a new prospect
-  const handleAddProspect = async (newProspectData: Omit<Prospect, 'id'>) => {
+  const handleAddProspect = async (newProspectData: Partial<Prospect>) => {
     // We do NOT optimistically update here to avoid ID mismatch duplicates 
     // with the real-time subscription. We await the DB insert and let the 
     // postgres_changes event populate the new row, OR we update immediately 
     // with the returned DB ID.
-    const { data, error } = await supabase.from('prospects').insert([{
-      gm_name: activeGm.name,
-      player_name: newProspectData.name,
-      position: newProspectData.position,
-      draft_year: newProspectData.draftYear,
-      draft_round: newProspectData.draftRound,
-      draft_pick: newProspectData.draftPick,
-      nhl_team: newProspectData.nhlTeam,
-      nhl_team_abbr: newProspectData.nhlTeamAbbr,
-      total_games: newProspectData.totalGames,
-      current_season_gp: newProspectData.currentSeasonGP,
-      prior_career_gp: newProspectData.priorCareerGP,
-      promoted: newProspectData.promoted,
-      promotion_date: newProspectData.promotionDate,
-      protected: newProspectData.isProtected,
-      age: newProspectData.age,
-      photo_url: newProspectData.photoUrl,
-      status_notes: newProspectData.statusNotes,
-      nhl_player_id: newProspectData.nhlPlayerId,
-    }]).select();
+    const targetGmName = newProspectData.gm_name || newProspectData.gmName || activeGm.name;
+    const isTrashed = newProspectData.status === 'trashed' || newProspectData.status === 'inactive';
+    const rawNhlId = newProspectData.nhl_id ?? newProspectData.nhlId ?? newProspectData.nhlPlayerId;
+    const isExplicitNoNhlId = Boolean(newProspectData.hasNoNhlId || rawNhlId === null || rawNhlId === '');
+    const numNhlId = (!isExplicitNoNhlId && rawNhlId && !isNaN(Number(rawNhlId))) ? Number(rawNhlId) : null;
+    const currentGP = Number(newProspectData.currentSeasonGP) || 0;
+    const priorGP = Number(newProspectData.priorCareerGP) || 0;
+    const totalGames = currentGP + priorGP;
+    const qualSeasons = newProspectData.seasons25PlusGP ?? newProspectData.qualifyingSeasons ?? 0;
+
+    // Build payload containing ONLY actual columns existing in Supabase prospects table:
+    // id, gm_name, player_name, position, draft_year, promoted, protected, promotion_date,
+    // is_inactive, nhl_id, total_games, qualifying_seasons, max_single_season_gp, season_breakdown
+    const insertPayload: Record<string, any> = {
+      gm_name: targetGmName,
+      player_name: newProspectData.name?.trim(),
+      position: newProspectData.position || 'F',
+      draft_year: Number(newProspectData.draftYear) || 2024,
+      promoted: Boolean(newProspectData.promoted),
+      promotion_date: newProspectData.promotionDate || null,
+      protected: Boolean(newProspectData.isProtected),
+      is_inactive: isTrashed,
+      nhl_id: numNhlId,
+      total_games: totalGames,
+      qualifying_seasons: qualSeasons,
+      max_single_season_gp: currentGP,
+      season_breakdown: [],
+    };
+
+    console.log("Inserting new prospect into Supabase:", insertPayload);
+    let { data, error } = await supabase.from('prospects').insert([insertPayload]).select();
 
     if (error) {
-      console.error("Error adding prospect:", error);
+      console.warn("Retrying insert without optional columns:", error);
+      const retryPayload = { ...insertPayload };
+      if (error.message?.includes('is_inactive') || error.details?.includes('is_inactive')) {
+        delete retryPayload.is_inactive;
+      }
+      if (error.message?.includes('qualifying_seasons') || error.details?.includes('qualifying_seasons')) {
+        delete retryPayload.qualifying_seasons;
+      }
+      if (error.message?.includes('season_breakdown') || error.details?.includes('season_breakdown')) {
+        delete retryPayload.season_breakdown;
+      }
+      const retryRes = await supabase.from('prospects').insert([retryPayload]).select();
+      data = retryRes.data;
+      error = retryRes.error;
+    }
+
+    if (error) {
+      console.error("Error adding prospect to Supabase:", error);
+      alert(`Error adding prospect: ${error.message || 'Please check database connection.'}`);
       return;
     }
 
     if (data && data.length > 0) {
       const mappedProspect = mapProspectRow(data[0]);
+      const enrichedProspect: Prospect = {
+        ...mappedProspect,
+        nhlTeam: newProspectData.nhlTeam || mappedProspect.nhlTeam,
+        nhlTeamAbbr: newProspectData.nhlTeamAbbr || mappedProspect.nhlTeamAbbr,
+        draftRound: newProspectData.draftRound || 1,
+        draftPick: newProspectData.draftPick || 1,
+        currentSeasonGP: currentGP,
+        priorCareerGP: priorGP,
+        statusNotes: newProspectData.statusNotes,
+      };
+
       setGms((prevGms) =>
         prevGms.map((gm) => {
-          if (gm.id !== activeGm.id) return gm;
-          if (gm.prospects.some(p => p.id === mappedProspect.id)) return gm;
+          if (gm.name.trim().toLowerCase() !== targetGmName.trim().toLowerCase()) return gm;
+          if (gm.prospects.some(p => p.id === enrichedProspect.id)) return gm;
           
           return {
             ...gm,
-            prospects: [mappedProspect, ...gm.prospects],
+            prospects: [enrichedProspect, ...gm.prospects],
           };
         })
       );
@@ -1052,7 +1130,9 @@ export default function App() {
       {view === 'prospects' && (
         <main className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
         {/* Action Toolbar above filters */}
-        <div className="mb-4 flex flex-wrap items-center justify-between gap-3 border-b pb-6 dark:border-slate-800/80 border-slate-200">
+        <div className={`mb-8 flex flex-wrap items-center justify-between gap-3 border-b pb-6 ${
+          isLight ? 'border-slate-200' : 'border-slate-800/80'
+        }`}>
           <div className="flex items-center gap-2">
             <h1 className={`text-4xl sm:text-5xl font-black tracking-tight ${isLight ? 'text-slate-900' : 'text-slate-100'}`}>
               {activeGm.name}'s Prospect Pool
@@ -1231,6 +1311,8 @@ export default function App() {
         onClose={() => setIsAddModalOpen(false)}
         onAdd={handleAddProspect}
         gmName={activeGm.name}
+        availableGms={gms}
+        theme={theme}
       />
 
       <EditProspectModal
@@ -1240,6 +1322,7 @@ export default function App() {
         prospect={editingProspect}
         gmName={activeGm.name}
         availableGms={gms}
+        theme={theme}
       />
     </div>
   );

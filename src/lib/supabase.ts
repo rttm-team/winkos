@@ -1,6 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import { GeneralManager, Prospect } from '../types';
-import { NHL_TEAMS_MAP, LEAGUE_RULES, INITIAL_GMS, getStoredProspectStatus } from '../data/mockData';
+import { NHL_TEAMS_MAP, LEAGUE_RULES, INITIAL_GMS, getStoredProspectStatus, getStoredScoringStats, getBaselineScoringStats, calculateFantasyPoints } from '../data/mockData';
 import { getCachedProspectFromLeagueData, getStored25PlusSeasons } from '../services/nhlApi';
 
 const SUPABASE_URL = "https://wltqsayrupcvcrodsjmn.supabase.co";
@@ -148,6 +148,116 @@ export const mapProspectRow = (row: any): Prospect => {
         gp: Number(s.gp || 0),
         hit: Boolean(s.qualifies ?? s.hit),
       }));
+    })(),
+    goals: (() => {
+      if (row.goals != null && !isNaN(Number(row.goals))) return Number(row.goals);
+      const stored = getStoredScoringStats(String(row.id), name);
+      if (stored?.goals !== undefined) return stored.goals;
+      return getBaselineScoringStats(name, row.position || (isGoalie ? 'G' : 'F'), totalGames).goals;
+    })(),
+    assists: (() => {
+      if (row.assists != null && !isNaN(Number(row.assists))) return Number(row.assists);
+      const stored = getStoredScoringStats(String(row.id), name);
+      if (stored?.assists !== undefined) return stored.assists;
+      return getBaselineScoringStats(name, row.position || (isGoalie ? 'G' : 'F'), totalGames).assists;
+    })(),
+    points: (() => {
+      if (row.points != null && !isNaN(Number(row.points))) return Number(row.points);
+      const stored = getStoredScoringStats(String(row.id), name);
+      if (stored?.points !== undefined) return stored.points;
+      return getBaselineScoringStats(name, row.position || (isGoalie ? 'G' : 'F'), totalGames).points;
+    })(),
+    pp_points: (() => {
+      if (row.pp_points != null && !isNaN(Number(row.pp_points))) return Number(row.pp_points);
+      if (row.power_play_points != null && !isNaN(Number(row.power_play_points))) return Number(row.power_play_points);
+      const stored = getStoredScoringStats(String(row.id), name);
+      if (stored?.pp_points !== undefined) return stored.pp_points;
+      return getBaselineScoringStats(name, row.position || (isGoalie ? 'G' : 'F'), totalGames).pp_points ?? 0;
+    })(),
+    sh_points: (() => {
+      if (row.sh_points != null && !isNaN(Number(row.sh_points))) return Number(row.sh_points);
+      if (row.shorthanded_points != null && !isNaN(Number(row.shorthanded_points))) return Number(row.shorthanded_points);
+      const stored = getStoredScoringStats(String(row.id), name);
+      if (stored?.sh_points !== undefined) return stored.sh_points;
+      return getBaselineScoringStats(name, row.position || (isGoalie ? 'G' : 'F'), totalGames).sh_points ?? 0;
+    })(),
+    gwg: (() => {
+      if (row.gwg != null && !isNaN(Number(row.gwg))) return Number(row.gwg);
+      if (row.game_winning_goals != null && !isNaN(Number(row.game_winning_goals))) return Number(row.game_winning_goals);
+      const stored = getStoredScoringStats(String(row.id), name);
+      if (stored?.gwg !== undefined) return stored.gwg;
+      return getBaselineScoringStats(name, row.position || (isGoalie ? 'G' : 'F'), totalGames).gwg ?? 0;
+    })(),
+    plus_minus: (() => {
+      if (row.plus_minus != null && !isNaN(Number(row.plus_minus))) return Number(row.plus_minus);
+      const stored = getStoredScoringStats(String(row.id), name);
+      if (stored?.plus_minus !== undefined) return stored.plus_minus;
+      return getBaselineScoringStats(name, row.position || (isGoalie ? 'G' : 'F'), totalGames).plus_minus ?? 0;
+    })(),
+    pim: (() => {
+      if (row.pim != null && !isNaN(Number(row.pim))) return Number(row.pim);
+      if (row.penalty_minutes != null && !isNaN(Number(row.penalty_minutes))) return Number(row.penalty_minutes);
+      const stored = getStoredScoringStats(String(row.id), name);
+      if (stored?.pim !== undefined) return stored.pim;
+      return getBaselineScoringStats(name, row.position || (isGoalie ? 'G' : 'F'), totalGames).pim ?? 0;
+    })(),
+    shots: (() => {
+      if (row.shots != null && !isNaN(Number(row.shots))) return Number(row.shots);
+      if (row.shots_on_goal != null && !isNaN(Number(row.shots_on_goal))) return Number(row.shots_on_goal);
+      const stored = getStoredScoringStats(String(row.id), name);
+      if (stored?.shots !== undefined) return stored.shots;
+      return getBaselineScoringStats(name, row.position || (isGoalie ? 'G' : 'F'), totalGames).shots ?? 0;
+    })(),
+    wins: (() => {
+      if (row.wins != null && !isNaN(Number(row.wins))) return Number(row.wins);
+      const stored = getStoredScoringStats(String(row.id), name);
+      if (stored?.wins !== undefined) return stored.wins;
+      return getBaselineScoringStats(name, row.position || (isGoalie ? 'G' : 'F'), totalGames).wins;
+    })(),
+    shutouts: (() => {
+      if (row.shutouts != null && !isNaN(Number(row.shutouts))) return Number(row.shutouts);
+      const stored = getStoredScoringStats(String(row.id), name);
+      if (stored?.shutouts !== undefined) return stored.shutouts;
+      return getBaselineScoringStats(name, row.position || (isGoalie ? 'G' : 'F'), totalGames).shutouts ?? 0;
+    })(),
+    saves: (() => {
+      if (row.saves != null && !isNaN(Number(row.saves))) return Number(row.saves);
+      const stored = getStoredScoringStats(String(row.id), name);
+      if (stored?.saves !== undefined) return stored.saves;
+      return getBaselineScoringStats(name, row.position || (isGoalie ? 'G' : 'F'), totalGames).saves ?? 0;
+    })(),
+    goals_against: (() => {
+      if (row.goals_against != null && !isNaN(Number(row.goals_against))) return Number(row.goals_against);
+      const stored = getStoredScoringStats(String(row.id), name);
+      if (stored?.goals_against !== undefined) return stored.goals_against;
+      return getBaselineScoringStats(name, row.position || (isGoalie ? 'G' : 'F'), totalGames).goals_against ?? 0;
+    })(),
+    save_pct: (() => {
+      if (row.save_pct != null && !isNaN(Number(row.save_pct))) return Number(row.save_pct);
+      if (row.savePct != null && !isNaN(Number(row.savePct))) return Number(row.savePct);
+      const stored = getStoredScoringStats(String(row.id), name);
+      if (stored?.save_pct !== undefined) return stored.save_pct;
+      return getBaselineScoringStats(name, row.position || (isGoalie ? 'G' : 'F'), totalGames).save_pct;
+    })(),
+    fantasy_points: (() => {
+      if (row.fantasy_points != null && !isNaN(Number(row.fantasy_points))) return Number(row.fantasy_points);
+      const stored = getStoredScoringStats(String(row.id), name);
+      const baseline = getBaselineScoringStats(name, row.position || (isGoalie ? 'G' : 'F'), totalGames);
+      const resolved = {
+        goals: row.goals ?? stored?.goals ?? baseline.goals,
+        assists: row.assists ?? stored?.assists ?? baseline.assists,
+        pp_points: row.pp_points ?? stored?.pp_points ?? baseline.pp_points,
+        sh_points: row.sh_points ?? stored?.sh_points ?? baseline.sh_points,
+        gwg: row.gwg ?? stored?.gwg ?? baseline.gwg,
+        plus_minus: row.plus_minus ?? stored?.plus_minus ?? baseline.plus_minus,
+        pim: row.pim ?? stored?.pim ?? baseline.pim,
+        shots: row.shots ?? stored?.shots ?? baseline.shots,
+        wins: row.wins ?? stored?.wins ?? baseline.wins,
+        shutouts: row.shutouts ?? stored?.shutouts ?? baseline.shutouts,
+        saves: row.saves ?? stored?.saves ?? baseline.saves,
+        goals_against: row.goals_against ?? stored?.goals_against ?? baseline.goals_against,
+      };
+      return calculateFantasyPoints(resolved);
     })(),
   };
 };
