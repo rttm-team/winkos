@@ -365,6 +365,10 @@ export const ProspectLanding: React.FC<ProspectLandingProps> = ({
       avatarInitials: string;
       gmId: string;
       total_fantasy_points: number;
+      skater_fantasy_points: number;
+      goalie_fantasy_points: number;
+      skater_points: number;
+      goalie_wins: number;
       goals: number;
       assists: number;
       wins: number;
@@ -378,6 +382,10 @@ export const ProspectLanding: React.FC<ProspectLandingProps> = ({
     allGmsMap.forEach((gmData, gmKey) => {
       const pMap = gmProspectsMap.get(gmKey) || new Map<string, any>();
       let total_fantasy_points = 0;
+      let skater_fantasy_points = 0;
+      let goalie_fantasy_points = 0;
+      let skater_points = 0;
+      let goalie_wins = 0;
       let goals = 0;
       let assists = 0;
       let wins = 0;
@@ -392,6 +400,7 @@ export const ProspectLanding: React.FC<ProspectLandingProps> = ({
 
         const pGoals = Number(p.goals ?? 0) || 0;
         const pAssists = Number(p.assists ?? 0) || 0;
+        const pPoints = Number(p.points ?? (pGoals + pAssists)) || (pGoals + pAssists);
         const pWins = p.position === 'G' ? (Number(p.wins ?? 0) || 0) : 0;
         const pShutouts = p.position === 'G' ? (Number(p.shutouts ?? 0) || 0) : 0;
         const pGP = Number(p.total_games ?? 0) || 0;
@@ -405,6 +414,14 @@ export const ProspectLanding: React.FC<ProspectLandingProps> = ({
         // Compute Rule 5 points for this prospect
         const prospectFP = calculateFantasyPoints(p);
         total_fantasy_points += prospectFP;
+
+        if (p.position === 'G') {
+          goalie_fantasy_points += prospectFP;
+          goalie_wins += pWins;
+        } else {
+          skater_fantasy_points += prospectFP;
+          skater_points += pPoints;
+        }
       });
 
       const finalTotalProspects = Math.max(gmData.total_prospects, localTotal);
@@ -419,6 +436,10 @@ export const ProspectLanding: React.FC<ProspectLandingProps> = ({
       result.push({
         ...gmData,
         total_fantasy_points,
+        skater_fantasy_points,
+        goalie_fantasy_points,
+        skater_points,
+        goalie_wins,
         goals,
         assists,
         wins,
@@ -773,10 +794,10 @@ export const ProspectLanding: React.FC<ProspectLandingProps> = ({
                   <th className="py-3.5 px-4 w-12 text-center">Rank</th>
                   <th className="py-3.5 px-4">General Manager</th>
                   <th className="py-3.5 px-4 text-center">Draft Hit Rate</th>
-                  <th className="py-3.5 px-4 text-center">Promoted / Drafted</th>
                   <th className="py-3.5 px-4 text-center">Total GP</th>
-                  <th className="py-3.5 px-4 text-center">Rule 5 FP</th>
-                  <th className="py-3.5 px-4 text-center">Goals / Wins</th>
+                  <th className="py-3.5 px-4 text-center">Skaters (FP)</th>
+                  <th className="py-3.5 px-4 text-center">Goalies (FP)</th>
+                  <th className="py-3.5 px-4 text-center">Rule 5 Total FP</th>
                   <th className="py-3.5 px-4 text-right">Pool</th>
                 </tr>
               </thead>
@@ -848,26 +869,24 @@ export const ProspectLanding: React.FC<ProspectLandingProps> = ({
                         </div>
                       </td>
 
-                      {/* Promoted / Drafted */}
-                      <td className="py-3 px-4 text-center font-mono">
-                        <span className={`font-bold ${isLight ? 'text-slate-900' : 'text-slate-100'}`}>{row.promoted_count}</span>
-                        <span className="text-slate-500 mx-1">/</span>
-                        <span className={isLight ? 'text-slate-600' : 'text-slate-400'}>{row.total_prospects}</span>
-                      </td>
-
                       {/* Total GP */}
                       <td className={`py-3 px-4 text-center font-mono font-bold ${isLight ? 'text-slate-900' : 'text-slate-200'}`}>
                         {row.gp.toLocaleString()}
                       </td>
 
-                      {/* Rule 5 Fantasy Points */}
-                      <td className={`py-3 px-4 text-center font-mono font-black text-amber-500 dark:text-amber-400`}>
-                        {row.total_fantasy_points.toLocaleString()} PTS
+                      {/* Skaters (FP) */}
+                      <td className={`py-3 px-4 text-center font-mono font-bold text-cyan-600 dark:text-cyan-400`}>
+                        {row.skater_fantasy_points.toLocaleString()} PTS
                       </td>
 
-                      {/* Goals / Wins */}
-                      <td className={`py-3 px-4 text-center font-mono text-xs ${isLight ? 'text-slate-700' : 'text-slate-300'}`}>
-                        <span className="font-bold text-cyan-600 dark:text-cyan-400">{row.goals}G</span> / <span className="font-bold text-emerald-600 dark:text-emerald-400">{row.wins}W</span>
+                      {/* Goalies (FP) */}
+                      <td className={`py-3 px-4 text-center font-mono font-bold text-emerald-600 dark:text-emerald-400`}>
+                        {row.goalie_fantasy_points.toLocaleString()} PTS
+                      </td>
+
+                      {/* Rule 5 Total Fantasy Points */}
+                      <td className={`py-3 px-4 text-center font-mono font-black text-amber-500 dark:text-amber-400 text-sm`}>
+                        {row.total_fantasy_points.toLocaleString()} PTS
                       </td>
 
                       {/* Quick jump to GM pool */}
