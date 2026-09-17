@@ -566,55 +566,9 @@ export function getBaselineScoringStats(name: string, pos: string, totalGames: n
   if (norm in KNOWN_PROSPECT_SCORING) {
     return KNOWN_PROSPECT_SCORING[norm];
   }
-  if (totalGames === 0) {
-    return pos === 'G'
-      ? { wins: 0, shutouts: 0, saves: 0, goals_against: 0, save_pct: 0 }
-      : { goals: 0, assists: 0, points: 0, pp_points: 0, sh_points: 0, gwg: 0, plus_minus: 0, pim: 0, shots: 0 };
-  }
-  if (pos === 'G') {
-    const wins = Math.max(0, Math.round(totalGames * 0.42));
-    const shutouts = Math.max(0, Math.round(totalGames * 0.03));
-    const saves = Math.max(0, Math.round(totalGames * 26));
-    const goals_against = Math.max(0, Math.round(totalGames * 2.85));
-    return {
-      wins,
-      shutouts,
-      saves,
-      goals_against,
-      save_pct: 0.901,
-    };
-  }
-  if (pos === 'D') {
-    const goals = Math.max(0, Math.round(totalGames * 0.08));
-    const assists = Math.max(0, Math.round(totalGames * 0.28));
-    const points = goals + assists;
-    return {
-      goals,
-      assists,
-      points,
-      pp_points: Math.max(0, Math.round(points * 0.28)),
-      sh_points: Math.max(0, Math.round(goals * 0.04)),
-      gwg: Math.max(0, Math.round(goals * 0.12)),
-      plus_minus: Math.max(-5, Math.round(totalGames * 0.06)),
-      pim: Math.max(0, Math.round(totalGames * 0.4)),
-      shots: Math.max(0, Math.round(totalGames * 1.5)),
-    };
-  }
-  // Forwards
-  const goals = Math.max(0, Math.round(totalGames * 0.18));
-  const assists = Math.max(0, Math.round(totalGames * 0.25));
-  const points = goals + assists;
-  return {
-    goals,
-    assists,
-    points,
-    pp_points: Math.max(0, Math.round(points * 0.25)),
-    sh_points: Math.max(0, Math.round(goals * 0.03)),
-    gwg: Math.max(0, Math.round(goals * 0.15)),
-    plus_minus: Math.max(-10, Math.round(totalGames * 0.04)),
-    pim: Math.max(0, Math.round(totalGames * 0.35)),
-    shots: Math.max(0, Math.round(totalGames * 1.9)),
-  };
+  return pos === 'G'
+    ? { wins: 0, shutouts: 0, saves: 0, goals_against: 0, save_pct: 0 }
+    : { goals: 0, assists: 0, points: 0, pp_points: 0, sh_points: 0, gwg: 0, plus_minus: 0, pim: 0, shots: 0 };
 }
 
 /**
