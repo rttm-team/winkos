@@ -123,19 +123,31 @@ export const PositionSection: React.FC<PositionSectionProps> = ({
         {/* Section Actions: Alerts Pill + Expand/Collapse Section Toggle */}
         <div className="flex items-center gap-2 text-xs">
           {promotedProtectedCount > 0 && (
-            <span className="inline-flex items-center gap-1 rounded-md bg-purple-950/50 border border-purple-800/40 px-2 py-0.5 font-medium text-purple-300/90">
-              <ShieldCheck className="h-3 w-3 text-purple-400/80" />
+            <span className={`inline-flex items-center gap-1 rounded-md px-2 py-0.5 font-bold border ${
+              isLight
+                ? 'bg-purple-100 text-purple-900 border-purple-300 shadow-xs'
+                : 'bg-purple-950/50 border border-purple-800/40 text-purple-300/90'
+            }`}>
+              <ShieldCheck className={`h-3 w-3 ${isLight ? 'text-purple-700' : 'text-purple-400/80'}`} />
               <span>{promotedProtectedCount} Promoted &amp; Protected</span>
             </span>
           )}
           {mandatoryCount > 0 && (
-            <span className="inline-flex items-center gap-1 rounded-md bg-rose-950/50 border border-rose-800/40 px-2 py-0.5 font-medium text-rose-300/90">
-              <AlertCircle className="h-3 w-3 text-rose-400/80" />
+            <span className={`inline-flex items-center gap-1 rounded-md px-2 py-0.5 font-semibold border ${
+              isLight
+                ? 'bg-rose-100 text-rose-900 border-rose-300 shadow-xs'
+                : 'bg-rose-950/50 border border-rose-800/40 text-rose-300/90'
+            }`}>
+              <AlertCircle className={`h-3 w-3 ${isLight ? 'text-rose-700' : 'text-rose-400/80'}`} />
               <span>{mandatoryCount} Mandatory</span>
             </span>
           )}
           {watchCount > 0 && (
-            <span className="inline-flex items-center gap-1 rounded-md bg-amber-950/40 border border-amber-800/40 px-2 py-0.5 font-medium text-amber-300/90">
+            <span className={`inline-flex items-center gap-1 rounded-md px-2 py-0.5 font-semibold border ${
+              isLight
+                ? 'bg-amber-100 text-amber-900 border-amber-300 shadow-xs'
+                : 'bg-amber-950/40 border border-amber-800/40 text-amber-300/90'
+            }`}>
               <span>{watchCount} On Watch</span>
             </span>
           )}
@@ -144,13 +156,17 @@ export const PositionSection: React.FC<PositionSectionProps> = ({
             <button
               type="button"
               onClick={handleToggleSection}
-              className="inline-flex items-center gap-1 rounded-lg border border-slate-700/80 bg-slate-800/90 hover:bg-slate-700 px-2.5 py-1 text-xs font-semibold text-slate-300 hover:text-white transition-colors ml-1"
+              className={`inline-flex items-center gap-1 rounded-lg border px-2.5 py-1 text-xs font-semibold transition-all ml-1 cursor-pointer ${
+                isLight
+                  ? 'border-slate-300 bg-white hover:bg-slate-100 text-slate-700 hover:text-slate-900 shadow-xs'
+                  : 'border-slate-700/80 bg-slate-800/90 hover:bg-slate-700 text-slate-300 hover:text-white'
+              }`}
               title={allSectionExpanded ? `Collapse all ${title}` : `Expand all ${title}`}
             >
               {allSectionExpanded ? (
-                <ChevronsDownUp className="h-3.5 w-3.5 text-cyan-400" />
+                <ChevronsDownUp className={`h-3.5 w-3.5 ${isLight ? 'text-cyan-600' : 'text-cyan-400'}`} />
               ) : (
-                <ChevronsUpDown className="h-3.5 w-3.5 text-cyan-400" />
+                <ChevronsUpDown className={`h-3.5 w-3.5 ${isLight ? 'text-cyan-600' : 'text-cyan-400'}`} />
               )}
               <span className="hidden sm:inline">
                 {allSectionExpanded ? 'Collapse All' : 'Expand All'}

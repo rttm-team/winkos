@@ -1241,23 +1241,18 @@ export default function App() {
         <div className={`mb-8 flex flex-wrap items-center justify-between gap-3 border-b pb-6 ${
           isLight ? 'border-slate-200' : 'border-slate-800/80'
         }`}>
-          <div className="flex items-center gap-2">
+          <div>
             <h1 className={`text-4xl sm:text-5xl font-black tracking-tight ${isLight ? 'text-slate-900' : 'text-slate-100'}`}>
               {activeGm.name}'s Prospect Pool
             </h1>
-            <span className={`rounded-full px-2.5 py-0.5 text-xs font-semibold border ${
-              isLight ? 'bg-slate-100 text-slate-700 border-slate-300' : 'bg-slate-800 text-slate-300 border-slate-700'
-            }`}>
-              {filteredProspects.length} of {activeGm.prospects.length}
-            </span>
           </div>
 
           <div className="flex items-center gap-2">
             <button
               onClick={() => setIsAddModalOpen(true)}
-              className="flex items-center gap-1.5 rounded-xl bg-cyan-500 hover:bg-cyan-400 px-3.5 py-1.5 text-xs font-bold text-slate-950 transition-colors shadow-sm shadow-cyan-500/20"
+              className="flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold shadow-md shadow-emerald-500/20 active:scale-95 transition cursor-pointer"
             >
-              <UserPlus className="h-4 w-4" />
+              <UserPlus className="h-5 w-5" />
               <span>Add Prospect</span>
             </button>
           </div>
@@ -1369,6 +1364,8 @@ export default function App() {
           }}
           viewMode={viewMode}
           setViewMode={setViewMode}
+          onToggleExpandAll={handleToggleExpandAll}
+          allExpanded={allExpanded}
         />
 
         {/* 3. Prospect Roster (List View Default or Card Grid, Grouped by Position) */}
@@ -1388,7 +1385,7 @@ export default function App() {
                 setSortOption('urgency');
                 setSearchQuery('');
               }}
-              className="mt-4 inline-flex items-center gap-1.5 rounded-xl bg-cyan-500 px-4 py-2 text-xs font-bold text-slate-950 hover:bg-cyan-400 transition-colors"
+              className="mt-4 inline-flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold shadow-md shadow-emerald-500/20 active:scale-95 transition cursor-pointer"
             >
               Clear All Filters
             </button>

@@ -295,8 +295,8 @@ export const ProspectCard: React.FC<ProspectCardProps> = ({
                 <div
                   className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border text-base font-bold ${
                     isPromotedAndProtected
-                      ? 'bg-purple-950/60 text-purple-300/90 border-purple-800/40 shadow-sm'
-                      : 'bg-slate-800 text-slate-300 border-slate-700'
+                      ? (isLight ? 'bg-purple-100 text-purple-900 border-purple-300 shadow-xs' : 'bg-purple-950/60 text-purple-300/90 border-purple-800/40 shadow-sm')
+                      : (isLight ? 'bg-slate-100 text-slate-700 border-slate-300' : 'bg-slate-800 text-slate-300 border-slate-700')
                   }`}
                 >
                   {(prospect.name || 'U').split(' ').map((n) => n[0]).join('')}
@@ -355,12 +355,12 @@ export const ProspectCard: React.FC<ProspectCardProps> = ({
             {/* Promote? Tag */}
             {isPromotedAndProtected ? (
               <div
-                className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-semibold border ${
-                  isLight ? 'bg-purple-100 text-purple-800 border-purple-300' : 'bg-purple-950/50 text-purple-300 border-purple-800/40'
+                className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-bold border ${
+                  isLight ? 'bg-purple-100 text-purple-900 border-purple-300 shadow-xs' : 'bg-purple-950/50 text-purple-300 border-purple-800/40'
                 }`}
                 title={`Player is promoted to the active fantasy roster AND protected${prospect.promotionDate ? ` on ${prospect.promotionDate}` : ''}`}
               >
-                <ShieldCheck className={`h-3.5 w-3.5 shrink-0 ${isLight ? 'text-purple-600' : 'text-purple-400/80'}`} />
+                <ShieldCheck className={`h-3.5 w-3.5 shrink-0 ${isLight ? 'text-purple-700' : 'text-purple-400/80'}`} />
                 <span>
                   Promoted &amp; Protected {prospect.promotionDate ? `(${prospect.promotionDate})` : '(Active)'}
                 </span>
@@ -419,12 +419,12 @@ export const ProspectCard: React.FC<ProspectCardProps> = ({
               </div>
             ) : isPromotedAndProtected ? (
               <div
-                className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-semibold border ${
-                  isLight ? 'bg-purple-100 text-purple-800 border-purple-300' : 'bg-purple-950/50 text-purple-300 border-purple-800/40'
+                className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-bold border ${
+                  isLight ? 'bg-purple-100 text-purple-900 border-purple-300 shadow-xs' : 'bg-purple-950/50 text-purple-300 border-purple-800/40'
                 }`}
                 title="Player is protected in pool"
               >
-                <ShieldCheck className={`h-3.5 w-3.5 ${isLight ? 'text-purple-600' : 'text-purple-400/80'}`} />
+                <ShieldCheck className={`h-3.5 w-3.5 ${isLight ? 'text-purple-700' : 'text-purple-400/80'}`} />
                 <span>Protected? YES</span>
               </div>
             ) : prospect.isProtected ? (

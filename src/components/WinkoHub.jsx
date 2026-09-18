@@ -420,7 +420,7 @@ function UnlockedView({ activeGm, leaderboard, isArcadeComingSoon, onNavigate, i
             <button
               type="button"
               onClick={() => onNavigate('prospect-central')}
-              className="flex-1 flex items-center justify-center gap-2 rounded-xl bg-sky-500 px-4 py-3 text-sm font-bold text-slate-950 transition hover:bg-sky-400 cursor-pointer shadow-md shadow-sky-500/20"
+              className="flex-1 flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold shadow-md shadow-emerald-500/20 active:scale-95 transition cursor-pointer"
             >
               <span>Prospect Central HQ</span>
               <ArrowRight className="h-4 w-4" />
@@ -484,7 +484,7 @@ function UnlockedView({ activeGm, leaderboard, isArcadeComingSoon, onNavigate, i
             <button
               type="button"
               onClick={() => onNavigate('arcade')}
-              className="flex w-full items-center justify-center gap-2 rounded-xl bg-amber-500 px-4 py-3 text-sm font-bold text-slate-950 transition hover:bg-amber-400 cursor-pointer shadow-md"
+              className="flex w-full items-center justify-center gap-2 px-6 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold shadow-md shadow-emerald-500/20 active:scale-95 transition cursor-pointer"
             >
               <Dice5 className="h-4 w-4" />
               <span>Play Today's Challenge</span>
@@ -657,10 +657,10 @@ function PinModal({ gm, onClose, onSubmit }) {
         <button
           type="button"
           onClick={submit}
-          className="mt-6 flex w-full items-center justify-center gap-2 rounded-xl bg-sky-500 px-4 py-3 text-sm font-bold text-slate-950 transition hover:bg-sky-400 cursor-pointer"
+          className="mt-6 flex w-full items-center justify-center gap-2 px-6 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold shadow-md shadow-emerald-500/20 active:scale-95 transition cursor-pointer"
         >
-          <ShieldCheck className="h-4 w-4" />
-          Unlock Hub
+          <ShieldCheck className="h-5 w-5" />
+          <span>Unlock Hub</span>
         </button>
         <button
           type="button"

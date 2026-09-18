@@ -220,8 +220,8 @@ export const ProspectListItem: React.FC<ProspectListItemProps> = ({
               <div
                 className={`flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-xl border text-sm font-bold ${
                   isPromotedAndProtected
-                    ? 'bg-purple-950/70 text-purple-300 border-purple-500/60 shadow-sm shadow-purple-950/50'
-                    : 'bg-slate-800 text-slate-300 border-slate-700'
+                    ? (isLight ? 'bg-purple-100 text-purple-900 border-purple-300' : 'bg-purple-950/70 text-purple-300 border-purple-500/60 shadow-sm shadow-purple-950/50')
+                    : (isLight ? 'bg-slate-100 text-slate-700 border-slate-300' : 'bg-slate-800 text-slate-300 border-slate-700')
                 }`}
               >
                 {(prospect.name || 'U')
@@ -293,51 +293,83 @@ export const ProspectListItem: React.FC<ProspectListItemProps> = ({
             {/* Badges Row */}
             <div className="mt-1 flex items-center gap-1.5 flex-wrap text-[10px]">
               {isPromotedAndProtected ? (
-                <span className="inline-flex items-center gap-1 rounded bg-purple-950/60 px-1.5 py-0.5 font-medium text-purple-300/90 border border-purple-800/40">
-                  <ShieldCheck className="h-2.5 w-2.5 text-purple-400/80" />
+                <span className={`inline-flex items-center gap-1 rounded px-1.5 py-0.5 font-bold border ${
+                  isLight
+                    ? 'bg-purple-100 text-purple-900 border-purple-300 shadow-xs'
+                    : 'bg-purple-950/60 text-purple-300/90 border-purple-800/40'
+                }`}>
+                  <ShieldCheck className={`h-2.5 w-2.5 ${isLight ? 'text-purple-700' : 'text-purple-400/80'}`} />
                   Promoted &amp; Protected
                 </span>
               ) : prospect.promoted ? (
-                <span className="inline-flex items-center gap-1 rounded bg-emerald-950/60 px-1.5 py-0.5 font-medium text-emerald-300/90 border border-emerald-800/40">
-                  <Check className="h-2.5 w-2.5 text-emerald-400/80" />
+                <span className={`inline-flex items-center gap-1 rounded px-1.5 py-0.5 font-semibold border ${
+                  isLight
+                    ? 'bg-emerald-100 text-emerald-900 border-emerald-300'
+                    : 'bg-emerald-950/60 text-emerald-300/90 border-emerald-800/40'
+                }`}>
+                  <Check className={`h-2.5 w-2.5 ${isLight ? 'text-emerald-700' : 'text-emerald-400/80'}`} />
                   Promoted
                 </span>
               ) : ev.isMandatoryPromotion ? (
-                <span className="inline-flex items-center gap-1 rounded bg-rose-950/60 px-1.5 py-0.5 font-medium text-rose-300/90 border border-rose-800/40">
-                  <AlertCircle className="h-2.5 w-2.5 text-rose-400/80" />
+                <span className={`inline-flex items-center gap-1 rounded px-1.5 py-0.5 font-semibold border ${
+                  isLight
+                    ? 'bg-rose-100 text-rose-900 border-rose-300'
+                    : 'bg-rose-950/60 text-rose-300/90 border-rose-800/40'
+                }`}>
+                  <AlertCircle className={`h-2.5 w-2.5 ${isLight ? 'text-rose-700' : 'text-rose-400/80'}`} />
                   Mandatory Promotion
                 </span>
               ) : ev.isWatchlist ? (
-                <span className="inline-flex items-center gap-1 rounded bg-amber-950/60 px-1.5 py-0.5 font-medium text-amber-300/90 border border-amber-800/40">
-                  <AlertTriangle className="h-2.5 w-2.5 text-amber-400/80" />
+                <span className={`inline-flex items-center gap-1 rounded px-1.5 py-0.5 font-semibold border ${
+                  isLight
+                    ? 'bg-amber-100 text-amber-900 border-amber-300'
+                    : 'bg-amber-950/60 text-amber-300/90 border-amber-800/40'
+                }`}>
+                  <AlertTriangle className={`h-2.5 w-2.5 ${isLight ? 'text-amber-700' : 'text-amber-400/80'}`} />
                   Watchlist ({ev.seasonGamesRemaining} GP Left)
                 </span>
               ) : null}
 
               {!isPromotedAndProtected && prospect.isProtected && (
-                <span className="inline-flex items-center gap-1 rounded bg-slate-800 px-1.5 py-0.5 font-medium text-teal-300/90 border border-teal-800/40">
-                  <ShieldCheck className="h-2.5 w-2.5 text-teal-400/80" />
+                <span className={`inline-flex items-center gap-1 rounded px-1.5 py-0.5 font-semibold border ${
+                  isLight
+                    ? 'bg-teal-100 text-teal-900 border-teal-300'
+                    : 'bg-slate-800 text-teal-300/90 border-teal-800/40'
+                }`}>
+                  <ShieldCheck className={`h-2.5 w-2.5 ${isLight ? 'text-teal-700' : 'text-teal-400/80'}`} />
                   Protected
                 </span>
               )}
 
               {isTrashed && (
-                <span className="inline-flex items-center gap-1 rounded bg-slate-800/90 px-1.5 py-0.5 font-medium text-slate-300 border border-slate-700 shadow-sm">
+                <span className={`inline-flex items-center gap-1 rounded px-1.5 py-0.5 font-medium border ${
+                  isLight
+                    ? 'bg-slate-200 text-slate-700 border-slate-300'
+                    : 'bg-slate-800/90 text-slate-300 border-slate-700 shadow-sm'
+                }`}>
                   <Trash2 className="h-2.5 w-2.5 text-slate-400" />
                   Trashed
                 </span>
               )}
 
               {isInDevelopment && (
-                <span className="inline-flex items-center gap-1 rounded bg-slate-800 px-1.5 py-0.5 font-medium text-slate-400 border border-slate-700">
-                  <span className="h-1.5 w-1.5 rounded-full bg-slate-400"></span>
+                <span className={`inline-flex items-center gap-1 rounded px-1.5 py-0.5 font-medium border ${
+                  isLight
+                    ? 'bg-slate-100 text-slate-700 border-slate-300'
+                    : 'bg-slate-800 text-slate-400 border-slate-700'
+                }`}>
+                  <span className={`h-1.5 w-1.5 rounded-full ${isLight ? 'bg-slate-500' : 'bg-slate-400'}`}></span>
                   In Development
                 </span>
               )}
 
               {isNoNhlRecord && (
-                <span className="inline-flex items-center gap-1 rounded bg-slate-800 px-1.5 py-0.5 font-medium text-slate-300 border border-slate-700">
-                  <span className="h-1.5 w-1.5 rounded-full bg-slate-400"></span>
+                <span className={`inline-flex items-center gap-1 rounded px-1.5 py-0.5 font-medium border ${
+                  isLight
+                    ? 'bg-slate-100 text-slate-600 border-slate-300'
+                    : 'bg-slate-800 text-slate-300 border-slate-700'
+                }`}>
+                  <span className={`h-1.5 w-1.5 rounded-full ${isLight ? 'bg-slate-400' : 'bg-slate-400'}`}></span>
                   No NHL Record
                 </span>
               )}

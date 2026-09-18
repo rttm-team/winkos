@@ -707,9 +707,9 @@ export const AddProspectModal: React.FC<AddProspectModalProps> = ({
             </button>
             <button
               type="submit"
-              className="flex items-center gap-1.5 rounded-xl bg-cyan-500 hover:bg-cyan-400 px-5 py-2 text-xs font-bold text-slate-950 transition-colors shadow-sm shadow-cyan-500/20 cursor-pointer"
+              className="flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold shadow-md shadow-emerald-500/20 active:scale-95 transition cursor-pointer"
             >
-              <UserPlus className="h-4 w-4" />
+              <UserPlus className="h-5 w-5" />
               <span>Add Prospect to Roster</span>
             </button>
           </div>

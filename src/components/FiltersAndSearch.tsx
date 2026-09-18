@@ -10,6 +10,8 @@ import {
   List,
   LayoutGrid,
   ArrowUpDown,
+  ChevronsUpDown,
+  ChevronsDownUp,
 } from 'lucide-react';
 
 interface FiltersAndSearchProps {
@@ -37,6 +39,8 @@ interface FiltersAndSearchProps {
   onResetFilters: () => void;
   viewMode: ViewMode;
   setViewMode: (mode: ViewMode) => void;
+  onToggleExpandAll?: () => void;
+  allExpanded?: boolean;
 }
 
 export const FiltersAndSearch: React.FC<FiltersAndSearchProps> = ({
@@ -52,6 +56,8 @@ export const FiltersAndSearch: React.FC<FiltersAndSearchProps> = ({
   onResetFilters,
   viewMode,
   setViewMode,
+  onToggleExpandAll,
+  allExpanded = false,
 }) => {
   const isLight = (() => {
     try {
@@ -144,6 +150,28 @@ export const FiltersAndSearch: React.FC<FiltersAndSearchProps> = ({
               <span>Cards</span>
             </button>
           </div>
+
+          {/* Global Expand/Collapse All Button */}
+          {onToggleExpandAll && (
+            <button
+              type="button"
+              id="global-toggle-expand-all"
+              onClick={onToggleExpandAll}
+              className={`inline-flex items-center gap-1.5 rounded-xl border px-3 py-2 text-xs font-semibold transition-all cursor-pointer shadow-xs ${
+                isLight
+                  ? 'border-slate-300 bg-white hover:bg-slate-100 text-slate-700 hover:text-slate-900'
+                  : 'border-slate-700/80 bg-slate-800/90 hover:bg-slate-700 text-slate-300 hover:text-white'
+              }`}
+              title={allExpanded ? 'Collapse All Prospects' : 'Expand All Prospects'}
+            >
+              {allExpanded ? (
+                <ChevronsDownUp className={`h-3.5 w-3.5 ${isLight ? 'text-cyan-600' : 'text-cyan-400'}`} />
+              ) : (
+                <ChevronsUpDown className={`h-3.5 w-3.5 ${isLight ? 'text-cyan-600' : 'text-cyan-400'}`} />
+              )}
+              <span>{allExpanded ? 'Collapse All' : 'Expand All'}</span>
+            </button>
+          )}
 
           {/* Reset Filters button if any are applied */}
           {hasActiveFilters && (
