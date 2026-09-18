@@ -615,7 +615,7 @@ export default function WinkosChallenges({ gmName, theme = 'dark' }: { gmName: s
                 type="button"
                 id="tab-tonights-challenges"
                 onClick={() => setActiveTab('challenge')}
-                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold whitespace-nowrap transition-all cursor-pointer ${
+                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold whitespace-nowrap transition-colors select-none touch-manipulation cursor-pointer ${
                   activeTab === 'challenge' 
                     ? 'bg-emerald-600 text-white shadow-md shadow-emerald-600/30' 
                     : isLight
@@ -630,7 +630,7 @@ export default function WinkosChallenges({ gmName, theme = 'dark' }: { gmName: s
                 type="button"
                 id="tab-overall-leaderboard"
                 onClick={() => setActiveTab('leaderboard')}
-                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold whitespace-nowrap transition-all cursor-pointer ${
+                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold whitespace-nowrap transition-colors select-none touch-manipulation cursor-pointer ${
                   activeTab === 'leaderboard' 
                     ? 'bg-emerald-600 text-white shadow-md shadow-emerald-600/30' 
                     : isLight
@@ -645,7 +645,7 @@ export default function WinkosChallenges({ gmName, theme = 'dark' }: { gmName: s
                 type="button"
                 id="tab-draft-store"
                 onClick={() => setActiveTab('store')}
-                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold whitespace-nowrap transition-all cursor-pointer ${
+                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold whitespace-nowrap transition-colors select-none touch-manipulation cursor-pointer ${
                   activeTab === 'store' 
                     ? 'bg-emerald-600 text-white shadow-md shadow-emerald-600/30' 
                     : isLight
@@ -675,7 +675,7 @@ export default function WinkosChallenges({ gmName, theme = 'dark' }: { gmName: s
               <>
                 {/* TAB 1: TONIGHT'S CHALLENGES (Extensible Multi-Challenge Hub) */}
                 {activeTab === 'challenge' && (
-                  <div className="space-y-6 animate-in fade-in duration-300">
+                  <div className="space-y-6">
                     
                     {/* Challenge Game Selector: Shows Tonight's Games & upcoming challenge types */}
                     <div className={`p-4 rounded-2xl border transition-all ${
@@ -701,7 +701,7 @@ export default function WinkosChallenges({ gmName, theme = 'dark' }: { gmName: s
                           <button
                             type="button"
                             onClick={() => setSimMode('open')}
-                            className={`px-2.5 py-1 rounded-lg font-bold text-[11px] transition-all cursor-pointer ${
+                            className={`px-2.5 py-1 rounded-lg font-bold text-[11px] transition-colors select-none touch-manipulation cursor-pointer ${
                               simMode === 'open'
                                 ? isLight
                                   ? 'bg-emerald-100 text-emerald-800 border border-emerald-300 shadow-xs'
@@ -717,7 +717,7 @@ export default function WinkosChallenges({ gmName, theme = 'dark' }: { gmName: s
                           <button
                             type="button"
                             onClick={() => setSimMode('locked')}
-                            className={`px-2.5 py-1 rounded-lg font-bold text-[11px] transition-all cursor-pointer ${
+                            className={`px-2.5 py-1 rounded-lg font-bold text-[11px] transition-colors select-none touch-manipulation cursor-pointer ${
                               simMode === 'locked'
                                 ? isLight
                                   ? 'bg-rose-100 text-rose-800 border border-rose-300 shadow-xs'
@@ -742,7 +742,7 @@ export default function WinkosChallenges({ gmName, theme = 'dark' }: { gmName: s
                               key={game.id}
                               type="button"
                               onClick={() => setSelectedGameType(game.id)}
-                              className={`flex items-start gap-3 p-3.5 rounded-xl border text-left transition-all cursor-pointer ${
+                              className={`flex items-start gap-3 p-3.5 rounded-xl border text-left transition-colors select-none touch-manipulation cursor-pointer ${
                                 isSelected
                                   ? isLight
                                     ? 'border-emerald-500 bg-emerald-50/70 shadow-xs ring-1 ring-emerald-500/30'
@@ -887,7 +887,7 @@ export default function WinkosChallenges({ gmName, theme = 'dark' }: { gmName: s
                                 id="btn-save-picks"
                                 onClick={handleSavePicks}
                                 disabled={saving || isLockedOut || !isCompleteBallot}
-                                className={`flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl font-black text-sm transition-all ${
+                                className={`flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl font-black text-sm transition-colors select-none touch-manipulation ${
                                   isLockedOut
                                     ? isLight
                                       ? 'bg-slate-200 text-slate-500 cursor-not-allowed'
@@ -1005,7 +1005,7 @@ export default function WinkosChallenges({ gmName, theme = 'dark' }: { gmName: s
                                         type="button"
                                         onClick={() => handleSelectPick(game.id, game.awayTeam.abbrev)}
                                         disabled={isLockedOut}
-                                        className={`group relative flex flex-col items-center justify-center gap-2 p-3 sm:p-4 rounded-xl border-2 transition-all duration-200 ${
+                                        className={`group relative flex flex-col items-center justify-center gap-2 p-3 sm:p-4 rounded-xl border-2 transition-colors duration-150 select-none touch-manipulation ${
                                           selectedWinner === game.awayTeam.abbrev
                                             ? isLight
                                               ? 'border-emerald-500 bg-emerald-50/90 shadow-sm ring-2 ring-emerald-500/20'
@@ -1053,7 +1053,7 @@ export default function WinkosChallenges({ gmName, theme = 'dark' }: { gmName: s
                                         type="button"
                                         onClick={() => handleSelectPick(game.id, game.homeTeam.abbrev)}
                                         disabled={isLockedOut}
-                                        className={`group relative flex flex-col items-center justify-center gap-2 p-3 sm:p-4 rounded-xl border-2 transition-all duration-200 ${
+                                        className={`group relative flex flex-col items-center justify-center gap-2 p-3 sm:p-4 rounded-xl border-2 transition-colors duration-150 select-none touch-manipulation ${
                                           selectedWinner === game.homeTeam.abbrev
                                             ? isLight
                                               ? 'border-emerald-500 bg-emerald-50/90 shadow-sm ring-2 ring-emerald-500/20'
@@ -1335,7 +1335,7 @@ export default function WinkosChallenges({ gmName, theme = 'dark' }: { gmName: s
 
                 {/* TAB 2: OVERALL CHALLENGE LEADERBOARD */}
                 {activeTab === 'leaderboard' && (
-                  <div className="space-y-6 animate-in fade-in duration-300">
+                  <div className="space-y-6">
                     
                     {/* Header Block */}
                     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
@@ -1547,7 +1547,7 @@ export default function WinkosChallenges({ gmName, theme = 'dark' }: { gmName: s
 
                 {/* TAB 3: DRAFT STORE */}
                 {activeTab === 'store' && (
-                  <div className="space-y-6 animate-in fade-in duration-300">
+                  <div className="space-y-6">
                     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                       <div>
                         <h2 className="text-2xl font-black">Draft Store</h2>

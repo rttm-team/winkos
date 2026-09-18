@@ -4,6 +4,41 @@
   --font-bungee: "Bungee", cursive;
 }
 
+/* Eliminate mobile WebKit / Safari tap highlight white flash & flicker */
+*,
+*::before,
+*::after {
+  -webkit-tap-highlight-color: transparent !important;
+}
+
+html,
+body {
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+  touch-action: manipulation;
+}
+
+html.dark,
+html.dark body {
+  background-color: #0f172a;
+  color: #f1f5f9;
+}
+
+html:not(.dark),
+html:not(.dark) body {
+  background-color: #f8fafc;
+  color: #0f172a;
+}
+
+button,
+a,
+input,
+select,
+textarea {
+  -webkit-tap-highlight-color: transparent !important;
+  touch-action: manipulation;
+}
+
 @layer base {
   h1, h2, h3, h4, h5, h6 {
     font-family: var(--font-bungee);
