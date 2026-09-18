@@ -248,28 +248,6 @@ export const ProspectLanding: React.FC<ProspectLandingProps> = ({
       });
     });
 
-    (leaderboard || []).forEach((row) => {
-      const key = row.gm_name.trim().toLowerCase();
-      const existing = allGmsMap.get(key);
-      if (existing) {
-        existing.hit_rate_pct = row.hit_rate_pct ?? existing.hit_rate_pct;
-        existing.promoted_count = row.promoted_count ?? existing.promoted_count;
-        existing.total_prospects = row.total_prospects ?? existing.total_prospects;
-      } else {
-        allGmsMap.set(key, {
-          gm_name: row.gm_name,
-          teamName: `${row.gm_name}'s Franchise`,
-          winkoins: row.winkoins ?? 0,
-          avatarColor: 'from-slate-600 to-slate-800',
-          avatarInitials: row.gm_name.slice(0, 2).toUpperCase(),
-          gmId: `gm-${row.gm_name.toLowerCase()}`,
-          hit_rate_pct: row.hit_rate_pct ?? 0,
-          promoted_count: row.promoted_count ?? 0,
-          total_prospects: row.total_prospects ?? 0,
-        });
-      }
-    });
-
     // Aggregate prospects per GM
     const gmProspectsMap = new Map<string, Map<string, any>>();
 
@@ -313,57 +291,6 @@ export const ProspectLanding: React.FC<ProspectLandingProps> = ({
           goals_against: pGoalsAgainst,
         });
       });
-      gmProspectsMap.set(key, pMap);
-    });
-
-    (prospects || []).forEach((p) => {
-      const key = (p.gm_name || '').trim().toLowerCase();
-      if (!key) return;
-      const pMap = gmProspectsMap.get(key) || new Map<string, any>();
-      const pKey = p.player_name.trim().toLowerCase();
-      const existing = pMap.get(pKey);
-      if (!existing) {
-        pMap.set(pKey, {
-          name: p.player_name,
-          position: p.position,
-          total_games: p.total_games || 0,
-          promoted: p.promoted,
-          goals: p.goals,
-          assists: p.assists,
-          points: p.points,
-          pp_points: p.pp_points,
-          sh_points: p.sh_points,
-          gwg: p.gwg,
-          plus_minus: p.plus_minus,
-          pim: p.pim,
-          shots: p.shots,
-          wins: p.wins,
-          shutouts: p.shutouts,
-          saves: p.saves,
-          goals_against: p.goals_against,
-          save_pct: p.save_pct,
-          fantasy_points: p.fantasy_points,
-        });
-      } else {
-        pMap.set(pKey, {
-          ...existing,
-          total_games: Math.max(existing.total_games || 0, p.total_games || 0),
-          promoted: existing.promoted || p.promoted,
-          goals: p.goals != null ? p.goals : existing.goals,
-          assists: p.assists != null ? p.assists : existing.assists,
-          pp_points: p.pp_points != null ? p.pp_points : existing.pp_points,
-          sh_points: p.sh_points != null ? p.sh_points : existing.sh_points,
-          gwg: p.gwg != null ? p.gwg : existing.gwg,
-          plus_minus: p.plus_minus != null ? p.plus_minus : existing.plus_minus,
-          pim: p.pim != null ? p.pim : existing.pim,
-          shots: p.shots != null ? p.shots : existing.shots,
-          wins: p.wins != null ? p.wins : existing.wins,
-          shutouts: p.shutouts != null ? p.shutouts : existing.shutouts,
-          saves: p.saves != null ? p.saves : existing.saves,
-          goals_against: p.goals_against != null ? p.goals_against : existing.goals_against,
-          fantasy_points: p.fantasy_points != null ? p.fantasy_points : existing.fantasy_points,
-        });
-      }
       gmProspectsMap.set(key, pMap);
     });
 
@@ -475,7 +402,7 @@ export const ProspectLanding: React.FC<ProspectLandingProps> = ({
     });
 
     return result;
-  }, [gms, leaderboard, prospects]);
+  }, [gms]);
 
   const topGm = rankedLeaderboard.length > 0 ? rankedLeaderboard[0] : null;
 
