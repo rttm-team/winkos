@@ -12,7 +12,24 @@
     <meta property="og:description" content="Fantasy hockey prospect tracker, GM roster management, and mandatory promotion watch for Winko's Hockey Pool." />
     <meta property="og:type" content="website" />
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="theme-color" content="#0f172a" />
+    <meta name="color-scheme" content="light dark" />
+    <meta name="theme-color" content="#f8fafc" id="theme-color-meta" />
+    <script>
+      (function() {
+        try {
+          var t = localStorage.getItem('winkos_theme') || 'light';
+          if (t === 'dark') {
+            document.documentElement.classList.add('dark');
+            document.documentElement.style.colorScheme = 'dark';
+            var meta = document.getElementById('theme-color-meta');
+            if (meta) meta.setAttribute('content', '#0f172a');
+          } else {
+            document.documentElement.classList.remove('dark');
+            document.documentElement.style.colorScheme = 'light';
+          }
+        } catch (e) {}
+      })();
+    </script>
   </head>
   <body class="bg-slate-50 dark:bg-[#0f172a] text-slate-900 dark:text-slate-100">
     <div id="root"></div>

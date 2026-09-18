@@ -70,8 +70,15 @@ export default function App() {
   useEffect(() => {
     if (theme === 'dark') {
       document.documentElement.classList.add('dark');
+      document.documentElement.style.colorScheme = 'dark';
     } else {
       document.documentElement.classList.remove('dark');
+      document.documentElement.style.colorScheme = 'light';
+    }
+
+    const meta = document.getElementById('theme-color-meta') || document.querySelector('meta[name="theme-color"]');
+    if (meta) {
+      meta.setAttribute('content', theme === 'dark' ? '#0f172a' : '#f8fafc');
     }
   }, [theme]);
 

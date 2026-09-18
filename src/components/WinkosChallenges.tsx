@@ -896,7 +896,7 @@ export default function WinkosChallenges({ gmName, theme = 'dark' }: { gmName: s
                                       ? isLight
                                         ? 'bg-slate-200 text-slate-400 border border-slate-300/60 cursor-not-allowed opacity-60 shadow-none'
                                         : 'bg-slate-800 text-slate-500 border border-slate-700/60 cursor-not-allowed opacity-60 shadow-none'
-                                      : 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-md shadow-emerald-600/30 cursor-pointer active:scale-95'
+                                      : 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-md shadow-emerald-600/30 cursor-pointer active:opacity-85'
                                 }`}
                               >
                                 {isLockedOut ? (
@@ -1008,12 +1008,12 @@ export default function WinkosChallenges({ gmName, theme = 'dark' }: { gmName: s
                                         className={`group relative flex flex-col items-center justify-center gap-2 p-3 sm:p-4 rounded-xl border-2 transition-colors duration-150 select-none touch-manipulation ${
                                           selectedWinner === game.awayTeam.abbrev
                                             ? isLight
-                                              ? 'border-emerald-500 bg-emerald-50/90 shadow-sm ring-2 ring-emerald-500/20'
+                                              ? 'border-emerald-500 bg-emerald-50 shadow-sm ring-2 ring-emerald-500/20'
                                               : 'border-emerald-500 bg-emerald-950/40 shadow-[0_0_24px_rgba(16,185,129,0.18)] ring-1 ring-emerald-400/40'
                                             : isLight
-                                              ? 'border-slate-100 hover:border-slate-300 bg-slate-50/50 hover:bg-slate-100/60'
-                                              : 'border-slate-800/80 hover:border-slate-700 bg-slate-800/30 hover:bg-slate-800/70'
-                                        } ${isLockedOut ? 'cursor-not-allowed opacity-90' : 'cursor-pointer active:scale-[0.98]'}`}
+                                              ? 'border-slate-200 hover:border-slate-300 bg-slate-50 hover:bg-slate-100 active:bg-slate-100'
+                                              : 'border-slate-800/80 hover:border-slate-700 bg-slate-800/30 hover:bg-slate-800/70 active:bg-slate-800/80'
+                                        } ${isLockedOut ? 'cursor-not-allowed opacity-90' : 'cursor-pointer active:opacity-85'}`}
                                       >
                                         {selectedWinner === game.awayTeam.abbrev && (
                                           <span className="absolute top-2 right-2 flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-emerald-500 text-slate-950 font-black text-[9px] uppercase tracking-wider shadow-sm">
@@ -1056,12 +1056,12 @@ export default function WinkosChallenges({ gmName, theme = 'dark' }: { gmName: s
                                         className={`group relative flex flex-col items-center justify-center gap-2 p-3 sm:p-4 rounded-xl border-2 transition-colors duration-150 select-none touch-manipulation ${
                                           selectedWinner === game.homeTeam.abbrev
                                             ? isLight
-                                              ? 'border-emerald-500 bg-emerald-50/90 shadow-sm ring-2 ring-emerald-500/20'
+                                              ? 'border-emerald-500 bg-emerald-50 shadow-sm ring-2 ring-emerald-500/20'
                                               : 'border-emerald-500 bg-emerald-950/40 shadow-[0_0_24px_rgba(16,185,129,0.18)] ring-1 ring-emerald-400/40'
                                             : isLight
-                                              ? 'border-slate-100 hover:border-slate-300 bg-slate-50/50 hover:bg-slate-100/60'
-                                              : 'border-slate-800/80 hover:border-slate-700 bg-slate-800/30 hover:bg-slate-800/70'
-                                        } ${isLockedOut ? 'cursor-not-allowed opacity-90' : 'cursor-pointer active:scale-[0.98]'}`}
+                                              ? 'border-slate-200 hover:border-slate-300 bg-slate-50 hover:bg-slate-100 active:bg-slate-100'
+                                              : 'border-slate-800/80 hover:border-slate-700 bg-slate-800/30 hover:bg-slate-800/70 active:bg-slate-800/80'
+                                        } ${isLockedOut ? 'cursor-not-allowed opacity-90' : 'cursor-pointer active:opacity-85'}`}
                                       >
                                         {selectedWinner === game.homeTeam.abbrev && (
                                           <span className="absolute top-2 right-2 flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-emerald-500 text-slate-950 font-black text-[9px] uppercase tracking-wider shadow-sm">
@@ -1628,7 +1628,7 @@ export default function WinkosChallenges({ gmName, theme = 'dark' }: { gmName: s
                             type="button"
                             onClick={() => handleRedeemReward('Extra Entry Draft Pick', 5000, 'Redeemed Extra Entry Draft Pick')}
                             disabled={redeeming || winkoins < 5000}
-                            className={`w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl font-black text-sm shadow-md transition-all active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed ${
+                            className={`w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl font-black text-sm shadow-md transition-colors select-none touch-manipulation active:opacity-85 disabled:opacity-40 disabled:cursor-not-allowed ${
                               isLight
                                 ? 'bg-amber-500 hover:bg-amber-400 text-amber-950 shadow-amber-500/20'
                                 : 'bg-gradient-to-r from-amber-500 to-amber-400 hover:from-amber-400 hover:to-amber-300 text-slate-950 shadow-amber-500/20 ring-1 ring-amber-300/50'
@@ -1698,7 +1698,7 @@ export default function WinkosChallenges({ gmName, theme = 'dark' }: { gmName: s
                             type="button"
                             onClick={() => handleRedeemReward('Extra Waiver Claim', 2500, 'Redeemed Extra Waiver Claim')}
                             disabled={redeeming || winkoins < 2500}
-                            className={`w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl font-black text-sm shadow-md transition-all active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed ${
+                            className={`w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl font-black text-sm shadow-md transition-colors select-none touch-manipulation active:opacity-85 disabled:opacity-40 disabled:cursor-not-allowed ${
                               isLight
                                 ? 'bg-blue-500 hover:bg-blue-400 text-blue-950 shadow-blue-500/20'
                                 : 'bg-gradient-to-r from-blue-500 to-cyan-400 hover:from-blue-400 hover:to-cyan-300 text-slate-950 shadow-blue-500/20 ring-1 ring-blue-300/50'

@@ -1,21 +1,28 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 @theme {
   --font-bungee: "Bungee", cursive;
 }
 
 /* Eliminate mobile WebKit / Safari tap highlight white flash & flicker */
-*,
-*::before,
-*::after {
+:root {
+  color-scheme: light;
   -webkit-tap-highlight-color: transparent !important;
+  -webkit-tap-highlight-color: rgba(0, 0, 0, 0) !important;
 }
 
-html,
-body {
-  -webkit-tap-highlight-color: transparent;
+html {
+  color-scheme: light;
+  -webkit-tap-highlight-color: transparent !important;
+  -webkit-tap-highlight-color: rgba(0, 0, 0, 0) !important;
   -webkit-touch-callout: none;
   touch-action: manipulation;
+}
+
+html.dark {
+  color-scheme: dark;
 }
 
 html.dark,
@@ -24,19 +31,46 @@ html.dark body {
   color: #f1f5f9;
 }
 
+html:not(.dark) {
+  color-scheme: light;
+}
+
 html:not(.dark),
 html:not(.dark) body {
   background-color: #f8fafc;
   color: #0f172a;
 }
 
+*,
+*::before,
+*::after {
+  -webkit-tap-highlight-color: transparent !important;
+  -webkit-tap-highlight-color: rgba(0, 0, 0, 0) !important;
+}
+
 button,
 a,
 input,
 select,
-textarea {
+textarea,
+[role="button"] {
   -webkit-tap-highlight-color: transparent !important;
+  -webkit-tap-highlight-color: rgba(0, 0, 0, 0) !important;
+  -webkit-touch-callout: none;
   touch-action: manipulation;
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+}
+
+button:focus,
+button:active,
+button:focus-visible,
+a:focus,
+a:active,
+a:focus-visible {
+  -webkit-tap-highlight-color: transparent !important;
+  -webkit-tap-highlight-color: rgba(0, 0, 0, 0) !important;
+  outline: none !important;
 }
 
 @layer base {
