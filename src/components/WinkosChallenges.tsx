@@ -610,59 +610,77 @@ export default function WinkosChallenges({ gmName, theme = 'dark' }: { gmName: s
               </p>
             </div>
           
-            {/* Primary Navigation Tabs */}
-            <div className="flex overflow-x-auto no-scrollbar gap-2 sm:gap-3 lg:shrink-0">
-              <button
-                type="button"
-                id="tab-tonights-challenges"
-                onClick={() => setActiveTab('challenge')}
-                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold whitespace-nowrap transition-colors select-none touch-manipulation cursor-pointer ${
-                  activeTab === 'challenge' 
-                    ? 'bg-emerald-600 text-white shadow-md shadow-emerald-600/30' 
-                    : isLight
-                      ? 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-100'
-                      : 'bg-slate-800/90 text-slate-300 hover:bg-slate-700'
-                }`}
-              >
-                <span>🏒</span> Tonight's Challenges
-              </button>
-              
-              <button
-                type="button"
-                id="tab-overall-leaderboard"
-                onClick={() => setActiveTab('leaderboard')}
-                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold whitespace-nowrap transition-colors select-none touch-manipulation cursor-pointer ${
-                  activeTab === 'leaderboard' 
-                    ? 'bg-emerald-600 text-white shadow-md shadow-emerald-600/30' 
-                    : isLight
-                      ? 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-100'
-                      : 'bg-slate-800/90 text-slate-300 hover:bg-slate-700'
-                }`}
-              >
-                <span>🏆</span> Challenge Leaderboard
-              </button>
-              
-              <button
-                type="button"
-                id="tab-draft-store"
-                onClick={() => setActiveTab('store')}
-                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold whitespace-nowrap transition-colors select-none touch-manipulation cursor-pointer ${
-                  activeTab === 'store' 
-                    ? 'bg-emerald-600 text-white shadow-md shadow-emerald-600/30' 
-                    : isLight
-                      ? 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-100'
-                      : 'bg-slate-800/90 text-slate-300 hover:bg-slate-700'
-                }`}
-              >
-                <span>🎟️</span> Draft Store
-                {winkoins > 0 && (
-                  <span className={`ml-1 text-[10px] px-2 py-0.5 rounded-full font-black ${
-                    activeTab === 'store' ? 'bg-black/20 text-white' : 'bg-amber-500/20 text-amber-400'
-                  }`}>
-                    {winkoins.toLocaleString()} 🪙
-                  </span>
-                )}
-              </button>
+            {/* Primary Navigation Tabs (Segmented Control Track) */}
+            <div className="flex overflow-x-auto no-scrollbar lg:shrink-0">
+              <div className={`inline-flex items-center p-1 rounded-xl border transition-colors ${
+                isLight
+                  ? 'bg-slate-200/80 border-slate-300/70'
+                  : 'bg-slate-900/90 border-slate-800'
+              }`}>
+                <button
+                  type="button"
+                  id="tab-tonights-challenges"
+                  onClick={() => setActiveTab('challenge')}
+                  className={`flex items-center gap-2 px-3.5 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-bold whitespace-nowrap transition-all select-none touch-manipulation cursor-pointer ${
+                    activeTab === 'challenge'
+                      ? isLight
+                        ? 'bg-white text-slate-900 shadow-sm border border-slate-200/80'
+                        : 'bg-slate-800 text-white shadow-sm border border-slate-700/80'
+                      : isLight
+                        ? 'text-slate-600 hover:text-slate-900 hover:bg-white/40 border border-transparent'
+                        : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/40 border border-transparent'
+                  }`}
+                >
+                  <span>🏒</span> Tonight's Challenges
+                </button>
+                
+                <button
+                  type="button"
+                  id="tab-overall-leaderboard"
+                  onClick={() => setActiveTab('leaderboard')}
+                  className={`flex items-center gap-2 px-3.5 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-bold whitespace-nowrap transition-all select-none touch-manipulation cursor-pointer ${
+                    activeTab === 'leaderboard'
+                      ? isLight
+                        ? 'bg-white text-slate-900 shadow-sm border border-slate-200/80'
+                        : 'bg-slate-800 text-white shadow-sm border border-slate-700/80'
+                      : isLight
+                        ? 'text-slate-600 hover:text-slate-900 hover:bg-white/40 border border-transparent'
+                        : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/40 border border-transparent'
+                  }`}
+                >
+                  <span>🏆</span> Leaderboard
+                </button>
+                
+                <button
+                  type="button"
+                  id="tab-draft-store"
+                  onClick={() => setActiveTab('store')}
+                  className={`flex items-center gap-2 px-3.5 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-bold whitespace-nowrap transition-all select-none touch-manipulation cursor-pointer ${
+                    activeTab === 'store'
+                      ? isLight
+                        ? 'bg-white text-slate-900 shadow-sm border border-slate-200/80'
+                        : 'bg-slate-800 text-white shadow-sm border border-slate-700/80'
+                      : isLight
+                        ? 'text-slate-600 hover:text-slate-900 hover:bg-white/40 border border-transparent'
+                        : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/40 border border-transparent'
+                  }`}
+                >
+                  <span>🎟️</span> Shop
+                  {winkoins > 0 && (
+                    <span className={`ml-1 text-[10px] px-2 py-0.5 rounded-full font-black ${
+                      activeTab === 'store'
+                        ? isLight
+                          ? 'bg-amber-100 text-amber-900 border border-amber-300/80'
+                          : 'bg-amber-500/20 text-amber-300 border border-amber-500/40'
+                        : isLight
+                          ? 'bg-slate-300/70 text-slate-700'
+                          : 'bg-slate-800/80 text-slate-400'
+                    }`}>
+                      {winkoins.toLocaleString()} 🪙
+                    </span>
+                  )}
+                </button>
+              </div>
             </div>
           </div>
 
