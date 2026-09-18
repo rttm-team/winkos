@@ -19,7 +19,8 @@ import {
   Check,
   Calendar,
   Gamepad2,
-  HelpCircle
+  HelpCircle,
+  Activity
 } from 'lucide-react';
 
 interface Game {
@@ -683,54 +684,13 @@ export default function WinkosChallenges({ gmName, theme = 'dark' }: { gmName: s
                         ? 'bg-white border-slate-200 shadow-xs'
                         : 'bg-slate-900/90 border-slate-800/90 shadow-lg shadow-black/20'
                     }`}>
-                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-3">
-                        <div className="flex items-center gap-2">
-                          <Gamepad2 className={`h-4 w-4 ${isLight ? 'text-emerald-600' : 'text-emerald-400'}`} />
-                          <span className={`text-xs font-black uppercase tracking-wider ${
-                            isLight ? 'text-slate-700' : 'text-slate-300'
-                          }`}>
-                            Available Challenges Tonight
-                          </span>
-                        </div>
-                        
-                        {/* Simulation State Switcher for Commish & Testing */}
-                        <div className="flex items-center gap-1.5 self-start sm:self-auto text-xs">
-                          <span className={`text-[11px] font-medium mr-1 ${isLight ? 'text-slate-500' : 'text-slate-400'}`}>
-                            Slate Simulation:
-                          </span>
-                          <button
-                            type="button"
-                            onClick={() => setSimMode('open')}
-                            className={`px-2.5 py-1 rounded-lg font-bold text-[11px] transition-colors select-none touch-manipulation cursor-pointer ${
-                              simMode === 'open'
-                                ? isLight
-                                  ? 'bg-emerald-100 text-emerald-800 border border-emerald-300 shadow-xs'
-                                  : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
-                                : isLight
-                                  ? 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                                  : 'bg-slate-800 text-slate-400 hover:bg-slate-700'
-                            }`}
-                            title="Simulates slate 45m before first puck drop so you can test picking all games & saving"
-                          >
-                            ⏳ Open (Pre-Lockout)
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => setSimMode('locked')}
-                            className={`px-2.5 py-1 rounded-lg font-bold text-[11px] transition-colors select-none touch-manipulation cursor-pointer ${
-                              simMode === 'locked'
-                                ? isLight
-                                  ? 'bg-rose-100 text-rose-800 border border-rose-300 shadow-xs'
-                                  : 'bg-rose-500/20 text-rose-300 border border-rose-500/40'
-                                : isLight
-                                  ? 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                                  : 'bg-slate-800 text-slate-400 hover:bg-slate-700'
-                            }`}
-                            title="Simulates afternoon with live & final games to test locked picks & live standings"
-                          >
-                            🔒 Locked (Live Games)
-                          </button>
-                        </div>
+                      <div className="flex items-center gap-2 mb-3">
+                        <Gamepad2 className={`h-4 w-4 ${isLight ? 'text-emerald-600' : 'text-emerald-400'}`} />
+                        <span className={`text-xs font-black uppercase tracking-wider ${
+                          isLight ? 'text-slate-700' : 'text-slate-300'
+                        }`}>
+                          Available Challenges Tonight
+                        </span>
                       </div>
 
                       {/* Extensible Games List */}
@@ -1351,70 +1311,92 @@ export default function WinkosChallenges({ gmName, theme = 'dark' }: { gmName: s
 
                     {/* Summary Stat Cards */}
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                      {/* Stat 1: Top GM */}
-                      <div className={`p-5 rounded-2xl border ${
-                        isLight
-                          ? 'border-amber-200 bg-amber-50/60 shadow-xs'
-                          : 'border-amber-500/30 bg-gradient-to-b from-amber-950/20 via-slate-900 to-slate-950 shadow-md shadow-black/20'
+                      {/* Stat 1: Top GM / Challenge Leader */}
+                      <div className={`relative overflow-hidden rounded-2xl border p-5 backdrop-blur-sm shadow-md transition ${
+                        isLight ? 'border-slate-200 bg-white hover:border-amber-400 text-slate-900' : 'border-slate-800 bg-slate-900/60 hover:border-amber-500/40 text-white'
                       }`}>
                         <div className="flex items-center justify-between">
-                          <span className="text-xs font-black uppercase tracking-wider text-amber-500">
-                            Challenge Leader
-                          </span>
-                          <span className="text-xl">👑</span>
+                          <div className="min-w-0 pr-2">
+                            <p className={`text-xs font-semibold uppercase tracking-wider ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>
+                              Challenge Leader
+                            </p>
+                            <div className="mt-2 flex items-baseline gap-2">
+                              <span className={`text-3xl font-black font-mono truncate ${isLight ? 'text-amber-600' : 'text-amber-400'}`}>
+                                {topEarner ? topEarner.gmName : '—'}
+                              </span>
+                              {topEarner && (
+                                <span className="text-xs font-bold text-amber-600 dark:text-amber-400 shrink-0">
+                                  Rank #1
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-amber-500/15 text-amber-600 dark:text-amber-400 ring-1 ring-amber-500/30">
+                            <Trophy className="h-6 w-6" />
+                          </div>
                         </div>
-                        <div className="mt-2 flex items-baseline gap-2">
-                          <span className={`text-2xl font-black tracking-tight ${isLight ? 'text-amber-950' : 'text-white'}`}>
-                            {topEarner ? topEarner.gmName : '—'}
+                        <div className={`mt-4 flex items-center gap-1.5 text-xs ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>
+                          <Sparkles className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400 shrink-0" />
+                          <span className="truncate">
+                            {topEarner ? `${topEarner.winkoinsEarned.toLocaleString()} Winkoins Earned` : 'No earnings yet'}
                           </span>
                         </div>
-                        <p className={`text-xs mt-1 font-semibold ${isLight ? 'text-amber-800/80' : 'text-amber-400/80'}`}>
-                          {topEarner ? `${topEarner.winkoinsEarned.toLocaleString()} Winkoins Earned` : 'No earnings yet'}
-                        </p>
                       </div>
 
                       {/* Stat 2: Total Winkoins Awarded */}
-                      <div className={`p-5 rounded-2xl border ${
-                        isLight
-                          ? 'border-emerald-200 bg-emerald-50/60 shadow-xs'
-                          : 'border-emerald-500/30 bg-gradient-to-b from-emerald-950/20 via-slate-900 to-slate-950 shadow-md shadow-black/20'
+                      <div className={`relative overflow-hidden rounded-2xl border p-5 backdrop-blur-sm shadow-md transition ${
+                        isLight ? 'border-slate-200 bg-white hover:border-emerald-400 text-slate-900' : 'border-slate-800 bg-slate-900/60 hover:border-emerald-500/40 text-white'
                       }`}>
                         <div className="flex items-center justify-between">
-                          <span className="text-xs font-black uppercase tracking-wider text-emerald-500">
-                            Total Winkoins Awarded
-                          </span>
-                          <Coins className="h-5 w-5 text-emerald-500" />
+                          <div className="min-w-0 pr-2">
+                            <p className={`text-xs font-semibold uppercase tracking-wider ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>
+                              Total Winkoins Awarded
+                            </p>
+                            <div className="mt-2 flex items-baseline gap-2">
+                              <span className={`text-3xl font-black font-mono ${isLight ? 'text-emerald-700' : 'text-emerald-400'}`}>
+                                {totalLeagueEarnings.toLocaleString()}
+                              </span>
+                              <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 shrink-0">
+                                🪙 Winkoins
+                              </span>
+                            </div>
+                          </div>
+                          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 ring-1 ring-emerald-500/30">
+                            <Coins className="h-6 w-6" />
+                          </div>
                         </div>
-                        <div className="mt-2 flex items-baseline gap-2">
-                          <span className={`text-2xl font-black tracking-tight ${isLight ? 'text-emerald-950' : 'text-white'}`}>
-                            {totalLeagueEarnings.toLocaleString()} 🪙
-                          </span>
+                        <div className={`mt-4 flex items-center gap-1.5 text-xs ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>
+                          <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                          <span className="truncate">Paid out across all completed challenges</span>
                         </div>
-                        <p className={`text-xs mt-1 font-semibold ${isLight ? 'text-emerald-800/80' : 'text-emerald-400/80'}`}>
-                          Paid out across all completed challenges
-                        </p>
                       </div>
 
-                      {/* Stat 3: Active Competitors */}
-                      <div className={`p-5 rounded-2xl border ${
-                        isLight
-                          ? 'border-blue-200 bg-blue-50/60 shadow-xs'
-                          : 'border-blue-500/30 bg-gradient-to-b from-blue-950/20 via-slate-900 to-slate-950 shadow-md shadow-black/20'
+                      {/* Stat 3: League Participation */}
+                      <div className={`relative overflow-hidden rounded-2xl border p-5 backdrop-blur-sm shadow-md transition ${
+                        isLight ? 'border-slate-200 bg-white hover:border-cyan-400 text-slate-900' : 'border-slate-800 bg-slate-900/60 hover:border-cyan-500/40 text-white'
                       }`}>
                         <div className="flex items-center justify-between">
-                          <span className="text-xs font-black uppercase tracking-wider text-blue-500">
-                            League Participation
-                          </span>
-                          <Users className="h-5 w-5 text-blue-500" />
+                          <div className="min-w-0 pr-2">
+                            <p className={`text-xs font-semibold uppercase tracking-wider ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>
+                              League Participation
+                            </p>
+                            <div className="mt-2 flex items-baseline gap-2">
+                              <span className={`text-3xl font-black font-mono ${isLight ? 'text-slate-900' : 'text-white'}`}>
+                                {activeParticipantsCount}
+                              </span>
+                              <span className="text-xs font-semibold text-cyan-600 dark:text-cyan-400 shrink-0">
+                                of {overallLeaderboard.length} GMs ({overallLeaderboard.length > 0 ? Math.round((activeParticipantsCount / overallLeaderboard.length) * 100) : 0}%)
+                              </span>
+                            </div>
+                          </div>
+                          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-cyan-500/15 text-cyan-600 dark:text-cyan-400 ring-1 ring-cyan-500/30">
+                            <Users className="h-6 w-6" />
+                          </div>
                         </div>
-                        <div className="mt-2 flex items-baseline gap-2">
-                          <span className={`text-2xl font-black tracking-tight ${isLight ? 'text-blue-950' : 'text-white'}`}>
-                            {activeParticipantsCount} of {overallLeaderboard.length} GMs
-                          </span>
+                        <div className={`mt-4 flex items-center gap-1.5 text-xs ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>
+                          <Activity className="h-3.5 w-3.5 text-cyan-600 dark:text-cyan-400 shrink-0" />
+                          <span className="truncate">Have competed in challenge events</span>
                         </div>
-                        <p className={`text-xs mt-1 font-semibold ${isLight ? 'text-blue-800/80' : 'text-blue-400/80'}`}>
-                          Have competed in challenge events
-                        </p>
                       </div>
                     </div>
 
