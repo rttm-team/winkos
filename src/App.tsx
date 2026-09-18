@@ -10,7 +10,7 @@ import {
   ProspectSortOption,
   sortProspects,
 } from './types';
-import { INITIAL_GMS, setStoredProspectStatus, setStoredScoringStats, calculateFantasyPoints } from './data/mockData';
+import { INITIAL_GMS, setStoredProspectStatus, setStoredScoringStats, getStoredScoringStats, getBaselineScoringStats, calculateFantasyPoints } from './data/mockData';
 import { Header } from './components/Header';
 import WinkoHub from './components/WinkoHub';
 import { FiltersAndSearch } from './components/FiltersAndSearch';
@@ -139,10 +139,40 @@ export default function App() {
       let wins = 0;
       let promoted = 0;
       gm.prospects.forEach((p) => {
-        pts += calculateFantasyPoints(p);
-        goals += Number(p.goals || 0);
-        assists += Number(p.assists || 0);
-        if (p.position === 'G') wins += Number(p.wins || 0);
+        const stored = getStoredScoringStats(String(p.id), p.name);
+        const baseline = stored || getBaselineScoringStats(p.name, p.position, p.gp || 0);
+        const pGoals = p.goals != null && !isNaN(Number(p.goals)) ? Number(p.goals) : baseline.goals;
+        const pAssists = p.assists != null && !isNaN(Number(p.assists)) ? Number(p.assists) : baseline.assists;
+        const pPpPoints = p.pp_points != null && !isNaN(Number(p.pp_points)) ? Number(p.pp_points) : baseline.pp_points;
+        const pShPoints = p.sh_points != null && !isNaN(Number(p.sh_points)) ? Number(p.sh_points) : baseline.sh_points;
+        const pGwg = p.gwg != null && !isNaN(Number(p.gwg)) ? Number(p.gwg) : baseline.gwg;
+        const pPlusMinus = p.plus_minus != null && !isNaN(Number(p.plus_minus)) ? Number(p.plus_minus) : baseline.plus_minus;
+        const pPim = p.pim != null && !isNaN(Number(p.pim)) ? Number(p.pim) : baseline.pim;
+        const pShots = p.shots != null && !isNaN(Number(p.shots)) ? Number(p.shots) : baseline.shots;
+        const pWins = p.wins != null && !isNaN(Number(p.wins)) ? Number(p.wins) : baseline.wins;
+        const pShutouts = p.shutouts != null && !isNaN(Number(p.shutouts)) ? Number(p.shutouts) : baseline.shutouts;
+        const pSaves = p.saves != null && !isNaN(Number(p.saves)) ? Number(p.saves) : baseline.saves;
+        const pGoalsAgainst = p.goals_against != null && !isNaN(Number(p.goals_against)) ? Number(p.goals_against) : baseline.goals_against;
+
+        const prospectFP = calculateFantasyPoints({
+          goals: pGoals,
+          assists: pAssists,
+          pp_points: pPpPoints,
+          sh_points: pShPoints,
+          gwg: pGwg,
+          plus_minus: pPlusMinus,
+          pim: pPim,
+          shots: pShots,
+          wins: pWins,
+          shutouts: pShutouts,
+          saves: pSaves,
+          goals_against: pGoalsAgainst,
+        });
+
+        pts += prospectFP;
+        goals += pGoals;
+        assists += pAssists;
+        if (p.position === 'G') wins += pWins;
         if (p.promoted) promoted++;
       });
       return {

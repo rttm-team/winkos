@@ -278,26 +278,39 @@ export const ProspectLanding: React.FC<ProspectLandingProps> = ({
       const pMap = gmProspectsMap.get(key) || new Map<string, any>();
       (gm.prospects || []).forEach((p) => {
         const pKey = p.name.trim().toLowerCase();
+        const stored = getStoredScoringStats(String(p.id), p.name);
+        const baseline = stored || getBaselineScoringStats(p.name, p.position, p.gp || 0);
+        const pGoals = p.goals != null && !isNaN(Number(p.goals)) ? Number(p.goals) : baseline.goals;
+        const pAssists = p.assists != null && !isNaN(Number(p.assists)) ? Number(p.assists) : baseline.assists;
+        const pPpPoints = p.pp_points != null && !isNaN(Number(p.pp_points)) ? Number(p.pp_points) : baseline.pp_points;
+        const pShPoints = p.sh_points != null && !isNaN(Number(p.sh_points)) ? Number(p.sh_points) : baseline.sh_points;
+        const pGwg = p.gwg != null && !isNaN(Number(p.gwg)) ? Number(p.gwg) : baseline.gwg;
+        const pPlusMinus = p.plus_minus != null && !isNaN(Number(p.plus_minus)) ? Number(p.plus_minus) : baseline.plus_minus;
+        const pPim = p.pim != null && !isNaN(Number(p.pim)) ? Number(p.pim) : baseline.pim;
+        const pShots = p.shots != null && !isNaN(Number(p.shots)) ? Number(p.shots) : baseline.shots;
+        const pWins = p.wins != null && !isNaN(Number(p.wins)) ? Number(p.wins) : baseline.wins;
+        const pShutouts = p.shutouts != null && !isNaN(Number(p.shutouts)) ? Number(p.shutouts) : baseline.shutouts;
+        const pSaves = p.saves != null && !isNaN(Number(p.saves)) ? Number(p.saves) : baseline.saves;
+        const pGoalsAgainst = p.goals_against != null && !isNaN(Number(p.goals_against)) ? Number(p.goals_against) : baseline.goals_against;
+
         pMap.set(pKey, {
           name: p.name,
           position: p.position,
           total_games: p.totalGames || p.total_games || 0,
           promoted: p.promoted,
-          goals: p.goals,
-          assists: p.assists,
-          points: p.points,
-          pp_points: p.pp_points ?? p.power_play_points,
-          sh_points: p.sh_points ?? p.shorthanded_points,
-          gwg: p.gwg ?? p.game_winning_goals,
-          plus_minus: p.plus_minus,
-          pim: p.pim ?? p.penalty_minutes,
-          shots: p.shots ?? p.shots_on_goal,
-          wins: p.wins,
-          shutouts: p.shutouts,
-          saves: p.saves,
-          goals_against: p.goals_against,
-          save_pct: p.save_pct,
-          fantasy_points: p.fantasy_points,
+          goals: pGoals,
+          assists: pAssists,
+          points: pGoals + pAssists,
+          pp_points: pPpPoints,
+          sh_points: pShPoints,
+          gwg: pGwg,
+          plus_minus: pPlusMinus,
+          pim: pPim,
+          shots: pShots,
+          wins: pWins,
+          shutouts: pShutouts,
+          saves: pSaves,
+          goals_against: pGoalsAgainst,
         });
       });
       gmProspectsMap.set(key, pMap);
