@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { supabase } from '../lib/supabase';
 import { 
   Trophy, 
@@ -109,6 +109,11 @@ export default function WinkosChallenges({ gmName, theme = 'dark' }: { gmName: s
   const [redeeming, setRedeeming] = useState(false);
   const [saveFeedback, setSaveFeedback] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
 
+  // Track if user has touched/selected picks that haven't been saved yet
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const hasUnsavedRef = useRef(false);
+  hasUnsavedRef.current = hasUnsavedChanges;
+
   // Live ticking second clock for countdown timer
   const [now, setNow] = useState(Date.now());
   useEffect(() => {
@@ -119,7 +124,11 @@ export default function WinkosChallenges({ gmName, theme = 'dark' }: { gmName: s
   useEffect(() => {
     fetchInitialData(false);
     // Auto-refresh scores & schedule silently in background every 30 seconds
+    // FREEZE auto-refresh if user has unsaved selections in progress so nothing ever resets
     const interval = setInterval(() => {
+      if (hasUnsavedRef.current) {
+        return; // Auto-refresh is frozen while user is making picks
+      }
       fetchInitialData(true);
     }, 30000);
     return () => clearInterval(interval);
@@ -227,20 +236,22 @@ export default function WinkosChallenges({ gmName, theme = 'dark' }: { gmName: s
         setLiveGames(todayGames);
       }
 
-      // 3. Fetch User's Daily Picks (only on initial load or if user has not made picks yet)
-      if (gmName && (!isSilent || Object.keys(picks).length === 0)) {
+      // 3. Fetch User's Daily Picks (ONLY on initial page load, NEVER during silent background refresh)
+      if (gmName && !isSilent) {
         const { data: userPicks } = await supabase
           .from('daily_picks')
           .select('*')
           .eq('gm_name', gmName)
           .eq('pick_date', currDate);
           
-        if (userPicks) {
+        if (userPicks && userPicks.length > 0) {
           const mappedPicks: Record<number, string> = {};
           userPicks.forEach((p: PickRecord) => {
             mappedPicks[p.game_id] = p.predicted_winner;
           });
           setPicks(mappedPicks);
+          setHasUnsavedChanges(false);
+          hasUnsavedRef.current = false;
         }
       }
       
@@ -431,6 +442,8 @@ export default function WinkosChallenges({ gmName, theme = 'dark' }: { gmName: s
       });
       return;
     }
+    setHasUnsavedChanges(true);
+    hasUnsavedRef.current = true;
     setPicks(prev => ({ ...prev, [gameId]: teamAbbrev }));
     if (saveFeedback?.type === 'error') {
       setSaveFeedback(null);
@@ -479,6 +492,9 @@ export default function WinkosChallenges({ gmName, theme = 'dark' }: { gmName: s
         .from('daily_picks')
         .upsert(recordsToUpsert, { onConflict: 'gm_name,game_id' });
       if (error) throw error;
+      
+      setHasUnsavedChanges(false);
+      hasUnsavedRef.current = false;
       
       setSaveFeedback({
         text: `All ${totalGamesCount} picks saved! You can change them until 10m before puck drop.`,
@@ -741,16 +757,27 @@ export default function WinkosChallenges({ gmName, theme = 'dark' }: { gmName: s
                                 </p>
                               </div>
                               <div className="flex items-center gap-2 self-start sm:self-auto shrink-0">
-                                <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold border ${
-                                  isLight
-                                    ? 'bg-slate-50 border-slate-200 text-slate-600'
-                                    : 'bg-slate-950/70 border-slate-800 text-slate-300'
-                                }`}>
-                                  <span className={`h-2 w-2 rounded-full ${
-                                    isSyncing ? 'bg-amber-400 animate-spin' : 'bg-emerald-500 animate-pulse'
-                                  }`} />
-                                  <span>{isSyncing ? 'Syncing...' : 'Live Feed'}</span>
-                                </span>
+                                {hasUnsavedChanges ? (
+                                  <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold border ${
+                                    isLight
+                                      ? 'bg-amber-50 border-amber-200 text-amber-800'
+                                      : 'bg-amber-950/50 border-amber-500/40 text-amber-300'
+                                  }`}>
+                                    <span className="h-2 w-2 rounded-full bg-amber-500 animate-pulse" />
+                                    <span>Picks in Progress • Sync Paused</span>
+                                  </span>
+                                ) : (
+                                  <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold border ${
+                                    isLight
+                                      ? 'bg-slate-50 border-slate-200 text-slate-600'
+                                      : 'bg-slate-950/70 border-slate-800 text-slate-300'
+                                  }`}>
+                                    <span className={`h-2 w-2 rounded-full ${
+                                      isSyncing ? 'bg-amber-400 animate-spin' : 'bg-emerald-500 animate-pulse'
+                                    }`} />
+                                    <span>{isSyncing ? 'Syncing...' : 'Live Feed Active'}</span>
+                                  </span>
+                                )}
                               </div>
                             </div>
 
