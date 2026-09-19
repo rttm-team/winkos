@@ -90,9 +90,6 @@ export default function WinkosChallenges({ gmName, theme = 'dark' }: { gmName: s
   const [activeTab, setActiveTab] = useState<'challenge' | 'leaderboard' | 'store'>('challenge');
   const [selectedGameType, setSelectedGameType] = useState<string>('tonights_games');
   
-  // Simulation slate toggle: 'open' allows testing selections & countdown; 'locked' simulates mid-day live/final games
-  const [simMode, setSimMode] = useState<'open' | 'locked'>('open');
-  
   const [winkoins, setWinkoins] = useState(0);
   const [liveGames, setLiveGames] = useState<Game[]>([]);
   const [currentDateStr, setCurrentDateStr] = useState('');
@@ -120,7 +117,12 @@ export default function WinkosChallenges({ gmName, theme = 'dark' }: { gmName: s
 
   useEffect(() => {
     fetchInitialData();
-  }, [gmName, simMode]);
+    // Auto-refresh scores & schedule every 60 seconds
+    const interval = setInterval(() => {
+      fetchInitialData();
+    }, 60000);
+    return () => clearInterval(interval);
+  }, [gmName]);
 
   // Lockout calculation: 10 minutes before the first scheduled puck drop of the day
   const earliestGameTime = useMemo(() => {
@@ -179,102 +181,41 @@ export default function WinkosChallenges({ gmName, theme = 'dark' }: { gmName: s
         if (gmData) setWinkoins(gmData.winkoins || 0);
       }
 
-      // 2. Fetch NHL API data
+      // 2. Fetch live official NHL schedule & score feed
       let currDate = new Date().toISOString().split('T')[0];
+      let todayGames: Game[] = [];
+
       try {
         const res = await fetch(`/api/nhl-proxy?url=${encodeURIComponent('https://api-web.nhle.com/v1/score/now')}`);
         if (res.ok) {
           const data = await res.json();
           if (data.currentDate) currDate = data.currentDate;
+          if (Array.isArray(data.games) && data.games.length > 0) {
+            todayGames = data.games.map((g: any) => {
+              const awayAbbrev = g.awayTeam?.abbrev || '';
+              const homeAbbrev = g.homeTeam?.abbrev || '';
+              return {
+                id: g.id,
+                startTimeUTC: g.startTimeUTC,
+                gameState: g.gameState,
+                awayTeam: {
+                  abbrev: awayAbbrev,
+                  logo: g.awayTeam?.logo || `https://assets.nhle.com/logos/nhl/svg/${awayAbbrev}_light.svg`,
+                  score: g.awayTeam?.score
+                },
+                homeTeam: {
+                  abbrev: homeAbbrev,
+                  logo: g.homeTeam?.logo || `https://assets.nhle.com/logos/nhl/svg/${homeAbbrev}_light.svg`,
+                  score: g.homeTeam?.score
+                }
+              };
+            });
+          }
         }
       } catch (err) {
         console.warn("NHL proxy call notice:", err);
       }
       setCurrentDateStr(currDate);
-
-      // Construct live games based on simulation mode for comprehensive testing
-      let todayGames: Game[] = [];
-      
-      if (simMode === 'open') {
-        // Pre-lockout simulation: First puck drop starts in 45 minutes -> Lockout is in 35 minutes!
-        todayGames = [
-          {
-            id: 9001,
-            startTimeUTC: new Date(Date.now() + 1000 * 60 * 45).toISOString(), // 45m from now
-            gameState: 'FUT',
-            awayTeam: { abbrev: 'BOS', logo: 'https://assets.nhle.com/logos/nhl/svg/BOS_light.svg' },
-            homeTeam: { abbrev: 'NYR', logo: 'https://assets.nhle.com/logos/nhl/svg/NYR_light.svg' }
-          },
-          {
-            id: 9002,
-            startTimeUTC: new Date(Date.now() + 1000 * 60 * 75).toISOString(), // 1h 15m from now
-            gameState: 'FUT',
-            awayTeam: { abbrev: 'TOR', logo: 'https://assets.nhle.com/logos/nhl/svg/TOR_light.svg' },
-            homeTeam: { abbrev: 'MTL', logo: 'https://assets.nhle.com/logos/nhl/svg/MTL_light.svg' }
-          },
-          {
-            id: 9003,
-            startTimeUTC: new Date(Date.now() + 1000 * 60 * 105).toISOString(), // 1h 45m from now
-            gameState: 'FUT',
-            awayTeam: { abbrev: 'TBL', logo: 'https://assets.nhle.com/logos/nhl/svg/TBL_light.svg' },
-            homeTeam: { abbrev: 'FLA', logo: 'https://assets.nhle.com/logos/nhl/svg/FLA_light.svg' }
-          },
-          {
-            id: 9004,
-            startTimeUTC: new Date(Date.now() + 1000 * 60 * 150).toISOString(), // 2.5h from now
-            gameState: 'FUT',
-            awayTeam: { abbrev: 'EDM', logo: 'https://assets.nhle.com/logos/nhl/svg/EDM_light.svg' },
-            homeTeam: { abbrev: 'CGY', logo: 'https://assets.nhle.com/logos/nhl/svg/CGY_light.svg' }
-          },
-          {
-            id: 9005,
-            startTimeUTC: new Date(Date.now() + 1000 * 60 * 190).toISOString(), // 3h 10m from now
-            gameState: 'FUT',
-            awayTeam: { abbrev: 'VGK', logo: 'https://assets.nhle.com/logos/nhl/svg/VGK_light.svg' },
-            homeTeam: { abbrev: 'COL', logo: 'https://assets.nhle.com/logos/nhl/svg/COL_light.svg' }
-          }
-        ];
-      } else {
-        // Post-lockout simulation: games started 3 hours ago -> 1 Final, 2 Live, 2 Future
-        todayGames = [
-          {
-            id: 9001,
-            startTimeUTC: new Date(Date.now() - 1000 * 60 * 60 * 3).toISOString(), // 3 hours ago
-            gameState: 'OFF', // Final
-            awayTeam: { abbrev: 'BOS', logo: 'https://assets.nhle.com/logos/nhl/svg/BOS_light.svg', score: 4 },
-            homeTeam: { abbrev: 'NYR', logo: 'https://assets.nhle.com/logos/nhl/svg/NYR_light.svg', score: 3 }
-          },
-          {
-            id: 9002,
-            startTimeUTC: new Date(Date.now() - 1000 * 60 * 60 * 1.5).toISOString(), // 1.5 hours ago
-            gameState: 'LIVE',
-            awayTeam: { abbrev: 'TOR', logo: 'https://assets.nhle.com/logos/nhl/svg/TOR_light.svg', score: 2 },
-            homeTeam: { abbrev: 'MTL', logo: 'https://assets.nhle.com/logos/nhl/svg/MTL_light.svg', score: 1 }
-          },
-          {
-            id: 9003,
-            startTimeUTC: new Date(Date.now() - 1000 * 60 * 30).toISOString(), // 30 mins ago
-            gameState: 'LIVE',
-            awayTeam: { abbrev: 'TBL', logo: 'https://assets.nhle.com/logos/nhl/svg/TBL_light.svg', score: 1 },
-            homeTeam: { abbrev: 'FLA', logo: 'https://assets.nhle.com/logos/nhl/svg/FLA_light.svg', score: 1 }
-          },
-          {
-            id: 9004,
-            startTimeUTC: new Date(Date.now() + 1000 * 60 * 60 * 1).toISOString(), // 1 hour from now
-            gameState: 'FUT',
-            awayTeam: { abbrev: 'EDM', logo: 'https://assets.nhle.com/logos/nhl/svg/EDM_light.svg' },
-            homeTeam: { abbrev: 'CGY', logo: 'https://assets.nhle.com/logos/nhl/svg/CGY_light.svg' }
-          },
-          {
-            id: 9005,
-            startTimeUTC: new Date(Date.now() + 1000 * 60 * 60 * 3).toISOString(), // 3 hours from now
-            gameState: 'FUT',
-            awayTeam: { abbrev: 'VGK', logo: 'https://assets.nhle.com/logos/nhl/svg/VGK_light.svg' },
-            homeTeam: { abbrev: 'COL', logo: 'https://assets.nhle.com/logos/nhl/svg/COL_light.svg' }
-          }
-        ];
-      }
-
       setLiveGames(todayGames);
 
       // 3. Fetch User's Daily Picks
