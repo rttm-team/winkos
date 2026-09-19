@@ -104,6 +104,7 @@ export default function WinkosChallenges({ gmName, theme = 'dark' }: { gmName: s
   const [overallLeaderboard, setOverallLeaderboard] = useState<OverallLeaderboardEntry[]>([]);
   
   const [loading, setLoading] = useState(true);
+  const [isSyncing, setIsSyncing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [redeeming, setRedeeming] = useState(false);
   const [saveFeedback, setSaveFeedback] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
@@ -116,11 +117,11 @@ export default function WinkosChallenges({ gmName, theme = 'dark' }: { gmName: s
   }, []);
 
   useEffect(() => {
-    fetchInitialData();
-    // Auto-refresh scores & schedule every 60 seconds
+    fetchInitialData(false);
+    // Auto-refresh scores & schedule silently in background every 30 seconds
     const interval = setInterval(() => {
-      fetchInitialData();
-    }, 60000);
+      fetchInitialData(true);
+    }, 30000);
     return () => clearInterval(interval);
   }, [gmName]);
 
@@ -168,8 +169,14 @@ export default function WinkosChallenges({ gmName, theme = 'dark' }: { gmName: s
 
   const isCompleteBallot = totalGamesCount > 0 && selectedPicksCount === totalGamesCount;
 
-  const fetchInitialData = async () => {
-    setLoading(true);
+  const fetchInitialData = async (isSilent = false) => {
+    // Only show full loading spinner on initial cold start when there is no data yet
+    if (!isSilent && liveGames.length === 0) {
+      setLoading(true);
+    } else {
+      setIsSyncing(true);
+    }
+
     try {
       // 1. Fetch Winkoins for current GM
       if (gmName) {
@@ -216,10 +223,12 @@ export default function WinkosChallenges({ gmName, theme = 'dark' }: { gmName: s
         console.warn("NHL proxy call notice:", err);
       }
       setCurrentDateStr(currDate);
-      setLiveGames(todayGames);
+      if (todayGames.length > 0) {
+        setLiveGames(todayGames);
+      }
 
-      // 3. Fetch User's Daily Picks
-      if (gmName) {
+      // 3. Fetch User's Daily Picks (only on initial load or if user has not made picks yet)
+      if (gmName && (!isSilent || Object.keys(picks).length === 0)) {
         const { data: userPicks } = await supabase
           .from('daily_picks')
           .select('*')
@@ -236,15 +245,19 @@ export default function WinkosChallenges({ gmName, theme = 'dark' }: { gmName: s
       }
       
       // 4. Process Tonight's Leaderboard
-      await processTonightLeaderboard(todayGames, currDate);
+      if (todayGames.length > 0) {
+        await processTonightLeaderboard(todayGames, currDate);
+      }
 
       // 5. Process Overall Challenge Leaderboard
       await fetchOverallLeaderboard();
       
     } catch (err) {
       console.error("Error fetching challenge data:", err);
+    } finally {
+      setLoading(false);
+      setIsSyncing(false);
     }
-    setLoading(false);
   };
 
   const processTonightLeaderboard = async (games: Game[], date: string) => {
@@ -726,6 +739,18 @@ export default function WinkosChallenges({ gmName, theme = 'dark' }: { gmName: s
                                 <p className={`text-xs sm:text-sm mt-1 ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>
                                   Pick every winner on the slate to participate. Selections close 10m before first puck drop.
                                 </p>
+                              </div>
+                              <div className="flex items-center gap-2 self-start sm:self-auto shrink-0">
+                                <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold border ${
+                                  isLight
+                                    ? 'bg-slate-50 border-slate-200 text-slate-600'
+                                    : 'bg-slate-950/70 border-slate-800 text-slate-300'
+                                }`}>
+                                  <span className={`h-2 w-2 rounded-full ${
+                                    isSyncing ? 'bg-amber-400 animate-spin' : 'bg-emerald-500 animate-pulse'
+                                  }`} />
+                                  <span>{isSyncing ? 'Syncing...' : 'Live Feed'}</span>
+                                </span>
                               </div>
                             </div>
 
