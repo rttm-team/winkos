@@ -289,7 +289,7 @@ export const ActiveSquadManager: React.FC<ActiveSquadManagerProps> = ({
           <MoreVertical className="h-5 w-5" />
         </button>
         {isOpen && (
-          <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-slate-800 rounded-lg shadow-lg z-10 border border-slate-200 dark:border-slate-700">
+          <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-slate-800 rounded-lg shadow-lg z-50 border border-slate-200 dark:border-slate-700">
             <button
               onClick={() => { setIsOpen(false); handleBenchPlayer(player); }}
               className="block w-full text-left px-4 py-2 hover:bg-slate-100 dark:hover:bg-slate-700"
@@ -1685,7 +1685,7 @@ export const ActiveSquadManager: React.FC<ActiveSquadManagerProps> = ({
                         {activeFCount} / 9 Filled
                       </span>
                     </div>
-                    <div className="divide-y divide-slate-200 dark:divide-slate-800/60 rounded-xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-xs">
+                    <div className="divide-y divide-slate-200 dark:divide-slate-800/60 rounded-xl border border-slate-200 dark:border-slate-800 shadow-xs">
                       {ACTIVE_FORWARD_SLOTS.map(slot => renderActivePlayerRow(slot, activeSlotMap.get(slot)))}
                     </div>
                   </div>
@@ -1703,7 +1703,7 @@ export const ActiveSquadManager: React.FC<ActiveSquadManagerProps> = ({
                         {activeDCount} / 4 Filled
                       </span>
                     </div>
-                    <div className="divide-y divide-slate-200 dark:divide-slate-800/60 rounded-xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-xs">
+                    <div className="divide-y divide-slate-200 dark:divide-slate-800/60 rounded-xl border border-slate-200 dark:border-slate-800 shadow-xs">
                       {ACTIVE_DEFENSE_SLOTS.map(slot => renderActivePlayerRow(slot, activeSlotMap.get(slot)))}
                     </div>
                   </div>
@@ -1721,7 +1721,7 @@ export const ActiveSquadManager: React.FC<ActiveSquadManagerProps> = ({
                         {activeGCount} / 2 Filled
                       </span>
                     </div>
-                    <div className="divide-y divide-slate-200 dark:divide-slate-800/60 rounded-xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-xs">
+                    <div className="divide-y divide-slate-200 dark:divide-slate-800/60 rounded-xl border border-slate-200 dark:border-slate-800 shadow-xs">
                       {ACTIVE_GOALIE_SLOTS.map(slot => renderActivePlayerRow(slot, activeSlotMap.get(slot)))}
                     </div>
                   </div>
@@ -1825,7 +1825,7 @@ export const ActiveSquadManager: React.FC<ActiveSquadManagerProps> = ({
                         {benchFCount} / 3 Filled
                       </span>
                     </div>
-                    <div className="divide-y divide-slate-200 dark:divide-slate-800/60 rounded-xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-xs">
+                    <div className="divide-y divide-slate-200 dark:divide-slate-800/60 rounded-xl border border-slate-200 dark:border-slate-800 shadow-xs">
                       {BENCH_FORWARD_SLOTS.map(slot => renderBenchPlayerRow(slot, benchSlotMap.get(slot)))}
                     </div>
                   </div>
@@ -1843,7 +1843,7 @@ export const ActiveSquadManager: React.FC<ActiveSquadManagerProps> = ({
                         {benchDCount} / 2 Filled
                       </span>
                     </div>
-                    <div className="divide-y divide-slate-200 dark:divide-slate-800/60 rounded-xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-xs">
+                    <div className="divide-y divide-slate-200 dark:divide-slate-800/60 rounded-xl border border-slate-200 dark:border-slate-800 shadow-xs">
                       {BENCH_DEFENSE_SLOTS.map(slot => renderBenchPlayerRow(slot, benchSlotMap.get(slot)))}
                     </div>
                   </div>
@@ -1861,7 +1861,7 @@ export const ActiveSquadManager: React.FC<ActiveSquadManagerProps> = ({
                         {benchGCount} / 2 Filled
                       </span>
                     </div>
-                    <div className="divide-y divide-slate-200 dark:divide-slate-800/60 rounded-xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-xs">
+                    <div className="divide-y divide-slate-200 dark:divide-slate-800/60 rounded-xl border border-slate-200 dark:border-slate-800 shadow-xs">
                       {BENCH_GOALIE_SLOTS.map(slot => renderBenchPlayerRow(slot, benchSlotMap.get(slot)))}
                     </div>
                   </div>
@@ -1889,7 +1889,7 @@ export const ActiveSquadManager: React.FC<ActiveSquadManagerProps> = ({
                         }
                       }}
                       onDrop={handleDropToReserve}
-                      className="divide-y divide-slate-200 dark:divide-slate-800/60 rounded-xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-xs"
+                      className="divide-y divide-slate-200 dark:divide-slate-800/60 rounded-xl border border-slate-200 dark:border-slate-800 shadow-xs"
                     >
                       {unassignedBenchPlayers.map(player => {
                         const norm = normalizePosition(player.position);
