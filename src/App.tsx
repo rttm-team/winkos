@@ -325,6 +325,12 @@ export default function App() {
     await supabase.from('prospects')
       .update({ promoted: nextPromoted, promotion_date: newDate })
       .eq('id', prospectId);
+
+    // Sync with bench
+    await syncProspectToBench(
+      { ...prospect, promoted: nextPromoted },
+      activeGm.name
+    );
   };
 
   // Handle toggle protection
@@ -357,6 +363,49 @@ export default function App() {
     await supabase.from('prospects')
       .update({ protected: nextProtected })
       .eq('id', prospectId);
+
+    // Sync with bench
+    await syncProspectToBench(
+      { ...prospect, isProtected: nextProtected },
+      activeGm.name
+    );
+  };
+
+  const syncProspectToBench = async (prospect: any, gmName: string) => {
+    const isPromProt = prospect.promoted && prospect.isProtected;
+    if (isPromProt) {
+      // Find open bench slot
+      const { data: currentBench } = await supabase
+        .from('active_roster_players')
+        .select('slot_position')
+        .eq('gm_name', gmName)
+        .eq('roster_status', 'BENCH');
+      
+      const usedSlots = currentBench?.map(r => r.slot_position) || [];
+      const pos = prospect.position.toUpperCase();
+      let targetSlot = 'BENCH';
+
+      if (pos === 'F') targetSlot = ['BF1', 'BF2', 'BF3'].find(s => !usedSlots.includes(s)) || 'BENCH';
+      else if (pos === 'D') targetSlot = ['BD1', 'BD2'].find(s => !usedSlots.includes(s)) || 'BENCH';
+      else if (pos === 'G') targetSlot = ['BG1', 'BG2'].find(s => !usedSlots.includes(s)) || 'BENCH';
+
+      // Upsert
+      await supabase.from('active_roster_players').upsert({
+        gm_name: gmName,
+        player_name: prospect.player_name,
+        position: prospect.position,
+        roster_status: 'BENCH',
+        slot_position: targetSlot,
+        gp: prospect.total_games || 0,
+      }, { onConflict: 'player_name,gm_name' });
+    } else {
+      // Remove from bench
+      await supabase.from('active_roster_players')
+        .delete()
+        .eq('gm_name', gmName)
+        .eq('player_name', prospect.player_name)
+        .eq('roster_status', 'BENCH');
+    }
   };
 
   // Handle syncing a single prospect with NHL API
