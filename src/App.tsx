@@ -20,6 +20,7 @@ import { AddProspectModal } from './components/AddProspectModal';
 import { EditProspectModal } from './components/EditProspectModal';
 import WinkosChallenges from './components/WinkosChallenges';
 import { ProspectLanding } from './components/ProspectLanding';
+import ActiveSquadManager from './components/ActiveSquadManager';
 import { syncProspectWithNhlApi, setStored25PlusSeasons } from './services/nhlApi';
 import { supabase, fetchLeagueData, mapProspectRow, addDeletedProspectId } from './lib/supabase';
 import {
@@ -39,7 +40,7 @@ export default function App() {
   const [gms, setGms] = useState<GeneralManager[]>(INITIAL_GMS);
   const [selectedGmId, setSelectedGmId] = useState<string>('gm-adam');
   const [authedGmId, setAuthedGmId] = useState<string | null>(null);
-  const [view, setView] = useState<'hub' | 'prospect-central' | 'prospects' | 'arcade'>('hub');
+  const [view, setView] = useState<'hub' | 'prospect-central' | 'prospects' | 'arcade' | 'active-squad'>('hub');
   const [positionFilter, setPositionFilter] = useState<PositionFilter>('ALL');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('ALL');
   const [sortOption, setSortOption] = useState<ProspectSortOption>('urgency');
@@ -1225,6 +1226,20 @@ export default function App() {
 
       {view === 'arcade' && (
         <WinkosChallenges gmName={authedGm?.name || ''} theme={theme} />
+      )}
+
+      {view === 'active-squad' && (
+        isAdmin ? (
+          <ActiveSquadManager
+            initialGm={authedGm?.name || activeGm?.name || 'Adam'}
+            theme={theme}
+            onNavigateBack={() => setView('hub')}
+          />
+        ) : (
+          <div className="mx-auto max-w-7xl px-4 py-16 text-center">
+            <p className="text-sm font-bold text-slate-400">Commissioner access required.</p>
+          </div>
+        )
       )}
 
       {view === 'prospect-central' && (

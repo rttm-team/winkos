@@ -9,15 +9,16 @@ import {
   Moon,
   Settings,
   LogOut,
-  ChevronDown
+  ChevronDown,
+  Shield,
 } from 'lucide-react';
 import logoLight from '../assets/images/winkos-logo-light.png';
 import logoDark from '../assets/images/winkos-logo-dark.png';
 
 interface HeaderProps {
-  onNavigate: (view: 'hub' | 'prospect-central' | 'prospects' | 'arcade') => void;
+  onNavigate: (view: 'hub' | 'prospect-central' | 'prospects' | 'arcade' | 'active-squad') => void;
   onOpenRules: () => void;
-  activeView: 'hub' | 'prospect-central' | 'prospects' | 'arcade' | string;
+  activeView: 'hub' | 'prospect-central' | 'prospects' | 'arcade' | 'active-squad' | string;
   theme: 'light' | 'dark';
   onToggleTheme: () => void;
   activeGm?: any;
@@ -88,6 +89,28 @@ export const Header: React.FC<HeaderProps> = ({
               <NavItem icon={LayoutGrid} label="Prospect Central" onClick={() => onNavigate('prospect-central')} active={activeView === 'prospect-central'} theme={theme} />
               <NavItem icon={Users} label="GM Pools" onClick={() => onNavigate('prospects')} active={activeView === 'prospects'} theme={theme} />
               <NavItem icon={Dice5} label="Challenges" onClick={() => onNavigate('arcade')} active={activeView === 'arcade'} theme={theme} />
+              {isAdmin && (
+                <button
+                  id="nav-commish-squad-btn"
+                  onClick={() => onNavigate('active-squad')}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+                    activeView === 'active-squad'
+                      ? isLight
+                        ? 'bg-emerald-100 text-emerald-800 font-bold border border-emerald-300 shadow-xs'
+                        : 'bg-emerald-950/80 text-emerald-300 font-bold border border-emerald-700/80 shadow-xs'
+                      : isLight
+                      ? 'text-emerald-700 hover:text-emerald-900 hover:bg-emerald-50 border border-dashed border-emerald-300/80'
+                      : 'text-emerald-400 hover:text-emerald-200 hover:bg-emerald-950/40 border border-dashed border-emerald-700/60'
+                  }`}
+                  title="Commissioner Test: Active Squad Manager"
+                >
+                  <Shield className="h-4 w-4 text-emerald-500 shrink-0" />
+                  <span className="hidden sm:inline">Squads</span>
+                  <span className="text-[9px] font-black uppercase px-1 py-0.5 rounded bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 leading-none">
+                    Commish
+                  </span>
+                </button>
+              )}
               <NavItem icon={Info} label="Rules" onClick={onOpenRules} active={false} theme={theme} />
             </nav>
             
@@ -129,32 +152,55 @@ export const Header: React.FC<HeaderProps> = ({
                       {isLight ? 'Switch to Dark Mode' : 'Switch to Light Mode'}
                     </button>
 
-                    {isAdmin && gms.length > 0 && onSelectGm && (
+                    {isAdmin && (
                       <div className="px-1 py-1">
                         <div className={`px-2 py-1.5 text-[10px] font-bold uppercase tracking-wider ${isLight ? 'text-slate-500' : 'text-slate-400'}`}>
-                          Commish Tools: View As GM
+                          Commish Tools
                         </div>
-                        <div className="relative mt-1">
-                          <select
-                            value={selectedGmId}
-                            onChange={(e) => {
-                              onSelectGm(e.target.value);
-                              setSettingsOpen(false);
-                            }}
-                            className={`w-full appearance-none rounded-lg border px-3 py-2 pr-8 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-cyan-500/50 ${
-                              isLight 
-                                ? 'border-slate-300 bg-slate-50 text-slate-800' 
-                                : 'border-slate-600 bg-slate-900 text-slate-200'
-                            }`}
-                          >
-                            {gms.map((gm) => (
-                              <option key={gm.id} value={gm.id}>
-                                {gm.name}
-                              </option>
-                            ))}
-                          </select>
-                          <ChevronDown className={`pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 ${isLight ? 'text-slate-400' : 'text-slate-500'}`} />
-                        </div>
+                        <button
+                          id="settings-commish-squads-btn"
+                          onClick={() => {
+                            onNavigate('active-squad');
+                            setSettingsOpen(false);
+                          }}
+                          className={`w-full flex items-center gap-2.5 px-3 py-2 text-xs font-bold rounded-lg transition-colors mb-2 cursor-pointer ${
+                            isLight
+                              ? 'bg-emerald-50 text-emerald-800 hover:bg-emerald-100 border border-emerald-200'
+                              : 'bg-emerald-950/40 text-emerald-300 hover:bg-emerald-900/60 border border-emerald-700/50'
+                          }`}
+                        >
+                          <Shield className="h-3.5 w-3.5 text-emerald-500 shrink-0" />
+                          <span>Active Squad Manager (Test)</span>
+                        </button>
+
+                        {gms.length > 0 && onSelectGm && (
+                          <>
+                            <div className={`px-2 py-1 text-[10px] font-bold uppercase tracking-wider ${isLight ? 'text-slate-500' : 'text-slate-400'}`}>
+                              View As GM
+                            </div>
+                            <div className="relative mt-1">
+                              <select
+                                value={selectedGmId}
+                                onChange={(e) => {
+                                  onSelectGm(e.target.value);
+                                  setSettingsOpen(false);
+                                }}
+                                className={`w-full appearance-none rounded-lg border px-3 py-2 pr-8 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-cyan-500/50 ${
+                                  isLight 
+                                    ? 'border-slate-300 bg-slate-50 text-slate-800' 
+                                    : 'border-slate-600 bg-slate-900 text-slate-200'
+                                }`}
+                              >
+                                {gms.map((gm) => (
+                                  <option key={gm.id} value={gm.id}>
+                                    {gm.name}
+                                  </option>
+                                ))}
+                              </select>
+                              <ChevronDown className={`pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 ${isLight ? 'text-slate-400' : 'text-slate-500'}`} />
+                            </div>
+                          </>
+                        )}
                       </div>
                     )}
 
