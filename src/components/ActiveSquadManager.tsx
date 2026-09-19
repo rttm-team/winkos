@@ -291,10 +291,17 @@ export const ActiveSquadManager: React.FC<ActiveSquadManagerProps> = ({
         {isOpen && (
           <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-slate-800 rounded-lg shadow-lg z-50 border border-slate-200 dark:border-slate-700">
             <button
-              onClick={() => { setIsOpen(false); handleBenchPlayer(player); }}
+              onClick={() => {
+                setIsOpen(false);
+                if (player.roster_status === 'BENCH') {
+                  handleActivatePlayer(player);
+                } else {
+                  handleBenchPlayer(player);
+                }
+              }}
               className="block w-full text-left px-4 py-2 hover:bg-slate-100 dark:hover:bg-slate-700"
             >
-              Bench
+              {player.roster_status === 'BENCH' ? 'Activate' : 'Bench'}
             </button>
             <button
               onClick={() => { setIsOpen(false); setSwapModalPlayer(player); }}
