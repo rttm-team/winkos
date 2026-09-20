@@ -386,8 +386,11 @@ export const ActiveSquadManager: React.FC<ActiveSquadManagerProps> = ({
       else setIsSyncing(true);
 
       try {
+        const currentSeason = selectedSeason || '2026-27';
+        const altSeason = currentSeason === '2026-27' ? '2026-2027' : currentSeason === '2026-2027' ? '2026-27' : currentSeason;
+
         const [activeRes, prospectsRes] = await Promise.all([
-          supabase.from('active_roster_players').select('*').eq('gm_name', gm).eq('season_id', selectedSeason || '2026-2027'),
+          supabase.from('active_roster_players').select('*').eq('gm_name', gm).in('season_id', [currentSeason, altSeason, '2026-2027', '2026-27']),
           supabase.from('prospects').select('*').eq('gm_name', gm),
         ]);
 
