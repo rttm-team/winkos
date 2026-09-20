@@ -14,6 +14,7 @@ import {
   Sparkles,
   Crown,
   ShieldCheck,
+  LayoutDashboard,
   LogOut,
   X,
   Delete,
@@ -43,6 +44,8 @@ export default function WinkoHub({
   onNavigate = (_target = 'prospects') => {},
   theme = 'light',
   onToggleTheme = () => {},
+  gmLeaderboard = [],
+  activeGmStats = {},
 }) {
   const isLight = theme === 'light';
   // GM chosen in the locked state whose PIN modal is open (null = no modal).
@@ -86,6 +89,7 @@ export default function WinkoHub({
       {/* Ambient background glows */}
       <div className="pointer-events-none fixed inset-0 overflow-hidden">
         <div className="absolute -top-40 -left-40 h-96 w-96 rounded-full bg-sky-500/10 blur-3xl" />
+        <div className="absolute -top-20 right-1/4 h-64 w-64 rounded-full bg-purple-500/10 blur-3xl" />
         <div className="absolute -bottom-40 -right-40 h-96 w-96 rounded-full bg-amber-500/10 blur-3xl" />
       </div>
 
@@ -139,6 +143,8 @@ export default function WinkoHub({
             isArcadeComingSoon={isArcadeComingSoon}
             onNavigate={onNavigate}
             isLight={isLight}
+            gmLeaderboard={gmLeaderboard}
+            activeGmStats={activeGmStats}
           />
         )}
       </div>
@@ -307,7 +313,7 @@ function LockedTile({ title, subtitle, icon: Icon, accent = 'sky', badge, childr
 
 /* ---------------------------- Unlocked view ---------------------------- */
 
-function UnlockedView({ activeGm, leaderboard, isArcadeComingSoon, onNavigate, isLight }) {
+function UnlockedView({ activeGm, leaderboard, isArcadeComingSoon, onNavigate, isLight, gmLeaderboard, activeGmStats }) {
   const firstName = activeGm?.name ? activeGm.name.split(' ')[0] : '';
   
   const stats = useMemo(() => {
@@ -353,6 +359,8 @@ function UnlockedView({ activeGm, leaderboard, isArcadeComingSoon, onNavigate, i
     };
   }, [activeGm]);
 
+  const topGm = gmLeaderboard?.[0] || null;
+
   return (
     <>
       {/* Hero */}
@@ -364,14 +372,73 @@ function UnlockedView({ activeGm, leaderboard, isArcadeComingSoon, onNavigate, i
           Run your roster. Rack up Winkoins.
         </h2>
         <p className={`mt-1 max-w-xl text-xs sm:text-sm ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>
-          Track live NHL promotions and jump into the daily challenges — all from one
-          command center.
+          Track live NHL promotions, explore the season standings, and jump into the daily challenges.
         </p>
       </div>
 
       {/* Feature cards */}
-      <main className="grid flex-1 grid-cols-1 gap-6 pb-10 lg:grid-cols-2">
-        {/* CARD 1 — Prospect Central */}
+      <main className="grid flex-1 grid-cols-1 gap-6 pb-10 lg:grid-cols-3">
+        {/* CARD 1 — Season Central */}
+        <section className={`group relative flex flex-col overflow-hidden rounded-2xl border p-6 transition ${
+          isLight
+            ? 'border-slate-200 bg-white shadow-sm hover:border-purple-300 hover:shadow-md'
+            : 'border-slate-800 bg-slate-900/60 hover:border-purple-500/50 hover:bg-slate-900'
+        }`}>
+          <div className="absolute -right-16 -top-16 h-40 w-40 rounded-full bg-purple-500/10 blur-2xl transition group-hover:bg-purple-500/20" />
+
+          <div className="relative flex items-start gap-4">
+            <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl ring-1 ${
+              isLight ? 'bg-purple-50 text-purple-700 ring-purple-300' : 'bg-purple-500/15 text-purple-300 ring-purple-500/30'
+            }`}>
+              <Trophy className="h-6 w-6" />
+            </div>
+            <div>
+              <h3 className={`text-lg font-bold ${isLight ? 'text-slate-900' : 'text-white'}`}>Season Central</h3>
+              <p className={`text-sm ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>
+                Standings & Leaderboards
+              </p>
+            </div>
+          </div>
+
+          <div className="relative mt-6 space-y-4">
+            {topGm && (
+              <div className={`p-4 rounded-xl ${isLight ? 'bg-slate-50' : 'bg-slate-800/40'}`}>
+                <div className="flex items-center gap-2 mb-2">
+                  <Crown className="h-4 w-4 text-amber-500" />
+                  <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">Current Leader</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className={`text-sm font-black ${isLight ? 'text-slate-900' : 'text-white'}`}>{topGm.teamName}</span>
+                  <span className="text-sm font-black text-cyan-500">{topGm.total_fantasy_points.toLocaleString()} <span className="text-[10px]">FP</span></span>
+                </div>
+              </div>
+            )}
+            
+            <div className={`p-4 rounded-xl ${isLight ? 'bg-slate-50' : 'bg-slate-800/40'}`}>
+              <div className="flex items-center gap-2 mb-2">
+                <LayoutDashboard className="h-4 w-4 text-emerald-500" />
+                <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">My Season Stats</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className={`text-sm font-bold ${isLight ? 'text-slate-700' : 'text-slate-300'}`}>Rank: #{activeGmStats.rank || '--'}</span>
+                <span className="text-sm font-black text-cyan-500">{activeGmStats.total_fantasy_points?.toLocaleString() || '0'} <span className="text-[10px]">FP</span></span>
+              </div>
+            </div>
+          </div>
+
+          <div className="relative mt-auto pt-6">
+            <button
+              type="button"
+              onClick={() => onNavigate('seasons')}
+              className="w-full flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold shadow-md shadow-purple-500/20 active:scale-95 transition cursor-pointer"
+            >
+              <span>Explore Seasons</span>
+              <ArrowRight className="h-4 w-4" />
+            </button>
+          </div>
+        </section>
+
+        {/* CARD 2 — Prospect Central */}
         <section className={`group relative flex flex-col overflow-hidden rounded-2xl border p-6 transition ${
           isLight
             ? 'border-slate-200 bg-white shadow-sm hover:border-sky-300 hover:shadow-md'
@@ -388,7 +455,7 @@ function UnlockedView({ activeGm, leaderboard, isArcadeComingSoon, onNavigate, i
             <div>
               <h3 className={`text-lg font-bold ${isLight ? 'text-slate-900' : 'text-white'}`}>Prospect Central</h3>
               <p className={`text-sm ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>
-                Roster Management &amp; Live NHL Rule Tracking
+                Roster Management
               </p>
             </div>
           </div>
@@ -410,17 +477,11 @@ function UnlockedView({ activeGm, leaderboard, isArcadeComingSoon, onNavigate, i
             />
           </div>
 
-          <ul className="relative mt-6 flex flex-wrap gap-2">
-            <FeatureChip icon={Search} label="Search prospects" isLight={isLight} />
-            <FeatureChip icon={Filter} label="Position filters" isLight={isLight} />
-            <FeatureChip icon={RadioTower} label="Real-time sync" isLight={isLight} />
-          </ul>
-
-          <div className="relative mt-auto pt-6 flex flex-col sm:flex-row gap-2.5">
+          <div className="relative mt-auto pt-6 flex flex-col gap-2">
             <button
               type="button"
               onClick={() => onNavigate('prospect-central')}
-              className="flex-1 flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold shadow-md shadow-emerald-500/20 active:scale-95 transition cursor-pointer"
+              className="w-full flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold shadow-md shadow-emerald-500/20 active:scale-95 transition cursor-pointer"
             >
               <span>Prospect Central HQ</span>
               <ArrowRight className="h-4 w-4" />
@@ -428,7 +489,7 @@ function UnlockedView({ activeGm, leaderboard, isArcadeComingSoon, onNavigate, i
             <button
               type="button"
               onClick={() => onNavigate('prospects')}
-              className={`flex items-center justify-center gap-2 rounded-xl border px-4 py-3 text-sm font-bold transition cursor-pointer ${
+              className={`w-full flex items-center justify-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-bold transition cursor-pointer ${
                 isLight
                   ? 'border-slate-300 bg-slate-100 text-slate-800 hover:bg-slate-200'
                   : 'border-slate-700 bg-slate-800 text-slate-200 hover:bg-slate-700 hover:text-white'
@@ -439,7 +500,7 @@ function UnlockedView({ activeGm, leaderboard, isArcadeComingSoon, onNavigate, i
           </div>
         </section>
 
-        {/* CARD 2 — Winko's Arcade */}
+        {/* CARD 3 — Winko's Arcade */}
         <section className={`group relative flex flex-col overflow-hidden rounded-2xl border p-6 transition ${
           isLight
             ? 'border-slate-200 bg-white shadow-sm hover:border-amber-300 hover:shadow-md'
@@ -454,28 +515,27 @@ function UnlockedView({ activeGm, leaderboard, isArcadeComingSoon, onNavigate, i
               <Dice5 className="h-6 w-6" />
             </div>
             <div>
-              <h3 className={`text-lg font-bold ${isLight ? 'text-slate-900' : 'text-white'}`}>Winko&apos;s Challenges</h3>
+              <h3 className={`text-lg font-bold ${isLight ? 'text-slate-900' : 'text-white'}`}>Challenges</h3>
               <p className={`text-sm ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>
-                Daily Matchup Picks & Winkoins Leaderboard
+                Daily Matchup Picks
               </p>
             </div>
           </div>
 
           <div className="relative mt-6">
-              <span className="inline-flex items-center gap-2 rounded-lg border border-emerald-400/30 bg-emerald-400/10 px-3 py-1.5 text-sm font-bold text-emerald-600 dark:text-emerald-300">
+              <span className="inline-flex items-center gap-2 rounded-lg border border-emerald-400/30 bg-emerald-400/10 px-3 py-1.5 text-xs font-bold text-emerald-600 dark:text-emerald-300">
                 <span className="relative flex h-2 w-2">
                   <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
                   <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-400" />
                 </span>
-                Today&apos;s Challenge is Live!
-                <Dice5 className="h-4 w-4" />
+                Active Challenge!
               </span>
           </div>
 
           <div className="relative mt-6">
-            <div className={`mb-3 flex items-center gap-2 text-xs font-semibold uppercase tracking-wide ${isLight ? 'text-slate-700' : 'text-slate-400'}`}>
-              <Trophy className="h-4 w-4 text-amber-500 dark:text-amber-400" />
-              Top GMs
+            <div className={`mb-3 flex items-center gap-2 text-[10px] font-black uppercase tracking-widest ${isLight ? 'text-slate-700' : 'text-slate-400'}`}>
+              <Trophy className="h-3.5 w-3.5 text-amber-500 dark:text-amber-400" />
+              Winkoin Leaders
             </div>
             <LeaderboardList leaderboard={leaderboard} isLight={isLight} />
           </div>
@@ -484,14 +544,11 @@ function UnlockedView({ activeGm, leaderboard, isArcadeComingSoon, onNavigate, i
             <button
               type="button"
               onClick={() => onNavigate('arcade')}
-              className="flex w-full items-center justify-center gap-2 px-6 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold shadow-md shadow-emerald-500/20 active:scale-95 transition cursor-pointer"
+              className="flex w-full items-center justify-center gap-2 px-6 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black shadow-md shadow-amber-500/20 active:scale-95 transition cursor-pointer"
             >
               <Dice5 className="h-4 w-4" />
-              <span>Play Today's Challenge</span>
+              <span>Play Challenge</span>
             </button>
-            <p className={`mt-2 text-center text-xs ${isLight ? 'text-slate-500' : 'text-slate-500'}`}>
-              Pick winners daily to stack up Winkoins.
-            </p>
           </div>
         </section>
       </main>

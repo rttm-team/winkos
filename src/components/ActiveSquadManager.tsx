@@ -2,7 +2,6 @@ import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
 import { calculateFantasyPoints, NHL_TEAMS_MAP, INITIAL_GMS, getStoredProspectStatus } from '../data/mockData';
 import { proxyImageUrl } from '../lib/utils';
-import ActiveRosterStatsTable from './ActiveRosterStatsTable';
 import {
   Shield,
   Users,
@@ -236,7 +235,7 @@ export const ActiveSquadManager: React.FC<ActiveSquadManagerProps> = ({
   const [dragOverSlot, setDragOverSlot] = useState<string | null>(null);
 
   // View Mode: Lineup Builder vs Rule 5 Stats Table
-  const [managerTab, setManagerTab] = useState<'lineup' | 'stats'>('lineup');
+  // (Removed managerTab state)
 
   // Show Toast
   const addToast = useCallback((text: string, type: 'success' | 'error' | 'info' = 'success') => {
@@ -490,23 +489,35 @@ export const ActiveSquadManager: React.FC<ActiveSquadManagerProps> = ({
   // ROSTER MAPPINGS & COUNTERS
   // ==========================================
 
+  // Filter 1: Main Roster Eligible Players (Promoted & Protected drafted players)
+  // Per instructions: "Prospects should only be available on their active squad if they are Promoted and Protected."
+  const rosterEligiblePlayers = useMemo(() => {
+    return players.filter(p => p.promoted && p.isProtected && p.status !== 'trashed');
+  }, [players]);
+
+  // Filter 3: Farm / Prospect Pool (Non-promoted or Non-protected prospects)
+  // Per instructions: "Non-promoted or non-protected prospects stay in the PROSPECT_POOL / FARM section."
+  const farmPlayers = useMemo(() => {
+    return players.filter(p => (!p.promoted || !p.isProtected) && p.status !== 'trashed');
+  }, [players]);
+
   // Map of active players by slot position (F1-F9, D1-D4, G1-G2)
   const activeSlotMap = useMemo(() => {
     const map = new Map<ActiveSlotId, SquadPlayer>();
-    players.forEach(p => {
+    rosterEligiblePlayers.forEach(p => {
       if (p.roster_status === 'ACTIVE' && ALL_ACTIVE_SLOTS.includes(p.slot_position as ActiveSlotId)) {
         map.set(p.slot_position as ActiveSlotId, p);
       }
     });
     return map;
-  }, [players]);
+  }, [rosterEligiblePlayers]);
 
   // Map of bench players by bench slot position (BF1-BF3, BD1-BD2, BG1-BG2)
   const benchSlotMap = useMemo(() => {
     const map = new Map<BenchSlotId, SquadPlayer>();
     const unmappedBench: SquadPlayer[] = [];
 
-    players.forEach(p => {
+    rosterEligiblePlayers.forEach(p => {
       if (p.roster_status === 'BENCH') {
         if (ALL_BENCH_SLOTS.includes(p.slot_position as BenchSlotId)) {
           map.set(p.slot_position as BenchSlotId, p);
@@ -527,7 +538,7 @@ export const ActiveSquadManager: React.FC<ActiveSquadManagerProps> = ({
     });
 
     return map;
-  }, [players]);
+  }, [rosterEligiblePlayers]);
 
   // Active Slot Counters
   const activeFCount = useMemo(() => ACTIVE_FORWARD_SLOTS.filter(s => activeSlotMap.has(s)).length, [activeSlotMap]);
@@ -544,12 +555,6 @@ export const ActiveSquadManager: React.FC<ActiveSquadManagerProps> = ({
   // Total Main Roster (22 Slots Max)
   const totalMainRosterCount = totalActiveCount + totalBenchCount;
 
-  // Filter 1: Main Roster Eligible Players (Promoted & Protected drafted players)
-  // Per instructions: "it should also include prospects who are Promoted and Protected only. Your prospects in development or who have moved on shouldn't be on the list."
-  const rosterEligiblePlayers = useMemo(() => {
-    return players.filter(p => p.promoted && (p.isProtected ?? true) && p.status !== 'trashed');
-  }, [players]);
-
   // Filter 2: Unassigned Bench Reserves (Promoted & Protected players not currently in Active or Bench slots)
   const unassignedBenchPlayers = useMemo(() => {
     const assignedIds = new Set<string | number>();
@@ -558,44 +563,17 @@ export const ActiveSquadManager: React.FC<ActiveSquadManagerProps> = ({
     return rosterEligiblePlayers.filter(p => !assignedIds.has(p.id));
   }, [rosterEligiblePlayers, activeSlotMap, benchSlotMap]);
 
-  // Filter 3: Farm / Prospect Pool (Non-promoted developing prospects)
-  // Per instructions: "Non-promoted prospects stay in the PROSPECT_POOL / FARM section."
-  const farmPlayers = useMemo(() => {
-    return players.filter(p => !p.promoted && p.status !== 'trashed');
-  }, [players]);
-
   // Rule 5 Fantasy Points Summary (Earned ONLY by the 15 Active Slots)
+  // Per instructions: "Points in the 2026-27 season should be 0 for now"
   const activeFantasyStats = useMemo(() => {
-    let skaterFP = 0;
-    let goalieFP = 0;
-    let topPlayer: SquadPlayer | null = null;
-    let maxFP = -Infinity;
-
-    activeSlotMap.forEach(player => {
-      const norm = normalizePosition(player.position);
-      if (norm === 'G') {
-        goalieFP += player.fantasy_points;
-      } else {
-        skaterFP += player.fantasy_points;
-      }
-
-      if (player.fantasy_points > maxFP) {
-        maxFP = player.fantasy_points;
-        topPlayer = player;
-      }
-    });
-
-    const totalFP = skaterFP + goalieFP;
-    const avgFP = totalActiveCount > 0 ? Math.round(totalFP / totalActiveCount) : 0;
-
     return {
-      totalFP,
-      skaterFP,
-      goalieFP,
-      avgFP,
-      topPlayer,
+      totalFP: 0,
+      skaterFP: 0,
+      goalieFP: 0,
+      avgFP: 0,
+      topPlayer: null as SquadPlayer | null,
     };
-  }, [activeSlotMap, totalActiveCount]);
+  }, []);
 
   // ==========================================
   // ROSTER MUTATIONS & SWAP ENGINE
@@ -603,8 +581,9 @@ export const ActiveSquadManager: React.FC<ActiveSquadManagerProps> = ({
 
   // 1. Swap or Move Player into Target Slot
   const handleSwapToSlot = async (player: SquadPlayer, targetSlot: RosterSlotId) => {
-    if (!player.promoted) {
-      addToast(`${player.player_name} is not promoted! Only promoted players can occupy Active or Bench slots.`, 'error');
+    if (!player.promoted || !player.isProtected) {
+      const reason = !player.promoted ? "not promoted" : "not protected";
+      addToast(`${player.player_name} is ${reason}! Only promoted and protected players can occupy Active or Bench slots.`, 'error');
       return;
     }
 
@@ -753,6 +732,16 @@ export const ActiveSquadManager: React.FC<ActiveSquadManagerProps> = ({
 
   const handleDragOver = (e: React.DragEvent, targetSlot: RosterSlotId) => {
     e.preventDefault();
+
+    // Auto-scroll logic when dragging near viewport edges
+    const scrollThreshold = 100;
+    const scrollSpeed = 15;
+    if (e.clientY < scrollThreshold) {
+      window.scrollBy(0, -scrollSpeed);
+    } else if (e.clientY > window.innerHeight - scrollThreshold) {
+      window.scrollBy(0, scrollSpeed);
+    }
+
     if (!draggedPlayer) return;
     const isEligible = isPositionEligibleForSlot(draggedPlayer.position, targetSlot);
     if (isEligible) {
@@ -1539,58 +1528,7 @@ export const ActiveSquadManager: React.FC<ActiveSquadManagerProps> = ({
             </div>
           </div>
 
-          {/* Sub-View Navigation Tabs */}
-          <div className="flex items-center justify-between gap-4">
-            <div
-              className={`inline-flex items-center p-1 rounded-xl border ${
-                isLight ? 'bg-slate-100 border-slate-200' : 'bg-slate-900 border-slate-800'
-              }`}
-            >
-              <button
-                type="button"
-                id="btn-tab-lineup-builder"
-                onClick={() => setManagerTab('lineup')}
-                className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                  managerTab === 'lineup'
-                    ? isLight
-                      ? 'bg-white text-emerald-800 shadow-xs'
-                      : 'bg-slate-800 text-emerald-400 shadow-xs'
-                    : isLight
-                    ? 'text-slate-600 hover:text-slate-900'
-                    : 'text-slate-400 hover:text-slate-200'
-                }`}
-              >
-                <Users className="h-3.5 w-3.5" />
-                <span>Lineup Builder (Drag &amp; Drop)</span>
-              </button>
-
-              <button
-                type="button"
-                id="btn-tab-stats-table"
-                onClick={() => setManagerTab('stats')}
-                className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                  managerTab === 'stats'
-                    ? isLight
-                      ? 'bg-white text-cyan-800 shadow-xs'
-                      : 'bg-slate-800 text-cyan-400 shadow-xs'
-                    : isLight
-                    ? 'text-slate-600 hover:text-slate-900'
-                    : 'text-slate-400 hover:text-slate-200'
-                }`}
-              >
-                <Trophy className="h-3.5 w-3.5 text-cyan-400" />
-                <span>Rule 5 Stats Table (22 Players)</span>
-              </button>
-            </div>
-          </div>
-
-          {managerTab === 'stats' ? (
-            <ActiveRosterStatsTable
-              gmName={selectedGm}
-              theme={theme}
-              onSelectGm={setSelectedGm}
-            />
-          ) : loading ? (
+          {loading ? (
             <div className="flex flex-col items-center justify-center py-20 text-slate-400">
               <div className="h-8 w-8 animate-spin rounded-full border-4 border-slate-300 dark:border-slate-700 border-t-emerald-500 mb-4" />
               <p className="font-semibold text-sm">Loading GM {selectedGm}&apos;s roster...</p>
@@ -1697,128 +1635,6 @@ export const ActiveSquadManager: React.FC<ActiveSquadManagerProps> = ({
                     </div>
                   </div>
 
-                  {/* Active Defense (D1 to D4) */}
-                  <div>
-                    <div className="flex items-center justify-between mb-2.5">
-                      <div className="flex items-center gap-2">
-                        <div className="h-2 w-2 rounded-full bg-amber-400" />
-                        <h3 className={`text-xs font-black uppercase tracking-wider ${isLight ? 'text-slate-800' : 'text-slate-300'}`}>
-                          Active Defensemen (4 Slots: D1 - D4)
-                        </h3>
-                      </div>
-                      <span className="text-xs font-mono font-semibold text-slate-400">
-                        {activeDCount} / 4 Filled
-                      </span>
-                    </div>
-                    <div className="divide-y divide-slate-200 dark:divide-slate-800/60 rounded-xl border border-slate-200 dark:border-slate-800 shadow-xs">
-                      {ACTIVE_DEFENSE_SLOTS.map(slot => renderActivePlayerRow(slot, activeSlotMap.get(slot)))}
-                    </div>
-                  </div>
-
-                  {/* Active Goalies (G1 to G2) */}
-                  <div>
-                    <div className="flex items-center justify-between mb-2.5">
-                      <div className="flex items-center gap-2">
-                        <div className="h-2 w-2 rounded-full bg-purple-400" />
-                        <h3 className={`text-xs font-black uppercase tracking-wider ${isLight ? 'text-slate-800' : 'text-slate-300'}`}>
-                          Active Goalies (2 Slots: G1 - G2)
-                        </h3>
-                      </div>
-                      <span className="text-xs font-mono font-semibold text-slate-400">
-                        {activeGCount} / 2 Filled
-                      </span>
-                    </div>
-                    <div className="divide-y divide-slate-200 dark:divide-slate-800/60 rounded-xl border border-slate-200 dark:border-slate-800 shadow-xs">
-                      {ACTIVE_GOALIE_SLOTS.map(slot => renderActivePlayerRow(slot, activeSlotMap.get(slot)))}
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* ==========================================
-                  SECTION 2: BENCH (7 PLAYERS MAX) - LIST LAYOUT
-                  0 Fantasy Points
-              ========================================== */}
-              <div
-                className={`p-6 rounded-2xl border transition-all ${
-                  isLight
-                    ? 'bg-white border-slate-200 shadow-xs'
-                    : 'bg-slate-900/90 border-slate-800 shadow-lg shadow-black/20'
-                }`}
-              >
-                {/* Bench Header with Slot Counters */}
-                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-5 border-b border-slate-200 dark:border-slate-800">
-                  <div>
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="text-xs font-black uppercase tracking-wider text-amber-500">
-                        2. Bench Squad (7 Players Max)
-                      </span>
-                      <span className="text-xs text-slate-400">•</span>
-                      <span className="text-xs font-bold text-slate-400">0 Fantasy Points</span>
-                      <span className="text-xs text-slate-400">•</span>
-                      <span className="text-xs font-semibold text-emerald-400">Unlimited Swaps</span>
-                    </div>
-                    <h2 className={`text-xl font-black ${isLight ? 'text-slate-900' : 'text-white'}`}>
-                      Bench
-                    </h2>
-                    <p className={`text-xs mt-0.5 ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>
-                      Drafted players and Promoted &amp; Protected prospects. Bench players earn 0 FP while in reserve.
-                    </p>
-                  </div>
-
-                  {/* Bench Slot Counter Badges */}
-                  <div className="flex flex-wrap items-center gap-2">
-                    {/* Bench F */}
-                    <div
-                      className={`px-3 py-1.5 rounded-xl border text-xs font-mono font-bold flex items-center gap-1.5 ${
-                        benchFCount === 3
-                          ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
-                          : 'bg-slate-800/60 text-slate-300 border-slate-700'
-                      }`}
-                    >
-                      <span className="h-2 w-2 rounded-full bg-blue-400" />
-                      <span>Bench F: <strong className={benchFCount === 3 ? 'text-emerald-400' : 'text-white'}>{benchFCount}</strong>/3</span>
-                    </div>
-
-                    {/* Bench D */}
-                    <div
-                      className={`px-3 py-1.5 rounded-xl border text-xs font-mono font-bold flex items-center gap-1.5 ${
-                        benchDCount === 2
-                          ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
-                          : 'bg-slate-800/60 text-slate-300 border-slate-700'
-                      }`}
-                    >
-                      <span className="h-2 w-2 rounded-full bg-amber-400" />
-                      <span>Bench D: <strong className={benchDCount === 2 ? 'text-emerald-400' : 'text-white'}>{benchDCount}</strong>/2</span>
-                    </div>
-
-                    {/* Bench G */}
-                    <div
-                      className={`px-3 py-1.5 rounded-xl border text-xs font-mono font-bold flex items-center gap-1.5 ${
-                        benchGCount === 2
-                          ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
-                          : 'bg-slate-800/60 text-slate-300 border-slate-700'
-                      }`}
-                    >
-                      <span className="h-2 w-2 rounded-full bg-purple-400" />
-                      <span>Bench G: <strong className={benchGCount === 2 ? 'text-emerald-400' : 'text-white'}>{benchGCount}</strong>/2</span>
-                    </div>
-
-                    {/* Total Bench */}
-                    <div
-                      className={`px-3 py-1.5 rounded-xl border text-xs font-mono font-black ${
-                        totalBenchCount === 7
-                          ? 'bg-amber-500 text-slate-950 border-amber-400 shadow-xs'
-                          : 'bg-slate-800 text-slate-300 border-slate-700'
-                      }`}
-                    >
-                      Total Bench: {totalBenchCount} / 7
-                    </div>
-                  </div>
-                </div>
-
-                {/* BENCH PLAYERS LIST LAYOUT (Clean list of players per user request) */}
-                <div className="mt-6 space-y-6">
                   {/* Bench Forwards (BF1 to BF3) */}
                   <div>
                     <div className="flex items-center justify-between mb-2.5">
@@ -1834,6 +1650,24 @@ export const ActiveSquadManager: React.FC<ActiveSquadManagerProps> = ({
                     </div>
                     <div className="divide-y divide-slate-200 dark:divide-slate-800/60 rounded-xl border border-slate-200 dark:border-slate-800 shadow-xs">
                       {BENCH_FORWARD_SLOTS.map(slot => renderBenchPlayerRow(slot, benchSlotMap.get(slot)))}
+                    </div>
+                  </div>
+
+                  {/* Active Defense (D1 to D4) */}
+                  <div>
+                    <div className="flex items-center justify-between mb-2.5">
+                      <div className="flex items-center gap-2">
+                        <div className="h-2 w-2 rounded-full bg-amber-400" />
+                        <h3 className={`text-xs font-black uppercase tracking-wider ${isLight ? 'text-slate-800' : 'text-slate-300'}`}>
+                          Active Defensemen (4 Slots: D1 - D4)
+                        </h3>
+                      </div>
+                      <span className="text-xs font-mono font-semibold text-slate-400">
+                        {activeDCount} / 4 Filled
+                      </span>
+                    </div>
+                    <div className="divide-y divide-slate-200 dark:divide-slate-800/60 rounded-xl border border-slate-200 dark:border-slate-800 shadow-xs">
+                      {ACTIVE_DEFENSE_SLOTS.map(slot => renderActivePlayerRow(slot, activeSlotMap.get(slot)))}
                     </div>
                   </div>
 
@@ -1855,6 +1689,24 @@ export const ActiveSquadManager: React.FC<ActiveSquadManagerProps> = ({
                     </div>
                   </div>
 
+                  {/* Active Goalies (G1 to G2) */}
+                  <div>
+                    <div className="flex items-center justify-between mb-2.5">
+                      <div className="flex items-center gap-2">
+                        <div className="h-2 w-2 rounded-full bg-purple-400" />
+                        <h3 className={`text-xs font-black uppercase tracking-wider ${isLight ? 'text-slate-800' : 'text-slate-300'}`}>
+                          Active Goalies (2 Slots: G1 - G2)
+                        </h3>
+                      </div>
+                      <span className="text-xs font-mono font-semibold text-slate-400">
+                        {activeGCount} / 2 Filled
+                      </span>
+                    </div>
+                    <div className="divide-y divide-slate-200 dark:divide-slate-800/60 rounded-xl border border-slate-200 dark:border-slate-800 shadow-xs">
+                      {ACTIVE_GOALIE_SLOTS.map(slot => renderActivePlayerRow(slot, activeSlotMap.get(slot)))}
+                    </div>
+                  </div>
+
                   {/* Bench Goalies (BG1 to BG2) */}
                   <div>
                     <div className="flex items-center justify-between mb-2.5">
@@ -1873,6 +1725,8 @@ export const ActiveSquadManager: React.FC<ActiveSquadManagerProps> = ({
                     </div>
                   </div>
                 </div>
+              </div>
+
 
                 {/* UNASSIGNED RESERVES (If GM has additional drafted/promoted & protected players waiting for slots) */}
                 {unassignedBenchPlayers.length > 0 && (
@@ -1976,8 +1830,6 @@ export const ActiveSquadManager: React.FC<ActiveSquadManagerProps> = ({
                     </div>
                   </div>
                 )}
-              </div>
-
               {/* ==========================================
                   SECTION 3: PROSPECT POOL / FARM
                   Non-promoted developing prospects
@@ -2003,7 +1855,7 @@ export const ActiveSquadManager: React.FC<ActiveSquadManagerProps> = ({
                       Prospect Pool / Farm ({farmPlayers.length})
                     </h3>
                     <p className={`text-xs mt-0.5 ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>
-                      Non-promoted prospects stay in the Farm section. They cannot occupy Active or Bench slots until promoted.
+                      Non-promoted or non-protected prospects stay in the Farm section. They cannot occupy Active or Bench slots until they are both promoted and protected.
                     </p>
                   </div>
 
@@ -2045,7 +1897,7 @@ export const ActiveSquadManager: React.FC<ActiveSquadManagerProps> = ({
                                 </span>
                               </div>
                               <div className="text-[11px] text-slate-400 mt-0.5">
-                                {prospect.team_abbr} • {prospect.total_games} NHL GP • In Development
+                                {prospect.team_abbr} • {prospect.total_games} NHL GP • {prospect.promoted ? 'Promoted (Unprotected)' : 'In Development'}
                               </div>
                             </div>
 
@@ -2053,9 +1905,9 @@ export const ActiveSquadManager: React.FC<ActiveSquadManagerProps> = ({
                               type="button"
                               onClick={() => handlePromoteFarmProspect(prospect)}
                               className="px-2.5 py-1 rounded-lg text-xs font-bold bg-purple-600 hover:bg-purple-500 text-white transition-all cursor-pointer shrink-0"
-                              title="Promote prospect to make eligible for Bench & Active roster"
+                              title={prospect.promoted ? "Protect prospect to make eligible for roster" : "Promote prospect to make eligible for Bench & Active roster"}
                             >
-                              Promote
+                              {prospect.promoted ? 'Protect' : 'Promote'}
                             </button>
                           </div>
                         ))}

@@ -20,7 +20,9 @@ import { AddProspectModal } from './components/AddProspectModal';
 import { EditProspectModal } from './components/EditProspectModal';
 import WinkosChallenges from './components/WinkosChallenges';
 import { ProspectLanding } from './components/ProspectLanding';
+import { SeasonsLanding } from './components/SeasonsLanding';
 import ActiveSquadManager from './components/ActiveSquadManager';
+import NHLKeeperSelector from './components/NHLKeeperSelector';
 import { syncProspectWithNhlApi, setStored25PlusSeasons } from './services/nhlApi';
 import { supabase, fetchLeagueData, mapProspectRow, addDeletedProspectId } from './lib/supabase';
 import {
@@ -40,7 +42,8 @@ export default function App() {
   const [gms, setGms] = useState<GeneralManager[]>(INITIAL_GMS);
   const [selectedGmId, setSelectedGmId] = useState<string>('gm-adam');
   const [authedGmId, setAuthedGmId] = useState<string | null>(null);
-  const [view, setView] = useState<'hub' | 'prospect-central' | 'prospects' | 'arcade' | 'active-squad'>('hub');
+  const [view, setView] = useState<'hub' | 'seasons' | 'prospect-central' | 'prospects' | 'arcade' | 'active-squad'>('hub');
+  const [selectedSeason, setSelectedSeason] = useState<string>('2026-27');
   const [positionFilter, setPositionFilter] = useState<PositionFilter>('ALL');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('ALL');
   const [sortOption, setSortOption] = useState<ProspectSortOption>('urgency');
@@ -1230,6 +1233,8 @@ export default function App() {
         onNavigate={() => {}}
         theme={theme}
         onToggleTheme={toggleTheme}
+        gmLeaderboard={gmLeaderboard}
+        activeGmStats={activeGmStats}
       />
     );
   }
@@ -1267,10 +1272,26 @@ export default function App() {
           activeGm={authedGm}
           onAuthenticate={handleAuthenticate}
           onLogout={handleLogout}
-          onNavigate={(target: 'prospect-central' | 'prospects' | 'arcade') => setView(target)}
+          onNavigate={(target: 'seasons' | 'prospect-central' | 'prospects' | 'arcade') => setView(target)}
           theme={theme}
           onToggleTheme={toggleTheme}
+          gmLeaderboard={gms.map(gm => ({ ...gm, total_fantasy_points: 0, goals: 0, assists: 0, wins: 0 }))}
+          activeGmStats={{ rank: '--', total_fantasy_points: 0 }}
         />
+      )}
+
+      {view === 'seasons' && (
+        <main className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+          <SeasonsLanding 
+            theme={theme}
+            gms={gms}
+            onManageTeam={() => setView('active-squad')}
+          />
+        </main>
+      )}
+
+      {view === 'keepers' && (
+        <NHLKeeperSelector gms={gms} theme={theme} />
       )}
 
       {view === 'arcade' && (

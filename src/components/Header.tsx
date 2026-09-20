@@ -11,14 +11,15 @@ import {
   LogOut,
   ChevronDown,
   Shield,
+  Trophy,
 } from 'lucide-react';
 import logoLight from '../assets/images/winkos-logo-light.png';
 import logoDark from '../assets/images/winkos-logo-dark.png';
 
 interface HeaderProps {
-  onNavigate: (view: 'hub' | 'prospect-central' | 'prospects' | 'arcade' | 'active-squad') => void;
+  onNavigate: (view: 'hub' | 'seasons' | 'keepers' | 'prospect-central' | 'prospects' | 'arcade' | 'active-squad') => void;
   onOpenRules: () => void;
-  activeView: 'hub' | 'prospect-central' | 'prospects' | 'arcade' | 'active-squad' | string;
+  activeView: 'hub' | 'seasons' | 'keepers' | 'prospect-central' | 'prospects' | 'arcade' | 'active-squad' | string;
   theme: 'light' | 'dark';
   onToggleTheme: () => void;
   activeGm?: any;
@@ -86,31 +87,11 @@ export const Header: React.FC<HeaderProps> = ({
           <div className="flex items-center gap-2 sm:gap-3">
             <nav className="flex items-center gap-1 sm:gap-2">
               <NavItem icon={Home} label="Hub" onClick={() => onNavigate('hub')} active={activeView === 'hub'} theme={theme} />
+              <NavItem icon={Trophy} label="Seasons" onClick={() => onNavigate('seasons')} active={activeView === 'seasons'} theme={theme} />
+              <NavItem icon={Shield} label="Keepers" onClick={() => onNavigate('keepers')} active={activeView === 'keepers'} theme={theme} />
               <NavItem icon={LayoutGrid} label="Prospect Central" onClick={() => onNavigate('prospect-central')} active={activeView === 'prospect-central'} theme={theme} />
               <NavItem icon={Users} label="GM Pools" onClick={() => onNavigate('prospects')} active={activeView === 'prospects'} theme={theme} />
               <NavItem icon={Dice5} label="Challenges" onClick={() => onNavigate('arcade')} active={activeView === 'arcade'} theme={theme} />
-              {isAdmin && (
-                <button
-                  id="nav-commish-squad-btn"
-                  onClick={() => onNavigate('active-squad')}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
-                    activeView === 'active-squad'
-                      ? isLight
-                        ? 'bg-emerald-100 text-emerald-800 font-bold border border-emerald-300 shadow-xs'
-                        : 'bg-emerald-950/80 text-emerald-300 font-bold border border-emerald-700/80 shadow-xs'
-                      : isLight
-                      ? 'text-emerald-700 hover:text-emerald-900 hover:bg-emerald-50 border border-dashed border-emerald-300/80'
-                      : 'text-emerald-400 hover:text-emerald-200 hover:bg-emerald-950/40 border border-dashed border-emerald-700/60'
-                  }`}
-                  title="Commissioner Test: Active Squad Manager"
-                >
-                  <Shield className="h-4 w-4 text-emerald-500 shrink-0" />
-                  <span className="hidden sm:inline">Squads</span>
-                  <span className="text-[9px] font-black uppercase px-1 py-0.5 rounded bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 leading-none">
-                    Commish
-                  </span>
-                </button>
-              )}
               <NavItem icon={Info} label="Rules" onClick={onOpenRules} active={false} theme={theme} />
             </nav>
             
