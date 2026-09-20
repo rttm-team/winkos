@@ -717,27 +717,51 @@ export const ActiveSquadManager: React.FC<ActiveSquadManagerProps> = ({
       const syncKeeperMovement = (playerName: string, slot: string, status: string) => {
         try {
           const key = `winko_keepers_${selectedGm}`;
-          const stored = localStorage.getItem(key);
+          let stored = localStorage.getItem(key);
+          let slots: Record<string, any> = {};
           if (stored) {
-            const slots = JSON.parse(stored);
-            let existingSlot: string | null = null;
-            let playerData: any = null;
-            for (const [sKey, p] of Object.entries(slots)) {
-              if (p && (p as any).player_name.toLowerCase() === playerName.toLowerCase()) {
-                existingSlot = sKey;
-                playerData = p;
-                break;
+            try {
+              slots = JSON.parse(stored);
+            } catch (e) {}
+          }
+          if (!slots || Object.keys(slots).length === 0) {
+            slots = { F1: null, F2: null, F3: null, F4: null, D1: null, D2: null, G1: null };
+            // Populate from players where roster_status === 'KEEPER'
+            const keepers = players.filter(p => p.roster_status === 'KEEPER');
+            const fKeys = ['F1', 'F2', 'F3', 'F4'];
+            const dKeys = ['D1', 'D2'];
+            const gKeys = ['G1'];
+            keepers.forEach(k => {
+              const pos = (k.position || 'F').toUpperCase();
+              const targetKeys = pos === 'G' ? gKeys : pos === 'D' ? dKeys : fKeys;
+              const emptyKey = targetKeys.find(kKey => !slots[kKey]);
+              if (emptyKey) {
+                slots[emptyKey] = {
+                  player_name: k.player_name,
+                  nhl_id: String(k.nhl_id || ''),
+                  position: pos,
+                  nhl_team: k.team_abbr || 'NHL Team'
+                };
               }
+            });
+          }
+
+          let existingSlot: string | null = null;
+          let playerData: any = null;
+          for (const [sKey, p] of Object.entries(slots)) {
+            if (p && (p as any).player_name.toLowerCase() === playerName.toLowerCase()) {
+              existingSlot = sKey;
+              playerData = p;
+              break;
             }
-            if (existingSlot && playerData) {
-              if (['F1', 'F2', 'F3', 'F4', 'D1', 'D2', 'G1'].includes(slot)) {
-                slots[existingSlot] = null;
-                slots[slot] = playerData;
-              } else {
-                slots[existingSlot] = playerData;
-              }
-              localStorage.setItem(key, JSON.stringify(slots));
+          }
+          if (playerData) {
+            // If moving to an active slot, update the keeper slot position if needed, otherwise keep the keeper slot assignment intact
+            if (['F1', 'F2', 'F3', 'F4', 'D1', 'D2', 'G1'].includes(slot)) {
+              if (existingSlot) slots[existingSlot] = null;
+              slots[slot] = playerData;
             }
+            localStorage.setItem(key, JSON.stringify(slots));
           }
         } catch (e) {
           console.error('Error syncing keeper movement:', e);

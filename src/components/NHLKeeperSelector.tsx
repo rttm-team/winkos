@@ -167,7 +167,7 @@ export default function NHLKeeperSelector({ gms, theme = 'dark' }: NHLKeeperSele
               position: pos as 'F' | 'D' | 'G',
               nhl_team: row.nhl_team || 'NHL Team',
             };
-            if (row.slot_position && newSlots.hasOwnProperty(row.slot_position)) {
+            if (['F1', 'F2', 'F3', 'F4', 'D1', 'D2', 'G1'].includes(row.slot_position) && !newSlots[row.slot_position]) {
               newSlots[row.slot_position] = playerObj;
             } else {
               if (pos === 'G') goalies.push(playerObj);
