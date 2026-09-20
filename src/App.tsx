@@ -22,7 +22,7 @@ import WinkosChallenges from './components/WinkosChallenges';
 import { ProspectLanding } from './components/ProspectLanding';
 import { SeasonsLanding } from './components/SeasonsLanding';
 import ActiveSquadManager from './components/ActiveSquadManager';
-import NHLKeeperSelector from './components/NHLKeeperSelector';
+import KeeperSelectionPortal from './components/KeeperSelectionPortal';
 import { syncProspectWithNhlApi, setStored25PlusSeasons } from './services/nhlApi';
 import { supabase, fetchLeagueData, mapProspectRow, addDeletedProspectId } from './lib/supabase';
 import {
@@ -1291,7 +1291,7 @@ export default function App() {
       )}
 
       {view === 'keepers' && (
-        <NHLKeeperSelector gms={gms} theme={theme} />
+        <KeeperSelectionPortal gms={gms} theme={theme} />
       )}
 
       {view === 'arcade' && (

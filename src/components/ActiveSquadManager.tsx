@@ -108,6 +108,7 @@ export interface SquadPlayer {
   total_games: number;
   promoted: boolean;
   isProtected?: boolean;
+  is_keeper?: boolean;
   status?: string;
   nhl_id?: number | string | null;
   fantasy_points: number;
@@ -143,32 +144,45 @@ interface ToastMessage {
 }
 
 // ==========================================
-// HELPER FUNCTIONS
+// HELPER FUNCTIONS & DEFENSIVE UTILITIES
 // ==========================================
+
+export function safeLower(val?: any): string {
+  return String(val || '').toLowerCase();
+}
+
+export function safeUpper(val?: any): string {
+  return String(val || '').toUpperCase();
+}
 
 export function normalizePosition(pos?: string): 'F' | 'D' | 'G' {
   if (!pos) return 'F';
-  const clean = pos.trim().toUpperCase();
+  const clean = safeUpper(pos).trim();
   if (clean === 'D' || clean === 'DEF' || clean.includes('DEFENSE')) return 'D';
   if (clean === 'G' || clean === 'GOALIE') return 'G';
   return 'F';
 }
 
-export function isBenchSlot(slot: string): boolean {
-  return slot.startsWith('BF') || slot.startsWith('BD') || slot.startsWith('BG') || slot.toUpperCase() === 'BENCH';
+export function isBenchSlot(slot?: string): boolean {
+  if (!slot) return false;
+  const clean = safeUpper(slot).trim();
+  return clean.startsWith('BF') || clean.startsWith('BD') || clean.startsWith('BG') || clean === 'BENCH';
 }
 
-export function getSlotCategory(slot: string): SlotCategory {
-  if (slot.startsWith('BF') || (slot.startsWith('F') && !slot.startsWith('BD') && !slot.startsWith('BG'))) {
+export function getSlotCategory(slot?: string): SlotCategory {
+  if (!slot) return 'Forwards';
+  const clean = safeUpper(slot).trim();
+  if (clean.startsWith('BF') || (clean.startsWith('F') && !clean.startsWith('BD') && !clean.startsWith('BG'))) {
     return 'Forwards';
   }
-  if (slot.startsWith('BD') || slot.startsWith('D')) {
+  if (clean.startsWith('BD') || clean.startsWith('D')) {
     return 'Defense';
   }
   return 'Goalies';
 }
 
-export function isPositionEligibleForSlot(position: string, slot: string): boolean {
+export function isPositionEligibleForSlot(position?: string, slot?: string): boolean {
+  if (!slot) return false;
   const norm = normalizePosition(position);
   const cat = getSlotCategory(slot);
   if (cat === 'Forwards') return norm === 'F';
@@ -203,22 +217,65 @@ export const ActiveSquadManager: React.FC<ActiveSquadManagerProps> = ({
 
   // Selected GM
   const [selectedGm, setSelectedGm] = useState<string>(() => {
-    const match = PRIMARY_GMS.find(g => g.toLowerCase() === (initialGm || '').toLowerCase());
+    const match = PRIMARY_GMS.find(g => safeLower(g) === safeLower(initialGm));
     return match || 'Adam';
   });
 
   useEffect(() => {
     if (initialGm) {
-      const match = PRIMARY_GMS.find(g => g.toLowerCase() === initialGm.toLowerCase());
+      const match = PRIMARY_GMS.find(g => safeLower(g) === safeLower(initialGm));
       if (match) setSelectedGm(match);
     }
   }, [initialGm]);
 
   // Roster state
+  const [availableSeasons, setAvailableSeasons] = useState<{id: string, label: string, is_current: boolean}[]>([]);
+  const [selectedSeason, setSelectedSeason] = useState<string>('2026-27');
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
   const [players, setPlayers] = useState<SquadPlayer[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [isSyncing, setIsSyncing] = useState<boolean>(false);
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
+
+  // Fetch available seasons from league_seasons
+  useEffect(() => {
+    async function fetchSeasons() {
+      try {
+        const { data, error } = await supabase
+          .from('league_seasons')
+          .select('id, name, is_current')
+          .order('id', { ascending: false });
+
+        if (!error && data && data.length > 0) {
+          const formatted = data.map((s: any) => ({
+            id: s.id,
+            label: s.name || s.id,
+            is_current: !!s.is_current,
+          }));
+          setAvailableSeasons(formatted);
+          const currentSeason = formatted.find(s => s.is_current);
+          if (currentSeason) {
+            setSelectedSeason(currentSeason.id);
+          } else {
+            setSelectedSeason(formatted[0].id);
+          }
+        } else {
+          // Fallback seasons if table empty or error
+          setAvailableSeasons([
+            { id: '2026-27', label: '2026-27 Season', is_current: true },
+            { id: '2025-26', label: '2025-26 Season', is_current: false },
+          ]);
+        }
+      } catch (e) {
+        console.error('Error fetching seasons:', e);
+        setAvailableSeasons([
+          { id: '2026-27', label: '2026-27 Season', is_current: true },
+          { id: '2025-26', label: '2025-26 Season', is_current: false },
+        ]);
+      }
+    }
+    fetchSeasons();
+  }, []);
 
   // Modals
   const [assignModalSlot, setAssignModalSlot] = useState<RosterSlotId | null>(null);
@@ -247,31 +304,32 @@ export const ActiveSquadManager: React.FC<ActiveSquadManagerProps> = ({
   }, []);
 
   // Helper: Detailed Stats Display
-  const PlayerStats: React.FC<{ player: SquadPlayer }> = ({ player }) => {
+  const PlayerStats: React.FC<{ player?: SquadPlayer }> = ({ player }) => {
+    if (!player || !player.player_name) return null;
     const isGoalie = normalizePosition(player.position) === 'G';
     return (
       <div className="flex items-center gap-3 text-[10px] font-mono whitespace-nowrap overflow-x-auto">
-        <span className="font-bold text-amber-500">{player.fantasy_points_2026_27} FP</span>
-        <span className="text-slate-500">{player.total_games_2026_27} GP</span>
+        <span className="font-bold text-amber-500">{player.fantasy_points_2026_27 ?? 0} FP</span>
+        <span className="text-slate-500">{player.total_games_2026_27 ?? 0} GP</span>
         {isGoalie ? (
           <>
-            <span className="text-emerald-500">{player.wins_2026_27} W</span>
-            <span className="text-cyan-500">{player.shutouts_2026_27} SO</span>
+            <span className="text-emerald-500">{player.wins_2026_27 ?? 0} W</span>
+            <span className="text-cyan-500">{player.shutouts_2026_27 ?? 0} SO</span>
             <span className="text-slate-400">{formatSavePercentage(player.save_pct_2026_27)} SV%</span>
-            <span className="text-slate-400">{player.goals_against_2026_27} GA</span>
-            <span className="text-slate-400">{player.saves_2026_27} SV</span>
+            <span className="text-slate-400">{player.goals_against_2026_27 ?? 0} GA</span>
+            <span className="text-slate-400">{player.saves_2026_27 ?? 0} SV</span>
           </>
         ) : (
           <>
-            <span className="text-emerald-500">{player.goals_2026_27} G</span>
-            <span className="text-cyan-500">{player.assists_2026_27} A</span>
-            <span className="text-amber-500">{player.points_2026_27} PTS</span>
-            <span className="text-slate-400">{player.plus_minus_2026_27} +/-</span>
-            <span className="text-slate-400">{player.pim_2026_27} PIM</span>
-            <span className="text-slate-400">{player.shots_2026_27} SOG</span>
-            <span className="text-slate-400">{player.power_play_points_2026_27} PPP</span>
-            <span className="text-slate-400">{player.shorthanded_points_2026_27} SHP</span>
-            <span className="text-slate-400">{player.game_winning_goals_2026_27} GWG</span>
+            <span className="text-emerald-500">{player.goals_2026_27 ?? 0} G</span>
+            <span className="text-cyan-500">{player.assists_2026_27 ?? 0} A</span>
+            <span className="text-amber-500">{player.points_2026_27 ?? 0} PTS</span>
+            <span className="text-slate-400">{player.plus_minus_2026_27 ?? 0} +/-</span>
+            <span className="text-slate-400">{player.pim_2026_27 ?? 0} PIM</span>
+            <span className="text-slate-400">{player.shots_2026_27 ?? 0} SOG</span>
+            <span className="text-slate-400">{player.power_play_points_2026_27 ?? 0} PPP</span>
+            <span className="text-slate-400">{player.shorthanded_points_2026_27 ?? 0} SHP</span>
+            <span className="text-slate-400">{player.game_winning_goals_2026_27 ?? 0} GWG</span>
           </>
         )}
       </div>
@@ -279,8 +337,9 @@ export const ActiveSquadManager: React.FC<ActiveSquadManagerProps> = ({
   };
 
   // Action Menu Component
-  const PlayerActionMenu: React.FC<{ player: SquadPlayer }> = ({ player }) => {
+  const PlayerActionMenu: React.FC<{ player?: SquadPlayer }> = ({ player }) => {
     const [isOpen, setIsOpen] = useState(false);
+    if (!player || !player.player_name) return null;
 
     return (
       <div className="relative">
@@ -327,43 +386,91 @@ export const ActiveSquadManager: React.FC<ActiveSquadManagerProps> = ({
       else setIsSyncing(true);
 
       try {
-        const { data, error } = await supabase
-          .from('prospects')
-          .select('*')
-          .eq('gm_name', gm);
+        const [activeRes, prospectsRes] = await Promise.all([
+          supabase.from('active_roster_players').select('*').ilike('gm_name', gm),
+          supabase.from('prospects').select('*').ilike('gm_name', gm).eq('promoted', true),
+        ]);
 
-        if (error) throw error;
+        console.log('Active Roster Rows:', activeRes.data);
+        console.log('Promoted Prospects:', prospectsRes.data);
 
-        let rawRows = data;
-        // Fallback to INITIAL_GMS if Supabase returns 0 records for this GM
-        if (!rawRows || rawRows.length === 0) {
-          const gmObj = INITIAL_GMS.find(g => g.name.toLowerCase() === gm.toLowerCase());
+        const activeRows = activeRes.data || [];
+        let prospectRows = prospectsRes.data || [];
+
+        // Fallback to INITIAL_GMS if Supabase returns 0 records for both
+        if (activeRows.length === 0 && prospectRows.length === 0) {
+          const gmObj = INITIAL_GMS.find(g => safeLower(g?.name) === safeLower(gm));
           if (gmObj && gmObj.prospects) {
-            rawRows = gmObj.prospects.map(p => ({
-              id: p.id,
-              name: p.name,
-              player_name: p.name,
-              position: p.position,
-              nhl_team: p.nhlTeam,
-              nhl_team_abbr: p.nhlTeamAbbr,
-              promoted: p.promoted,
-              protected: p.isProtected,
-              status: p.status,
-              goals: p.goals,
-              assists: p.assists,
-              points: p.points,
-              total_games: p.totalGames,
+            prospectRows = gmObj.prospects.map(p => ({
+              id: p?.id || `p-${p?.name || 'unknown'}`,
+              name: p?.name || 'Unknown Prospect',
+              player_name: p?.name || 'Unknown Prospect',
+              position: p?.position || 'F',
+              nhl_team: p?.nhlTeam || 'NHL Team',
+              nhl_team_abbr: p?.nhlTeamAbbr || 'NHL',
+              promoted: !!p?.promoted,
+              protected: !!p?.isProtected,
+              status: p?.status || 'active',
+              goals: p?.goals || 0,
+              assists: p?.assists || 0,
+              points: p?.points || 0,
+              total_games: p?.totalGames || 0,
               gm_name: gm,
             }));
           }
         }
 
+        const unifiedMap = new Map<string, any>();
+
+        // Process promoted prospects
+        prospectRows.forEach((row: any) => {
+          if (!row) return;
+          const name = row?.player_name || row?.name || 'Unknown';
+          const key = safeLower(name);
+          unifiedMap.set(key, {
+            id: row.id || `p-${key}`,
+            player_name: name,
+            position: row.position || 'F',
+            nhl_team: row.nhl_team || row.team || 'NHL Team',
+            nhl_team_abbr: row.nhl_team_abbr || row.team_abbr || 'NHL',
+            slot_position: row.slot_position || (row.promoted ? 'BENCH' : 'FARM'),
+            roster_status: row.roster_status || (row.promoted ? 'BENCH' : 'PROSPECT_POOL'),
+            promoted: Boolean(row.promoted),
+            is_keeper: false,
+            source: 'prospects',
+            ...row
+          });
+        });
+
+        // Process active roster & keepers (overlaying or adding)
+        activeRows.forEach((row: any) => {
+          if (!row) return;
+          const name = row?.player_name || row?.name;
+          if (!name) return;
+          const key = safeLower(name);
+          const existing = unifiedMap.get(key) || {};
+          unifiedMap.set(key, {
+            ...existing,
+            ...row,
+            player_name: name,
+            position: row.position || existing.position || 'F',
+            nhl_team: row.nhl_team || existing.nhl_team || 'NHL Team',
+            slot_position: row.slot_position || (row.is_keeper ? 'F1' : existing.slot_position || 'BENCH'),
+            roster_status: row.roster_status || (row.is_keeper ? 'ACTIVE' : existing.roster_status || 'BENCH'),
+            promoted: true,
+            is_keeper: Boolean(row.is_keeper || existing.is_keeper),
+            source: 'active_roster',
+          });
+        });
+
+        const rawRows = Array.from(unifiedMap.values());
+
         const mapped: SquadPlayer[] = (rawRows || []).map((row: any) => {
-          const name = row.player_name || row.name || 'Unknown Prospect';
-          const lowerName = name.toLowerCase();
+          const name = row?.player_name || row?.name || 'Unknown Prospect';
+          const lowerName = safeLower(name);
           const teamInfo = NHL_TEAMS_MAP[lowerName] || {
-            team: row.nhl_team || 'NHL Team',
-            abbr: row.nhl_team_abbr || 'NHL',
+            team: row?.nhl_team || 'NHL Team',
+            abbr: row?.nhl_team_abbr || 'NHL',
           };
 
           const rawStats = {
@@ -467,68 +574,126 @@ export const ActiveSquadManager: React.FC<ActiveSquadManagerProps> = ({
           };
         });
 
-        let keeperRecords: any[] = [];
-        const { data: keeperData } = await supabase
-          .from('active_roster_players')
-          .select('*')
-          .eq('gm_name', gm)
-          .eq('roster_status', 'KEEPER');
+        // Fetch from active_roster_players for the selected season and GM (including keepers and rostered players)
+        let activeRosterRows: any[] = [];
+        try {
+          const { data: arpData, error: arpError } = await supabase
+            .from('active_roster_players')
+            .select('*')
+            .eq('season_id', selectedSeason)
+            .eq('gm_name', gm);
 
-        if (keeperData && keeperData.length > 0) {
-          keeperRecords = keeperData;
-        } else {
-          // Fallback to localStorage
+          if (!arpError && arpData && Array.isArray(arpData) && arpData.length > 0) {
+            activeRosterRows = arpData
+              .filter((r: any) => r && (r.player_name || r.name))
+              .map((r: any) => ({
+                ...r,
+                player_name: r.player_name || r.name || 'Unknown',
+                position: r.position || 'F',
+                roster_status: r.roster_status || (r.is_keeper ? 'ACTIVE' : 'ACTIVE'),
+                slot_position: r.slot_position || (r.is_keeper ? 'F1' : ''),
+                gm_name: r.gm_name || gm,
+                is_keeper: Boolean(r.is_keeper),
+              }));
+          }
+        } catch (e) {
+          console.error('Error fetching active_roster_players:', e);
+        }
+
+        // Season-aware local storage fallback / synchronization
+        const seasonRosterStorageKey = `winko_roster_${selectedSeason}_${gm}`;
+        const seasonKeeperStorageKey = `winko_keepers_${selectedSeason}_${gm}`;
+
+        if (activeRosterRows.length === 0) {
+          // Check local storage for this season's roster or keepers
           try {
-            const localStored = localStorage.getItem(`winko_keepers_${gm}`);
-            if (localStored) {
-              const parsedSlots = JSON.parse(localStored);
-              Object.entries(parsedSlots).forEach(([slotKey, player]: [string, any]) => {
-                if (player) {
-                  keeperRecords.push({
-                    player_name: player.player_name,
-                    nhl_id: player.nhl_id,
-                    position: player.position,
-                    nhl_team: player.nhl_team,
-                    slot_position: slotKey,
-                    gm_name: gm,
-                    roster_status: 'ACTIVE'
-                  });
-                }
-              });
+            const storedRoster = localStorage.getItem(seasonRosterStorageKey);
+            if (storedRoster) {
+              const parsed = JSON.parse(storedRoster);
+              if (Array.isArray(parsed) && parsed.length > 0) {
+                activeRosterRows = parsed
+                  .filter((item: any) => item && (item.player_name || item.name))
+                  .map((row: any) => ({
+                    ...row,
+                    player_name: row.player_name || row.name || 'Unknown',
+                    position: row.position || 'F',
+                    roster_status: row.roster_status || 'ACTIVE',
+                    slot_position: row.slot_position || '',
+                    gm_name: row.gm_name || gm,
+                  }));
+              }
             }
           } catch (e) {
-            console.error('Error reading local keepers:', e);
+            console.error('Error reading season roster cache:', e);
+          }
+
+          // If still empty, check keepers saved for this season
+          if (activeRosterRows.length === 0) {
+            try {
+              const storedKeepers = localStorage.getItem(seasonKeeperStorageKey) || localStorage.getItem(`winko_keepers_${gm}`);
+              if (storedKeepers) {
+                const parsedSlots = JSON.parse(storedKeepers);
+                if (parsedSlots && typeof parsedSlots === 'object') {
+                  Object.entries(parsedSlots).forEach(([slotKey, kPlayer]: [string, any]) => {
+                    if (kPlayer && (kPlayer.player_name || kPlayer.name)) {
+                      activeRosterRows.push({
+                        player_name: kPlayer.player_name || kPlayer.name || 'Unknown',
+                        nhl_id: kPlayer.nhl_id || '',
+                        position: kPlayer.position || 'F',
+                        nhl_team: kPlayer.nhl_team || kPlayer.team || 'NHL Team',
+                        slot_position: slotKey || '',
+                        gm_name: gm,
+                        roster_status: 'ACTIVE',
+                        is_keeper: true,
+                      });
+                    }
+                  });
+                }
+              }
+            } catch (e) {
+              console.error('Error reading season keepers cache:', e);
+            }
           }
         }
 
-        if (keeperRecords.length > 0) {
-          keeperRecords.forEach((kRow: any) => {
-            const kName = kRow.player_name;
-            const existingIndex = mapped.findIndex(m => m.player_name.toLowerCase() === kName.toLowerCase());
-            const isBenchSlot = kRow.slot_position && ALL_BENCH_SLOTS.includes(kRow.slot_position);
-            const statusForGrid = isBenchSlot ? 'BENCH' : 'ACTIVE';
+        // Apply active_roster_players and keepers to mapped list
+        if (activeRosterRows.length > 0) {
+          activeRosterRows.forEach((rRow: any) => {
+            if (!rRow) return;
+            const rName = rRow.player_name || rRow.name;
+            if (!rName) return;
+
+            const existingIndex = mapped.findIndex(
+              m => safeLower(m?.player_name) === safeLower(rName)
+            );
+            const slotPos = rRow.slot_position || '';
+            const isBenchSlot = slotPos && ALL_BENCH_SLOTS.includes(slotPos as any);
+            const targetStatus = rRow.roster_status === 'BENCH' || isBenchSlot ? 'BENCH' : 'ACTIVE';
+            const targetSlot = slotPos || (targetStatus === 'BENCH' ? 'BENCH' : 'F1');
 
             if (existingIndex >= 0) {
-              mapped[existingIndex].roster_status = statusForGrid;
-              mapped[existingIndex].slot_position = kRow.slot_position || 'F1';
+              mapped[existingIndex].roster_status = targetStatus;
+              mapped[existingIndex].slot_position = targetSlot;
               mapped[existingIndex].promoted = true;
               mapped[existingIndex].isProtected = true;
-              if (kRow.nhl_id) mapped[existingIndex].nhl_id = kRow.nhl_id;
-              if (kRow.nhl_team) mapped[existingIndex].team = kRow.nhl_team;
+              mapped[existingIndex].is_keeper = Boolean(rRow.is_keeper);
+              if (rRow.nhl_id) mapped[existingIndex].nhl_id = rRow.nhl_id;
+              if (rRow.nhl_team) mapped[existingIndex].team = rRow.nhl_team;
             } else {
               mapped.push({
-                id: kRow.id || `keeper-${kName}`,
-                player_name: kName,
-                position: kRow.position || 'F',
-                team: kRow.nhl_team || 'NHL Team',
+                id: rRow.id || `roster-${rName}`,
+                player_name: rName,
+                position: rRow.position || 'F',
+                team: rRow.nhl_team || 'NHL Team',
                 team_abbr: 'NHL',
-                roster_status: statusForGrid,
-                slot_position: kRow.slot_position || 'F1',
+                roster_status: targetStatus,
+                slot_position: targetSlot,
                 goals: 0, assists: 0, points: 0, wins: 0, shutouts: 0, saves: 0, goals_against: 0, save_pct: 0, total_games: 0,
                 promoted: true,
                 isProtected: true,
+                is_keeper: Boolean(rRow.is_keeper),
                 status: 'active',
-                nhl_id: kRow.nhl_id,
+                nhl_id: rRow.nhl_id || null,
                 fantasy_points: 0,
                 plus_minus: 0, pim: 0, shots: 0, power_play_points: 0, shorthanded_points: 0, game_winning_goals: 0,
                 gm_name: gm,
@@ -538,23 +703,42 @@ export const ActiveSquadManager: React.FC<ActiveSquadManagerProps> = ({
           });
         }
 
+        // Cache loaded roster state in season-aware local storage key
+        try {
+          const eligibleForCache = mapped
+            .filter(p => p && p.player_name && (p.roster_status === 'ACTIVE' || p.roster_status === 'BENCH'))
+            .map(p => ({
+              player_name: p.player_name,
+              position: p.position || 'F',
+              nhl_id: p.nhl_id,
+              nhl_team: p.team,
+              slot_position: p.slot_position,
+              gm_name: gm,
+              roster_status: p.roster_status,
+              is_keeper: Boolean(p.is_keeper),
+            }));
+          localStorage.setItem(seasonRosterStorageKey, JSON.stringify(eligibleForCache));
+        } catch (e) {}
+
         // Filter out any players that have completely moved on / trashed
-        const activePlayersList = mapped.filter(p => p.status !== 'trashed');
+        const activePlayersList = mapped.filter(p => p && p.player_name && p.status !== 'trashed');
         setPlayers(activePlayersList);
       } catch (err: any) {
         console.error('Error fetching GM roster:', err);
-        addToast(`Failed to load ${gm}'s roster: ${err.message || 'Network error'}`, 'error');
+        addToast(`Failed to load ${gm}'s roster: ${err?.message || 'Network error'}`, 'error');
+        // Render empty slot grid rather than crashing the component render loop
+        setPlayers([]);
       } finally {
         setLoading(false);
         setIsSyncing(false);
       }
     },
-    [addToast]
+    [addToast, selectedSeason]
   );
 
   useEffect(() => {
     loadGmRoster(selectedGm);
-  }, [selectedGm, loadGmRoster]);
+  }, [selectedGm, selectedSeason, loadGmRoster]);
 
   // ==========================================
   // ROSTER MAPPINGS & COUNTERS
@@ -563,20 +747,20 @@ export const ActiveSquadManager: React.FC<ActiveSquadManagerProps> = ({
   // Filter 1: Main Roster Eligible Players (Promoted & Protected drafted players)
   // Per instructions: "Prospects should only be available on their active squad if they are Promoted and Protected."
   const rosterEligiblePlayers = useMemo(() => {
-    return players.filter(p => p.promoted && p.isProtected && p.status !== 'trashed');
+    return players.filter(p => p && p.player_name && p.promoted && p.isProtected && p.status !== 'trashed');
   }, [players]);
 
   // Filter 3: Farm / Prospect Pool (Non-promoted or Non-protected prospects)
   // Per instructions: "Non-promoted or non-protected prospects stay in the PROSPECT_POOL / FARM section."
   const farmPlayers = useMemo(() => {
-    return players.filter(p => (!p.promoted || !p.isProtected) && p.status !== 'trashed');
+    return players.filter(p => p && p.player_name && (!p.promoted || !p.isProtected) && p.status !== 'trashed');
   }, [players]);
 
   // Map of active players by slot position (F1-F9, D1-D4, G1-G2)
   const activeSlotMap = useMemo(() => {
     const map = new Map<ActiveSlotId, SquadPlayer>();
     rosterEligiblePlayers.forEach(p => {
-      if (p.roster_status === 'ACTIVE' && ALL_ACTIVE_SLOTS.includes(p.slot_position as ActiveSlotId)) {
+      if (p && p.player_name && p.roster_status === 'ACTIVE' && ALL_ACTIVE_SLOTS.includes(p.slot_position as ActiveSlotId)) {
         map.set(p.slot_position as ActiveSlotId, p);
       }
     });
@@ -589,7 +773,7 @@ export const ActiveSquadManager: React.FC<ActiveSquadManagerProps> = ({
     const unmappedBench: SquadPlayer[] = [];
 
     rosterEligiblePlayers.forEach(p => {
-      if (p.roster_status === 'BENCH') {
+      if (p && p.player_name && p.roster_status === 'BENCH') {
         if (ALL_BENCH_SLOTS.includes(p.slot_position as BenchSlotId)) {
           map.set(p.slot_position as BenchSlotId, p);
         } else {
@@ -600,6 +784,7 @@ export const ActiveSquadManager: React.FC<ActiveSquadManagerProps> = ({
 
     // Auto-map unslotted bench players to open bench slots of matching position
     unmappedBench.forEach(p => {
+      if (!p || !p.player_name) return;
       const norm = normalizePosition(p.position);
       const slots = norm === 'F' ? BENCH_FORWARD_SLOTS : norm === 'D' ? BENCH_DEFENSE_SLOTS : BENCH_GOALIE_SLOTS;
       const openSlot = slots.find(s => !map.has(s));
@@ -629,9 +814,9 @@ export const ActiveSquadManager: React.FC<ActiveSquadManagerProps> = ({
   // Filter 2: Unassigned Bench Reserves (Promoted & Protected players not currently in Active or Bench slots)
   const unassignedBenchPlayers = useMemo(() => {
     const assignedIds = new Set<string | number>();
-    activeSlotMap.forEach(p => assignedIds.add(p.id));
-    benchSlotMap.forEach(p => assignedIds.add(p.id));
-    return rosterEligiblePlayers.filter(p => !assignedIds.has(p.id));
+    activeSlotMap.forEach(p => { if (p?.id != null) assignedIds.add(p.id); });
+    benchSlotMap.forEach(p => { if (p?.id != null) assignedIds.add(p.id); });
+    return rosterEligiblePlayers.filter(p => p && p.player_name && !assignedIds.has(p.id));
   }, [rosterEligiblePlayers, activeSlotMap, benchSlotMap]);
 
   // Rule 5 Fantasy Points Summary (Earned ONLY by the 15 Active Slots)
@@ -676,24 +861,23 @@ export const ActiveSquadManager: React.FC<ActiveSquadManagerProps> = ({
       p => p.slot_position === targetSlot && (isTargetBench ? p.roster_status === 'BENCH' : p.roster_status === 'ACTIVE')
     );
 
-    // Optimistic state update
-    setPlayers(current =>
-      current.map(p => {
-        if (p.id === player.id) {
-          return { ...p, roster_status: targetStatus, slot_position: targetSlot };
-        }
-        if (occupant && p.id === occupant.id) {
-          // If sourceSlot was a valid slot, swap occupant into sourceSlot; otherwise bench them
-          const isSourceActive = ALL_ACTIVE_SLOTS.includes(sourceSlot as any);
-          const isSourceBench = ALL_BENCH_SLOTS.includes(sourceSlot as any);
-          const returnStatus = isSourceActive ? 'ACTIVE' : 'BENCH';
-          const returnSlot = isSourceActive || isSourceBench ? sourceSlot : 'BENCH';
-          return { ...p, roster_status: returnStatus, slot_position: returnSlot };
-        }
-        return p;
-      })
-    );
+    const isSourceActive = ALL_ACTIVE_SLOTS.includes(sourceSlot as any);
+    const isSourceBench = ALL_BENCH_SLOTS.includes(sourceSlot as any);
+    const returnStatus = isSourceActive ? 'ACTIVE' : 'BENCH';
+    const returnSlot = isSourceActive || isSourceBench ? sourceSlot : 'BENCH';
 
+    // Optimistic state update
+    const nextPlayers = players.map(p => {
+      if (p.id === player.id) {
+        return { ...p, roster_status: targetStatus, slot_position: targetSlot };
+      }
+      if (occupant && p.id === occupant.id) {
+        return { ...p, roster_status: returnStatus, slot_position: returnSlot };
+      }
+      return p;
+    });
+
+    setPlayers(nextPlayers);
     setSwapModalPlayer(null);
     setAssignModalSlot(null);
 
@@ -702,137 +886,88 @@ export const ActiveSquadManager: React.FC<ActiveSquadManagerProps> = ({
       : `Moved ${player.player_name} into slot ${targetSlot}!`;
     addToast(swapMessage, 'success');
 
+    // Save indicator
+    setSaveStatus('saving');
+
     try {
-      const checkIsKeeper = (playerName: string) => {
-        try {
-          const stored = localStorage.getItem(`winko_keepers_${selectedGm}`);
-          if (stored) {
-            const slots = JSON.parse(stored);
-            return Object.values(slots).some((p: any) => p && p.player_name.toLowerCase() === playerName.toLowerCase());
-          }
-        } catch (e) {}
-        return false;
-      };
+      // 1. Sync to season-aware local storage
+      const seasonRosterStorageKey = `winko_roster_${selectedSeason}_${selectedGm}`;
+      try {
+        const eligibleForCache = nextPlayers
+          .filter(p => p.roster_status === 'ACTIVE' || p.roster_status === 'BENCH')
+          .map(p => ({
+            player_name: p.player_name,
+            position: p.position,
+            nhl_id: p.nhl_id,
+            nhl_team: p.team,
+            slot_position: p.slot_position,
+            gm_name: selectedGm,
+            roster_status: p.roster_status,
+            is_keeper: p.is_keeper,
+          }));
+        localStorage.setItem(seasonRosterStorageKey, JSON.stringify(eligibleForCache));
+      } catch (e) {}
 
-      const syncKeeperMovement = (playerName: string, slot: string, status: string) => {
-        try {
-          const key = `winko_keepers_${selectedGm}`;
-          let stored = localStorage.getItem(key);
-          let slots: Record<string, any> = {};
-          if (stored) {
-            try {
-              slots = JSON.parse(stored);
-            } catch (e) {}
-          }
-          if (!slots || Object.keys(slots).length === 0) {
-            slots = { F1: null, F2: null, F3: null, F4: null, D1: null, D2: null, G1: null };
-            // Populate from players where roster_status === 'KEEPER'
-            const keepers = players.filter(p => p.roster_status === 'KEEPER');
-            const fKeys = ['F1', 'F2', 'F3', 'F4'];
-            const dKeys = ['D1', 'D2'];
-            const gKeys = ['G1'];
-            keepers.forEach(k => {
-              const pos = (k.position || 'F').toUpperCase();
-              const targetKeys = pos === 'G' ? gKeys : pos === 'D' ? dKeys : fKeys;
-              const emptyKey = targetKeys.find(kKey => !slots[kKey]);
-              if (emptyKey) {
-                slots[emptyKey] = {
-                  player_name: k.player_name,
-                  nhl_id: String(k.nhl_id || ''),
-                  position: pos,
-                  nhl_team: k.team_abbr || 'NHL Team'
-                };
-              }
-            });
-          }
-
-          let existingSlot: string | null = null;
-          let playerData: any = null;
-          for (const [sKey, p] of Object.entries(slots)) {
-            if (p && (p as any).player_name.toLowerCase() === playerName.toLowerCase()) {
-              existingSlot = sKey;
-              playerData = p;
-              break;
-            }
-          }
-          if (playerData) {
-            // If moving to an active slot, update the keeper slot position if needed, otherwise keep the keeper slot assignment intact
-            if (['F1', 'F2', 'F3', 'F4', 'D1', 'D2', 'G1'].includes(slot)) {
-              if (existingSlot) slots[existingSlot] = null;
-              slots[slot] = playerData;
-            }
-            localStorage.setItem(key, JSON.stringify(slots));
-          }
-        } catch (e) {
-          console.error('Error syncing keeper movement:', e);
-        }
-      };
-
-      syncKeeperMovement(player.player_name, targetSlot, targetStatus);
-      const isSourceActive = ALL_ACTIVE_SLOTS.includes(sourceSlot as any);
-      const isSourceBench = ALL_BENCH_SLOTS.includes(sourceSlot as any);
-      const returnStatus = isSourceActive ? 'ACTIVE' : 'BENCH';
-      const returnSlot = isSourceActive || isSourceBench ? sourceSlot : 'BENCH';
-
-      if (occupant) {
-        syncKeeperMovement(occupant.player_name, returnSlot, returnStatus);
-      }
-
-      const playerIsKeeper = checkIsKeeper(player.player_name);
-      const occupantIsKeeper = occupant ? checkIsKeeper(occupant.player_name) : false;
-
-      const playerRosterStatus = playerIsKeeper ? 'KEEPER' : targetStatus;
-      const occupantRosterStatus = occupantIsKeeper ? 'KEEPER' : returnStatus;
-
-      const updatePlayerProspect = supabase
-        .from('prospects')
-        .update({ roster_status: playerIsKeeper ? 'KEEPER' : targetStatus, slot_position: targetSlot })
-        .eq('id', player.id);
-
+      // 2. Direct upsert into active_roster_players with season_id
       const updatePlayerActiveRoster = supabase
         .from('active_roster_players')
         .upsert({
+          season_id: selectedSeason,
           gm_name: selectedGm,
           player_name: player.player_name,
           position: player.position || 'F',
           nhl_id: String(player.nhl_id || ''),
           nhl_team: player.team || player.team_abbr || 'NHL Team',
-          roster_status: playerRosterStatus,
-          slot_position: targetSlot
-        }, { onConflict: 'gm_name,player_name' });
-
-      const updateOccupantProspect = occupant
-        ? supabase
-            .from('prospects')
-            .update({ roster_status: occupantIsKeeper ? 'KEEPER' : returnStatus, slot_position: returnSlot })
-            .eq('id', occupant.id)
-        : Promise.resolve({ error: null });
+          roster_status: targetStatus,
+          slot_position: targetSlot,
+          is_keeper: Boolean(player.is_keeper),
+          updated_at: new Date().toISOString(),
+        }, { onConflict: 'season_id,gm_name,player_name' });
 
       const updateOccupantActiveRoster = occupant
         ? supabase
             .from('active_roster_players')
             .upsert({
+              season_id: selectedSeason,
               gm_name: selectedGm,
               player_name: occupant.player_name,
               position: occupant.position || 'F',
               nhl_id: String(occupant.nhl_id || ''),
               nhl_team: occupant.team || occupant.team_abbr || 'NHL Team',
-              roster_status: occupantRosterStatus,
-              slot_position: returnSlot
-            }, { onConflict: 'gm_name,player_name' })
+              roster_status: returnStatus,
+              slot_position: returnSlot,
+              is_keeper: Boolean(occupant.is_keeper),
+              updated_at: new Date().toISOString(),
+            }, { onConflict: 'season_id,gm_name,player_name' })
         : Promise.resolve({ error: null });
 
-      const [resA, resB, resC, resD] = await Promise.all([
-        updatePlayerProspect,
+      // Backwards-compatible prospects table update
+      const updatePlayerProspect = supabase
+        .from('prospects')
+        .update({ roster_status: targetStatus, slot_position: targetSlot })
+        .eq('id', player.id);
+
+      const updateOccupantProspect = occupant
+        ? supabase
+            .from('prospects')
+            .update({ roster_status: returnStatus, slot_position: returnSlot })
+            .eq('id', occupant.id)
+        : Promise.resolve({ error: null });
+
+      await Promise.allSettled([
         updatePlayerActiveRoster,
-        updateOccupantProspect,
         updateOccupantActiveRoster,
+        updatePlayerProspect,
+        updateOccupantProspect,
       ]);
-      if (resA.error && resB.error) {
-        // If neither exists in DB (e.g. pure local keeper), don't throw
-      }
+
+      setSaveStatus('saved');
+      setTimeout(() => {
+        setSaveStatus(prev => prev === 'saved' ? 'idle' : prev);
+      }, 3500);
     } catch (err: any) {
       console.error('Roster movement error:', err);
+      setSaveStatus('idle');
       setPlayers(prevPlayers);
       addToast(`Movement failed: ${err.message}`, 'error');
     }
@@ -887,40 +1022,54 @@ export const ActiveSquadManager: React.FC<ActiveSquadManagerProps> = ({
 
     addToast(`${player.player_name} removed from ${oldSlot} to bench reserves.`, 'info');
 
+    setSaveStatus('saving');
     try {
-      const checkIsKeeper = (playerName: string) => {
-        try {
-          const stored = localStorage.getItem(`winko_keepers_${selectedGm}`);
-          if (stored) {
-            const slots = JSON.parse(stored);
-            return Object.values(slots).some((p: any) => p && p.player_name.toLowerCase() === playerName.toLowerCase());
-          }
-        } catch (e) {}
-        return false;
-      };
+      const seasonRosterStorageKey = `winko_roster_${selectedSeason}_${selectedGm}`;
+      try {
+        const eligibleForCache = players
+          .map(p => p.id === player.id ? { ...p, roster_status: 'BENCH' as const, slot_position: 'BENCH' } : p)
+          .filter(p => p.roster_status === 'ACTIVE' || p.roster_status === 'BENCH')
+          .map(p => ({
+            player_name: p.player_name,
+            position: p.position,
+            nhl_id: p.nhl_id,
+            nhl_team: p.team,
+            slot_position: p.slot_position,
+            gm_name: selectedGm,
+            roster_status: p.roster_status,
+            is_keeper: p.is_keeper,
+          }));
+        localStorage.setItem(seasonRosterStorageKey, JSON.stringify(eligibleForCache));
+      } catch (e) {}
 
-      const playerIsKeeper = checkIsKeeper(player.player_name);
-      const rosterStatusVal = playerIsKeeper ? 'KEEPER' : 'BENCH';
-
-      await Promise.all([
-        supabase
-          .from('prospects')
-          .update({ roster_status: rosterStatusVal, slot_position: 'BENCH' })
-          .eq('id', player.id),
+      await Promise.allSettled([
         supabase
           .from('active_roster_players')
           .upsert({
+            season_id: selectedSeason,
             gm_name: selectedGm,
             player_name: player.player_name,
             position: player.position || 'F',
             nhl_id: String(player.nhl_id || ''),
             nhl_team: player.team || player.team_abbr || 'NHL Team',
-            roster_status: rosterStatusVal,
-            slot_position: 'BENCH'
-          }, { onConflict: 'gm_name,player_name' })
+            roster_status: 'BENCH',
+            slot_position: 'BENCH',
+            is_keeper: Boolean(player.is_keeper),
+            updated_at: new Date().toISOString(),
+          }, { onConflict: 'season_id,gm_name,player_name' }),
+        supabase
+          .from('prospects')
+          .update({ roster_status: 'BENCH', slot_position: 'BENCH' })
+          .eq('id', player.id)
       ]);
+
+      setSaveStatus('saved');
+      setTimeout(() => {
+        setSaveStatus(prev => prev === 'saved' ? 'idle' : prev);
+      }, 3500);
     } catch (err: any) {
       console.error('Unassign error:', err);
+      setSaveStatus('idle');
       setPlayers(prevPlayers);
       addToast(`Error unassigning slot: ${err.message}`, 'error');
     }
@@ -1075,15 +1224,61 @@ export const ActiveSquadManager: React.FC<ActiveSquadManagerProps> = ({
 
     addToast(`Auto-optimized ${assignments.length} slots across 15 Active and 7 Bench!`, 'success');
 
+    setSaveStatus('saving');
     try {
-      for (const a of assignments) {
-        await supabase
-          .from('prospects')
-          .update({ roster_status: a.status, slot_position: a.slot })
-          .eq('id', a.id);
-      }
+      const seasonRosterStorageKey = `winko_roster_${selectedSeason}_${selectedGm}`;
+      try {
+        const eligibleForCache = players
+          .map(p => {
+            const a = assignments.find(item => item.id === p.id);
+            return a ? { ...p, roster_status: a.status, slot_position: a.slot } : p;
+          })
+          .filter(p => p.roster_status === 'ACTIVE' || p.roster_status === 'BENCH')
+          .map(p => ({
+            player_name: p.player_name,
+            position: p.position,
+            nhl_id: p.nhl_id,
+            nhl_team: p.team,
+            slot_position: p.slot_position,
+            gm_name: selectedGm,
+            roster_status: p.roster_status,
+            is_keeper: p.is_keeper,
+          }));
+        localStorage.setItem(seasonRosterStorageKey, JSON.stringify(eligibleForCache));
+      } catch (e) {}
+
+      const ops = assignments.map(a => {
+        const pl = candidates.find(c => c.id === a.id);
+        return Promise.allSettled([
+          supabase
+            .from('active_roster_players')
+            .upsert({
+              season_id: selectedSeason,
+              gm_name: selectedGm,
+              player_name: a.name,
+              position: pl?.position || 'F',
+              nhl_id: String(pl?.nhl_id || ''),
+              nhl_team: pl?.team || pl?.team_abbr || 'NHL Team',
+              roster_status: a.status,
+              slot_position: a.slot,
+              is_keeper: Boolean(pl?.is_keeper),
+              updated_at: new Date().toISOString(),
+            }, { onConflict: 'season_id,gm_name,player_name' }),
+          supabase
+            .from('prospects')
+            .update({ roster_status: a.status, slot_position: a.slot })
+            .eq('id', a.id)
+        ]);
+      });
+      await Promise.all(ops);
+
+      setSaveStatus('saved');
+      setTimeout(() => {
+        setSaveStatus(prev => prev === 'saved' ? 'idle' : prev);
+      }, 3500);
     } catch (err: any) {
       console.error('Optimize error:', err);
+      setSaveStatus('idle');
       setPlayers(prevPlayers);
       addToast(`Optimization error: ${err.message}`, 'error');
     }
@@ -1105,16 +1300,58 @@ export const ActiveSquadManager: React.FC<ActiveSquadManagerProps> = ({
     );
     addToast('All active players have been moved to the bench.', 'info');
 
+    setSaveStatus('saving');
     try {
-      const activeIds = players.filter(p => p.roster_status === 'ACTIVE').map(p => p.id);
-      for (const id of activeIds) {
-        await supabase
-          .from('prospects')
-          .update({ roster_status: 'BENCH', slot_position: 'BENCH' })
-          .eq('id', id);
-      }
+      const activePlayers = players.filter(p => p.roster_status === 'ACTIVE');
+      const seasonRosterStorageKey = `winko_roster_${selectedSeason}_${selectedGm}`;
+      try {
+        const eligibleForCache = players
+          .map(p => p.roster_status === 'ACTIVE' ? { ...p, roster_status: 'BENCH' as const, slot_position: 'BENCH' } : p)
+          .filter(p => p.roster_status === 'ACTIVE' || p.roster_status === 'BENCH')
+          .map(p => ({
+            player_name: p.player_name,
+            position: p.position,
+            nhl_id: p.nhl_id,
+            nhl_team: p.team,
+            slot_position: p.slot_position,
+            gm_name: selectedGm,
+            roster_status: p.roster_status,
+            is_keeper: p.is_keeper,
+          }));
+        localStorage.setItem(seasonRosterStorageKey, JSON.stringify(eligibleForCache));
+      } catch (e) {}
+
+      const ops = activePlayers.map(p => {
+        return Promise.allSettled([
+          supabase
+            .from('active_roster_players')
+            .upsert({
+              season_id: selectedSeason,
+              gm_name: selectedGm,
+              player_name: p.player_name,
+              position: p.position || 'F',
+              nhl_id: String(p.nhl_id || ''),
+              nhl_team: p.team || p.team_abbr || 'NHL Team',
+              roster_status: 'BENCH',
+              slot_position: 'BENCH',
+              is_keeper: Boolean(p.is_keeper),
+              updated_at: new Date().toISOString(),
+            }, { onConflict: 'season_id,gm_name,player_name' }),
+          supabase
+            .from('prospects')
+            .update({ roster_status: 'BENCH', slot_position: 'BENCH' })
+            .eq('id', p.id)
+        ]);
+      });
+      await Promise.all(ops);
+
+      setSaveStatus('saved');
+      setTimeout(() => {
+        setSaveStatus(prev => prev === 'saved' ? 'idle' : prev);
+      }, 3500);
     } catch (err: any) {
       console.error('Bench all error:', err);
+      setSaveStatus('idle');
       setPlayers(prevPlayers);
       addToast(`Failed to clear lineup: ${err.message}`, 'error');
     }
@@ -1163,7 +1400,7 @@ export const ActiveSquadManager: React.FC<ActiveSquadManagerProps> = ({
     const isSlotEligible = draggedPlayer ? isPositionEligibleForSlot(draggedPlayer.position, slot) : false;
     const isBeingDragged = !!(draggedPlayer && player && draggedPlayer.id === player.id);
 
-    if (!player) {
+    if (!player || !player.player_name) {
       // EMPTY ACTIVE SLOT ROW
       return (
         <div
@@ -1270,7 +1507,7 @@ export const ActiveSquadManager: React.FC<ActiveSquadManagerProps> = ({
           {player.nhl_id ? (
             <img
               src={proxyImageUrl(`https://assets.nhle.com/mugs/nhl/latest/${player.nhl_id}.png`)}
-              alt={player.player_name}
+              alt={player.player_name || 'Player'}
               referrerPolicy="no-referrer"
               className="h-10 w-10 rounded-xl object-cover border border-slate-700 bg-slate-800 shrink-0"
               onError={e => {
@@ -1285,7 +1522,7 @@ export const ActiveSquadManager: React.FC<ActiveSquadManagerProps> = ({
                   : 'bg-slate-800 text-slate-300 border-slate-700'
               }`}
             >
-              {player.player_name.slice(0, 2).toUpperCase()}
+              {(player.player_name || '??').slice(0, 2).toUpperCase()}
             </div>
           )}
 
@@ -1309,8 +1546,23 @@ export const ActiveSquadManager: React.FC<ActiveSquadManagerProps> = ({
                     : 'bg-purple-500/10 text-purple-400 border-purple-500/20'
                 }`}
               >
-                {player.position}
+                {player.position || 'F'}
               </span>
+
+              {/* Keeper Badge */}
+              {player.is_keeper && (
+                <span
+                  className={`inline-flex items-center gap-1 text-[10px] font-black px-1.5 py-0.2 rounded border ${
+                    isLight
+                      ? 'bg-amber-100 text-amber-900 border-amber-300 shadow-xs'
+                      : 'bg-amber-900/40 text-amber-300 border-amber-600/40'
+                  }`}
+                  title="Locked Season Keeper"
+                >
+                  <Lock className="h-2.5 w-2.5 text-amber-500" />
+                  <span>KEEPER</span>
+                </span>
+              )}
 
               {/* Fantasy Points Badge */}
               <span
@@ -1321,18 +1573,18 @@ export const ActiveSquadManager: React.FC<ActiveSquadManagerProps> = ({
                 }`}
               >
                 <Flame className="h-2.5 w-2.5 text-amber-500" />
-                <span>{player.fantasy_points} FP</span>
+                <span>{player.fantasy_points ?? 0} FP</span>
               </span>
             </div>
 
             <div className="flex items-center gap-1.5 text-xs text-slate-400 mt-0.5">
               <span className="font-semibold text-slate-500 dark:text-slate-400">
-                {player.team_abbr}
+                {player.team_abbr || 'NHL'}
               </span>
               <span>•</span>
-              <span className="truncate max-w-[140px] sm:max-w-none">{player.team}</span>
+              <span className="truncate max-w-[140px] sm:max-w-none">{player.team || 'NHL Team'}</span>
               <span>•</span>
-              <span className="font-mono text-slate-500">{player.total_games} GP</span>
+              <span className="font-mono text-slate-500">{player.total_games ?? 0} GP</span>
             </div>
           </div>
         </div>
@@ -1360,7 +1612,7 @@ export const ActiveSquadManager: React.FC<ActiveSquadManagerProps> = ({
     const isSlotEligible = draggedPlayer ? isPositionEligibleForSlot(draggedPlayer.position, slot) : false;
     const isBeingDragged = !!(draggedPlayer && player && draggedPlayer.id === player.id);
 
-    if (!player) {
+    if (!player || !player.player_name) {
       // EMPTY BENCH SLOT ROW
       return (
         <div
@@ -1467,7 +1719,7 @@ export const ActiveSquadManager: React.FC<ActiveSquadManagerProps> = ({
           {player.nhl_id ? (
             <img
               src={proxyImageUrl(`https://assets.nhle.com/mugs/nhl/latest/${player.nhl_id}.png`)}
-              alt={player.player_name}
+              alt={player.player_name || 'Player'}
               referrerPolicy="no-referrer"
               className="h-10 w-10 rounded-xl object-cover border border-slate-700 bg-slate-800 shrink-0"
               onError={e => {
@@ -1482,7 +1734,7 @@ export const ActiveSquadManager: React.FC<ActiveSquadManagerProps> = ({
                   : 'bg-slate-800 text-slate-300 border-slate-700'
               }`}
             >
-              {player.player_name.slice(0, 2).toUpperCase()}
+              {(player.player_name || '??').slice(0, 2).toUpperCase()}
             </div>
           )}
 
@@ -1506,8 +1758,22 @@ export const ActiveSquadManager: React.FC<ActiveSquadManagerProps> = ({
                     : 'bg-purple-500/10 text-purple-400 border-purple-500/20'
                 }`}
               >
-                {player.position}
+                {player.position || 'F'}
               </span>
+              {/* Keeper Badge */}
+              {player.is_keeper && (
+                <span
+                  className={`inline-flex items-center gap-1 text-[10px] font-black px-1.5 py-0.2 rounded border ${
+                    isLight
+                      ? 'bg-amber-100 text-amber-900 border-amber-300 shadow-xs'
+                      : 'bg-amber-900/40 text-amber-300 border-amber-600/40'
+                  }`}
+                  title="Locked Season Keeper"
+                >
+                  <Lock className="h-2.5 w-2.5 text-amber-500" />
+                  <span>KEEPER</span>
+                </span>
+              )}
               <span
                 className={`text-[10px] font-mono px-1.5 py-0.2 rounded border hidden sm:inline ${
                   isLight
@@ -1521,12 +1787,12 @@ export const ActiveSquadManager: React.FC<ActiveSquadManagerProps> = ({
 
             <div className="flex items-center gap-1.5 text-xs text-slate-400 mt-0.5">
               <span className="font-semibold text-slate-500 dark:text-slate-400">
-                {player.team_abbr}
+                {player.team_abbr || 'NHL'}
               </span>
               <span>•</span>
-              <span className="truncate max-w-[140px] sm:max-w-none">{player.team}</span>
+              <span className="truncate max-w-[140px] sm:max-w-none">{player.team || 'NHL Team'}</span>
               <span>•</span>
-              <span className="font-mono text-slate-500">{player.total_games} GP</span>
+              <span className="font-mono text-slate-500">{player.total_games ?? 0} GP</span>
             </div>
           </div>
         </div>
@@ -1624,8 +1890,35 @@ export const ActiveSquadManager: React.FC<ActiveSquadManagerProps> = ({
                 </p>
               </div>
 
-              {/* GM Selector & Quick actions */}
+              {/* GM Selector, Season Selector & Quick actions */}
               <div className="flex flex-wrap items-center gap-3">
+                {/* Season Selector Dropdown */}
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Season:</span>
+                  <div className="relative">
+                    <select
+                      value={selectedSeason}
+                      onChange={e => setSelectedSeason(e.target.value)}
+                      className={`appearance-none pl-3.5 pr-9 py-2 rounded-xl text-sm font-black border cursor-pointer transition-all ${
+                        isLight
+                          ? 'bg-slate-100 hover:bg-slate-200/80 border-slate-300 text-slate-900'
+                          : 'bg-slate-800 hover:bg-slate-750 border-slate-700 text-white'
+                      }`}
+                    >
+                      {availableSeasons.length > 0 ? (
+                        availableSeasons.map(s => (
+                          <option key={s.id} value={s.id}>
+                            {s.label} {s.is_current ? '(Current)' : ''}
+                          </option>
+                        ))
+                      ) : (
+                        <option value="2026-27">2026-27 Season</option>
+                      )}
+                    </select>
+                    <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 pointer-events-none text-slate-400" />
+                  </div>
+                </div>
+
                 {/* GM Selector Dropdown */}
                 <div className="flex items-center gap-2">
                   <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">GM:</span>
@@ -1648,6 +1941,34 @@ export const ActiveSquadManager: React.FC<ActiveSquadManagerProps> = ({
                     <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 pointer-events-none text-slate-400" />
                   </div>
                 </div>
+
+                {/* Save Status Indicator */}
+                {saveStatus !== 'idle' && (
+                  <div
+                    className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border transition-all ${
+                      saveStatus === 'saving'
+                        ? isLight
+                          ? 'bg-amber-50 text-amber-800 border-amber-300'
+                          : 'bg-amber-950/50 text-amber-300 border-amber-600/40'
+                        : isLight
+                        ? 'bg-emerald-50 text-emerald-800 border-emerald-300'
+                        : 'bg-emerald-950/50 text-emerald-300 border-emerald-600/40'
+                    }`}
+                  >
+                    <span
+                      className={`h-2 w-2 rounded-full ${
+                        saveStatus === 'saving'
+                          ? 'bg-amber-400 animate-ping'
+                          : 'bg-emerald-400'
+                      }`}
+                    />
+                    <span>
+                      {saveStatus === 'saving'
+                        ? 'Saving... 🟡'
+                        : `Saved to ${selectedSeason} 🟢`}
+                    </span>
+                  </div>
+                )}
 
                 {/* Auto Optimize Button */}
                 <button
@@ -2141,7 +2462,7 @@ export const ActiveSquadManager: React.FC<ActiveSquadManagerProps> = ({
                     <span>Assign to Slot {assignModalSlot}</span>
                   </h3>
                   <p className="text-xs text-slate-400 mt-0.5">
-                    Select an eligible promoted {getSlotCategory(assignModalSlot).toLowerCase()} to occupy this slot.
+                    Select an eligible promoted {safeLower(getSlotCategory(assignModalSlot || ''))} to occupy this slot.
                   </p>
                 </div>
                 <button
@@ -2155,9 +2476,9 @@ export const ActiveSquadManager: React.FC<ActiveSquadManagerProps> = ({
 
               {/* Eligible Players List */}
               <div className="mt-4 max-h-80 overflow-y-auto space-y-2">
-                {rosterEligiblePlayers.filter(p => isPositionEligibleForSlot(p.position, assignModalSlot)).length === 0 ? (
+                {rosterEligiblePlayers.filter(p => isPositionEligibleForSlot(p.position, assignModalSlot || '')).length === 0 ? (
                   <div className="p-8 text-center text-slate-400 text-xs">
-                    <p className="font-semibold">No eligible promoted {getSlotCategory(assignModalSlot).toLowerCase()} available.</p>
+                    <p className="font-semibold">No eligible promoted {safeLower(getSlotCategory(assignModalSlot || ''))} available.</p>
                     <p className="mt-1">
                       Promote developing prospects in your Farm Pool to make them eligible.
                     </p>
@@ -2368,4 +2689,5 @@ export const ActiveSquadManager: React.FC<ActiveSquadManagerProps> = ({
   );
 };
 
+export const ManageTeam = ActiveSquadManager;
 export default ActiveSquadManager;

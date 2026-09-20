@@ -227,10 +227,10 @@ export const ActiveRosterStatsTable: React.FC<ActiveRosterStatsTableProps> = ({
 
         // 3. Fallback to INITIAL_GMS if DB is completely unpopulated for this GM
         if (rows.length === 0) {
-          const gmObj = INITIAL_GMS.find(g => g.name.toLowerCase() === gm.toLowerCase());
+          const gmObj = INITIAL_GMS.find(g => (g?.name || '').toLowerCase() === (gm || '').toLowerCase());
           if (gmObj && gmObj.prospects) {
             rows = gmObj.prospects
-              .filter(p => p.status !== 'trashed' && (p.promoted || p.isProtected))
+              .filter(p => p && p.status !== 'trashed' && (p.promoted || p.isProtected))
               .map(p => ({
                 id: p.id,
                 player_name: p.name,
@@ -252,7 +252,7 @@ export const ActiveRosterStatsTable: React.FC<ActiveRosterStatsTableProps> = ({
       // Group by position
       const parsedPlayers: RosterPlayerStats[] = rows.map((r: any, idx: number) => {
         const name = r.player_name || r.name || `Player ${idx + 1}`;
-        const lowerName = name.toLowerCase();
+        const lowerName = (name || '').toLowerCase();
         const teamInfo = NHL_TEAMS_MAP[lowerName] || {
           team: r.nhl_team || r.team || 'NHL Team',
           abbr: r.nhl_team_abbr || r.team_abbr || 'NHL',
@@ -454,11 +454,11 @@ export const ActiveRosterStatsTable: React.FC<ActiveRosterStatsTableProps> = ({
     if (!searchQuery.trim()) return tabFilteredPlayers;
     const q = searchQuery.toLowerCase().trim();
     return tabFilteredPlayers.filter(p =>
-      p.player_name.toLowerCase().includes(q) ||
-      p.team.toLowerCase().includes(q) ||
-      p.team_abbr.toLowerCase().includes(q) ||
-      p.slot_position.toLowerCase().includes(q) ||
-      p.position.toLowerCase().includes(q)
+      (p?.player_name || '').toLowerCase().includes(q) ||
+      (p?.team || '').toLowerCase().includes(q) ||
+      (p?.team_abbr || '').toLowerCase().includes(q) ||
+      (p?.slot_position || '').toLowerCase().includes(q) ||
+      (p?.position || '').toLowerCase().includes(q)
     );
   }, [tabFilteredPlayers, searchQuery]);
 

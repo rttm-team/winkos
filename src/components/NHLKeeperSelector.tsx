@@ -210,15 +210,15 @@ export default function NHLKeeperSelector({ gms, theme = 'dark' }: NHLKeeperSele
 
   // Handle Player Search filter
   useEffect(() => {
-    const q = searchQuery.toLowerCase().trim();
+    const q = (searchQuery || '').toLowerCase().trim();
     if (!q) {
       setSearchResults(SAMPLE_NHL_PLAYERS);
       return;
     }
     const filtered = SAMPLE_NHL_PLAYERS.filter(p => 
-      p.player_name.toLowerCase().includes(q) || 
-      p.nhl_team.toLowerCase().includes(q) ||
-      p.position.toLowerCase() === q
+      (p?.player_name || '').toLowerCase().includes(q) || 
+      (p?.nhl_team || '').toLowerCase().includes(q) ||
+      (p?.position || '').toLowerCase() === q
     );
     setSearchResults(filtered);
   }, [searchQuery]);
