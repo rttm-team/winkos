@@ -269,6 +269,27 @@ export default function WinkosChallenges({ gmName, theme = 'dark' }: { gmName: s
             gameState: 'PRE',
             awayTeam: { abbrev: 'TBL', logo: 'https://assets.nhle.com/logos/nhl/svg/TBL_light.svg' },
             homeTeam: { abbrev: 'FLA', logo: 'https://assets.nhle.com/logos/nhl/svg/FLA_light.svg' }
+          },
+          {
+            id: 2026020005,
+            startTimeUTC: new Date(Date.now() + 5 * 3600 * 1000).toISOString(),
+            gameState: 'PRE',
+            awayTeam: { abbrev: 'VGK', logo: 'https://assets.nhle.com/logos/nhl/svg/VGK_light.svg' },
+            homeTeam: { abbrev: 'COL', logo: 'https://assets.nhle.com/logos/nhl/svg/COL_light.svg' }
+          },
+          {
+            id: 2026020006,
+            startTimeUTC: new Date(Date.now() + 5.5 * 3600 * 1000).toISOString(),
+            gameState: 'PRE',
+            awayTeam: { abbrev: 'VAN', logo: 'https://assets.nhle.com/logos/nhl/svg/VAN_light.svg' },
+            homeTeam: { abbrev: 'SEA', logo: 'https://assets.nhle.com/logos/nhl/svg/SEA_light.svg' }
+          },
+          {
+            id: 2026020007,
+            startTimeUTC: new Date(Date.now() + 6 * 3600 * 1000).toISOString(),
+            gameState: 'PRE',
+            awayTeam: { abbrev: 'CAR', logo: 'https://assets.nhle.com/logos/nhl/svg/CAR_light.svg' },
+            homeTeam: { abbrev: 'NJD', logo: 'https://assets.nhle.com/logos/nhl/svg/NJD_light.svg' }
           }
         ];
       }
