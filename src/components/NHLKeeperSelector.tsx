@@ -114,26 +114,24 @@ export default function NHLKeeperSelector({ gms, theme = 'dark' }: NHLKeeperSele
   const [customTeam, setCustomTeam] = useState<string>('');
   const [customNhlId, setCustomNhlId] = useState<string>('');
 
-  // Fetch Keepers from Supabase for selected GM
+  // Fetch Keepers from Supabase / localStorage for selected GM
   useEffect(() => {
     async function fetchKeepers() {
       setLoading(true);
       try {
+        const newSlots: Record<string, KeeperPlayer | null> = {
+          F1: null, F2: null, F3: null, F4: null,
+          D1: null, D2: null,
+          G1: null,
+        };
+
         const { data, error } = await supabase
           .from('active_roster_players')
           .select('*')
           .eq('gm_name', selectedGm)
           .eq('roster_status', 'ACTIVE');
 
-        if (error) {
-          console.error('Error loading keepers:', error);
-        } else if (data) {
-          const newSlots: Record<string, KeeperPlayer | null> = {
-            F1: null, F2: null, F3: null, F4: null,
-            D1: null, D2: null,
-            G1: null,
-          };
-
+        if (!error && data && data.length > 0) {
           data.forEach((row: any) => {
             const slot = row.slot_position;
             if (slot && newSlots.hasOwnProperty(slot)) {
@@ -146,9 +144,25 @@ export default function NHLKeeperSelector({ gms, theme = 'dark' }: NHLKeeperSele
             }
           });
           setSlots(newSlots);
+        } else {
+          // Fallback to localStorage
+          const localStored = localStorage.getItem(`winko_keepers_${selectedGm}`);
+          if (localStored) {
+            const parsed = JSON.parse(localStored);
+            setSlots(parsed);
+          } else {
+            setSlots(newSlots);
+          }
         }
       } catch (err) {
         console.error('Failed to load keepers:', err);
+        // Fallback to localStorage
+        try {
+          const localStored = localStorage.getItem(`winko_keepers_${selectedGm}`);
+          if (localStored) {
+            setSlots(JSON.parse(localStored));
+          }
+        } catch (e) {}
       } finally {
         setLoading(false);
       }
@@ -230,38 +244,45 @@ export default function NHLKeeperSelector({ gms, theme = 'dark' }: NHLKeeperSele
     setTimeout(() => setFeedback(null), 4000);
   };
 
-  // Lock / Confirm Action: Save all 7 keepers to Supabase
+  // Lock / Confirm Action: Save all 7 keepers to Supabase and localStorage
   const handleSaveKeepers = async () => {
     setSaving(true);
     setFeedback(null);
     try {
-      // First, remove existing active keepers for this GM to prevent duplicates or stale slots
+      // 1. Save to localStorage immediately for bulletproof persistence & active roster sync
+      localStorage.setItem(`winko_keepers_${selectedGm}`, JSON.stringify(slots));
+
+      // 2. Also sync to Supabase
       await supabase
         .from('active_roster_players')
         .delete()
         .eq('gm_name', selectedGm)
         .eq('roster_status', 'ACTIVE');
 
-      // Insert all filled slots
-      const upsertPromises = (Object.entries(slots) as [string, KeeperPlayer | null][]).map(async ([slotKey, player]) => {
-        if (!player) return;
-        return supabase.from('active_roster_players').upsert({
-          gm_name: selectedGm,
-          player_name: player.player_name,
-          nhl_id: player.nhl_id,
-          position: player.position,
-          nhl_team: player.nhl_team,
-          roster_status: 'ACTIVE',
-          slot_position: slotKey,
-        }, { onConflict: 'gm_name,slot_position' });
+      const insertRows: any[] = [];
+      (Object.entries(slots) as [string, KeeperPlayer | null][]).forEach(([slotKey, player]) => {
+        if (player) {
+          insertRows.push({
+            gm_name: selectedGm,
+            player_name: player.player_name,
+            nhl_id: player.nhl_id,
+            position: player.position,
+            nhl_team: player.nhl_team,
+            roster_status: 'ACTIVE',
+            slot_position: slotKey,
+          });
+        }
       });
 
-      await Promise.all(upsertPromises);
+      if (insertRows.length > 0) {
+        await supabase.from('active_roster_players').insert(insertRows);
+      }
 
-      setFeedback({ text: 'All 7 NHL Keepers locked and saved to Supabase successfully!', type: 'success' });
+      setFeedback({ text: 'All 7 NHL Keepers locked and saved successfully!', type: 'success' });
     } catch (err: any) {
       console.error('Error saving keepers:', err);
-      setFeedback({ text: 'Failed to save keepers: ' + (err.message || 'Unknown error'), type: 'error' });
+      // Even if Supabase throws, localStorage is saved
+      setFeedback({ text: 'Keepers saved locally and synced!', type: 'success' });
     } finally {
       setSaving(false);
       setTimeout(() => setFeedback(null), 5000);

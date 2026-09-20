@@ -467,6 +467,7 @@ export const ActiveSquadManager: React.FC<ActiveSquadManagerProps> = ({
           };
         });
 
+        let keeperRecords: any[] = [];
         const { data: keeperData } = await supabase
           .from('active_roster_players')
           .select('*')
@@ -474,7 +475,34 @@ export const ActiveSquadManager: React.FC<ActiveSquadManagerProps> = ({
           .eq('roster_status', 'ACTIVE');
 
         if (keeperData && keeperData.length > 0) {
-          keeperData.forEach((kRow: any) => {
+          keeperRecords = keeperData;
+        } else {
+          // Fallback to localStorage
+          try {
+            const localStored = localStorage.getItem(`winko_keepers_${gm}`);
+            if (localStored) {
+              const parsedSlots = JSON.parse(localStored);
+              Object.entries(parsedSlots).forEach(([slotKey, player]: [string, any]) => {
+                if (player) {
+                  keeperRecords.push({
+                    player_name: player.player_name,
+                    nhl_id: player.nhl_id,
+                    position: player.position,
+                    nhl_team: player.nhl_team,
+                    slot_position: slotKey,
+                    gm_name: gm,
+                    roster_status: 'ACTIVE'
+                  });
+                }
+              });
+            }
+          } catch (e) {
+            console.error('Error reading local keepers:', e);
+          }
+        }
+
+        if (keeperRecords.length > 0) {
+          keeperRecords.forEach((kRow: any) => {
             const kName = kRow.player_name;
             const existingIndex = mapped.findIndex(m => m.player_name.toLowerCase() === kName.toLowerCase());
             if (existingIndex >= 0) {
