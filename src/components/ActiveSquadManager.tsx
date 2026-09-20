@@ -397,43 +397,36 @@ export const ActiveSquadManager: React.FC<ActiveSquadManagerProps> = ({
         const rawActiveRows = activeRes.data || [];
         const allProspects = prospectsRes.data || [];
 
-        // Build prospect eligibility lookup maps
-        const prospectByPlayerName = new Map<string, any>();
-        const prospectByNhlId = new Map<string, any>();
+        const validProspects = new Set(
+          allProspects
+            .filter((p: any) => p && p.promoted === true && (p.protected === true || p.is_protected === true || p.isProtected === true))
+            .map((p: any) => (p.nhl_id ? String(p.nhl_id) : safeLower(p.player_name || p.name || '')))
+        );
 
-        allProspects.forEach((p: any) => {
-          if (!p) return;
-          const nameKey = safeLower(p.player_name || p.name);
-          const idKey = String(p.nhl_id || p.id || '');
-          prospectByPlayerName.set(nameKey, p);
-          if (idKey) prospectByNhlId.set(idKey, p);
-        });
-
-        // Filter active rows: exclude any prospect who has lost protected status (protected === false) or not promoted (promoted === false)
+        // Filter active rows: include if is_keeper === true, or if prospect exists in validProspects
         const activeRows: any[] = [];
         for (const row of rawActiveRows) {
           if (!row) continue;
-          const nameKey = safeLower(row.player_name || row.name);
-          const idKey = String(row.nhl_id || '');
-          
-          const matchingProspect = prospectByPlayerName.get(nameKey) || prospectByNhlId.get(idKey);
-          if (matchingProspect) {
-            const isPromoted = Boolean(matchingProspect.promoted);
-            const isProtected = Boolean(matchingProspect.protected ?? matchingProspect.is_protected ?? matchingProspect.isProtected);
-            
-            if (!isPromoted || !isProtected) {
-              // Un-protected or un-promoted prospect found in active_roster_players -> Purge from DB
-              console.log('Purging ineligible prospect from active_roster_players:', row.player_name);
-              supabase.from('active_roster_players')
-                .delete()
-                .eq('season_id', selectedSeason || '2026-2027')
-                .eq('gm_name', gm)
-                .eq('nhl_id', row.nhl_id)
-                .then();
-              continue; // Skip this row
-            }
+          const isKeeper = Boolean(row.is_keeper);
+          if (isKeeper) {
+            activeRows.push(row);
+            continue;
           }
-          activeRows.push(row);
+
+          const idKey = row.nhl_id ? String(row.nhl_id) : '';
+          const nameKey = safeLower(row.player_name || row.name || '');
+
+          if (validProspects.has(idKey) || validProspects.has(nameKey)) {
+            activeRows.push(row);
+          } else {
+            console.log('Excluding non-keeper / unprotected prospect from active_roster_players:', row.player_name);
+            supabase.from('active_roster_players')
+              .delete()
+              .eq('season_id', selectedSeason || '2026-2027')
+              .eq('gm_name', gm)
+              .eq('nhl_id', row.nhl_id)
+              .then();
+          }
         }
 
         // Filter prospect rows: only include prospects where promoted === true && protected === true
@@ -622,87 +615,25 @@ export const ActiveSquadManager: React.FC<ActiveSquadManagerProps> = ({
           };
         });
 
-        // Fetch from active_roster_players for the selected season and GM (including keepers and rostered players)
-        let activeRosterRows: any[] = [];
+        // Use the validated activeRows from Promise.all fetch and purge stale local storage cache
+        let activeRosterRows: any[] = activeRows.map((r: any) => ({
+          ...r,
+          player_name: r.player_name || r.name || 'Unknown',
+          position: r.position || 'F',
+          roster_status: r.roster_status || (r.is_keeper ? 'ACTIVE' : 'ACTIVE'),
+          slot_position: r.slot_position || (r.is_keeper ? 'F1' : ''),
+          gm_name: r.gm_name || gm,
+          is_keeper: Boolean(r.is_keeper),
+        }));
+
         try {
-          const { data: arpData, error: arpError } = await supabase
-            .from('active_roster_players')
-            .select('*')
-            .eq('season_id', selectedSeason)
-            .eq('gm_name', gm);
-
-          if (!arpError && arpData && Array.isArray(arpData) && arpData.length > 0) {
-            activeRosterRows = arpData
-              .filter((r: any) => r && (r.player_name || r.name))
-              .map((r: any) => ({
-                ...r,
-                player_name: r.player_name || r.name || 'Unknown',
-                position: r.position || 'F',
-                roster_status: r.roster_status || (r.is_keeper ? 'ACTIVE' : 'ACTIVE'),
-                slot_position: r.slot_position || (r.is_keeper ? 'F1' : ''),
-                gm_name: r.gm_name || gm,
-                is_keeper: Boolean(r.is_keeper),
-              }));
-          }
-        } catch (e) {
-          console.error('Error fetching active_roster_players:', e);
-        }
-
-        // Season-aware local storage fallback / synchronization
-        const seasonRosterStorageKey = `winko_roster_${selectedSeason}_${gm}`;
-        const seasonKeeperStorageKey = `winko_keepers_${selectedSeason}_${gm}`;
-
-        if (activeRosterRows.length === 0) {
-          // Check local storage for this season's roster or keepers
-          try {
-            const storedRoster = localStorage.getItem(seasonRosterStorageKey);
-            if (storedRoster) {
-              const parsed = JSON.parse(storedRoster);
-              if (Array.isArray(parsed) && parsed.length > 0) {
-                activeRosterRows = parsed
-                  .filter((item: any) => item && (item.player_name || item.name))
-                  .map((row: any) => ({
-                    ...row,
-                    player_name: row.player_name || row.name || 'Unknown',
-                    position: row.position || 'F',
-                    roster_status: row.roster_status || 'ACTIVE',
-                    slot_position: row.slot_position || '',
-                    gm_name: row.gm_name || gm,
-                  }));
-              }
-            }
-          } catch (e) {
-            console.error('Error reading season roster cache:', e);
-          }
-
-          // If still empty, check keepers saved for this season
-          if (activeRosterRows.length === 0) {
-            try {
-              const storedKeepers = localStorage.getItem(seasonKeeperStorageKey) || localStorage.getItem(`winko_keepers_${gm}`);
-              if (storedKeepers) {
-                const parsedSlots = JSON.parse(storedKeepers);
-                if (parsedSlots && typeof parsedSlots === 'object') {
-                  Object.entries(parsedSlots).forEach(([slotKey, kPlayer]: [string, any]) => {
-                    if (kPlayer && (kPlayer.player_name || kPlayer.name)) {
-                      activeRosterRows.push({
-                        player_name: kPlayer.player_name || kPlayer.name || 'Unknown',
-                        nhl_id: kPlayer.nhl_id || '',
-                        position: kPlayer.position || 'F',
-                        nhl_team: kPlayer.nhl_team || kPlayer.team || 'NHL Team',
-                        slot_position: slotKey || '',
-                        gm_name: gm,
-                        roster_status: 'ACTIVE',
-                        is_keeper: true,
-                      });
-                    }
-                  });
-                }
-              }
-            } catch (e) {
-              console.error('Error reading season keepers cache:', e);
+          for (let i = localStorage.length - 1; i >= 0; i--) {
+            const key = localStorage.key(i);
+            if (key && (key.startsWith('winko_roster_') || key.startsWith('winko_keepers_'))) {
+              localStorage.removeItem(key);
             }
           }
-        }
+        } catch (e) {}
 
         // Apply active_roster_players and keepers to mapped list
         if (activeRosterRows.length > 0) {
@@ -753,6 +684,7 @@ export const ActiveSquadManager: React.FC<ActiveSquadManagerProps> = ({
 
         // Cache loaded roster state in season-aware local storage key
         try {
+          const seasonRosterStorageKey = `winko_roster_${selectedSeason}_${gm}`;
           const eligibleForCache = mapped
             .filter(p => p && p.player_name && (p.roster_status === 'ACTIVE' || p.roster_status === 'BENCH'))
             .map(p => ({
