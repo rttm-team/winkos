@@ -125,6 +125,29 @@ export default function NHLKeeperSelector({ gms, theme = 'dark' }: NHLKeeperSele
           G1: null,
         };
 
+        // 1. Load from localStorage winko_keepers_${selectedGm} first as the primary keeper slot map
+        const localStored = localStorage.getItem(`winko_keepers_${selectedGm}`);
+        if (localStored) {
+          try {
+            const parsed = JSON.parse(localStored);
+            if (parsed && typeof parsed === 'object') {
+              let hasAny = false;
+              Object.keys(newSlots).forEach(k => {
+                if (parsed[k]) {
+                  newSlots[k] = parsed[k];
+                  hasAny = true;
+                }
+              });
+              if (hasAny) {
+                setSlots(newSlots);
+                setLoading(false);
+                return;
+              }
+            }
+          } catch (e) {}
+        }
+
+        // 2. Fallback to Supabase active_roster_players with roster_status = 'KEEPER'
         const { data, error } = await supabase
           .from('active_roster_players')
           .select('*')
@@ -132,37 +155,51 @@ export default function NHLKeeperSelector({ gms, theme = 'dark' }: NHLKeeperSele
           .eq('roster_status', 'KEEPER');
 
         if (!error && data && data.length > 0) {
+          const forwards: any[] = [];
+          const defense: any[] = [];
+          const goalies: any[] = [];
+
           data.forEach((row: any) => {
-            const slot = row.slot_position;
-            if (slot && newSlots.hasOwnProperty(slot)) {
-              newSlots[slot] = {
-                player_name: row.player_name,
-                nhl_id: String(row.nhl_id || ''),
-                position: (row.position || 'F').toUpperCase() as 'F' | 'D' | 'G',
-                nhl_team: row.nhl_team || 'NHL Team',
-              };
+            const pos = (row.position || 'F').toUpperCase();
+            const playerObj = {
+              player_name: row.player_name,
+              nhl_id: String(row.nhl_id || ''),
+              position: pos as 'F' | 'D' | 'G',
+              nhl_team: row.nhl_team || 'NHL Team',
+            };
+            if (row.slot_position && newSlots.hasOwnProperty(row.slot_position)) {
+              newSlots[row.slot_position] = playerObj;
+            } else {
+              if (pos === 'G') goalies.push(playerObj);
+              else if (pos === 'D') defense.push(playerObj);
+              else forwards.push(playerObj);
             }
           });
+
+          const fKeys = ['F1', 'F2', 'F3', 'F4'];
+          const dKeys = ['D1', 'D2'];
+          const gKeys = ['G1'];
+
+          forwards.forEach(p => {
+            const emptyKey = fKeys.find(k => !newSlots[k]);
+            if (emptyKey) newSlots[emptyKey] = p;
+          });
+          defense.forEach(p => {
+            const emptyKey = dKeys.find(k => !newSlots[k]);
+            if (emptyKey) newSlots[emptyKey] = p;
+          });
+          goalies.forEach(p => {
+            const emptyKey = gKeys.find(k => !newSlots[k]);
+            if (emptyKey) newSlots[emptyKey] = p;
+          });
+
           setSlots(newSlots);
+          localStorage.setItem(`winko_keepers_${selectedGm}`, JSON.stringify(newSlots));
         } else {
-          // Fallback to localStorage
-          const localStored = localStorage.getItem(`winko_keepers_${selectedGm}`);
-          if (localStored) {
-            const parsed = JSON.parse(localStored);
-            setSlots(parsed);
-          } else {
-            setSlots(newSlots);
-          }
+          setSlots(newSlots);
         }
       } catch (err) {
         console.error('Failed to load keepers:', err);
-        // Fallback to localStorage
-        try {
-          const localStored = localStorage.getItem(`winko_keepers_${selectedGm}`);
-          if (localStored) {
-            setSlots(JSON.parse(localStored));
-          }
-        } catch (e) {}
       } finally {
         setLoading(false);
       }

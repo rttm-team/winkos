@@ -849,32 +849,31 @@ export const ActiveSquadManager: React.FC<ActiveSquadManagerProps> = ({
       )
     );
 
-    addToast(`${player.player_name} removed from ${oldSlot} to reserves.`, 'info');
+    addToast(`${player.player_name} removed from ${oldSlot} to bench reserves.`, 'info');
 
     try {
-      try {
-        const key = `winko_keepers_${selectedGm}`;
-        const stored = localStorage.getItem(key);
-        if (stored) {
-          const slots = JSON.parse(stored);
-          for (const [sKey, p] of Object.entries(slots)) {
-            if (p && (p as any).player_name.toLowerCase() === player.player_name.toLowerCase()) {
-              slots[sKey] = null;
-              break;
-            }
+      const checkIsKeeper = (playerName: string) => {
+        try {
+          const stored = localStorage.getItem(`winko_keepers_${selectedGm}`);
+          if (stored) {
+            const slots = JSON.parse(stored);
+            return Object.values(slots).some((p: any) => p && p.player_name.toLowerCase() === playerName.toLowerCase());
           }
-          localStorage.setItem(key, JSON.stringify(slots));
-        }
-      } catch (e) {}
+        } catch (e) {}
+        return false;
+      };
+
+      const playerIsKeeper = checkIsKeeper(player.player_name);
+      const rosterStatusVal = playerIsKeeper ? 'KEEPER' : 'BENCH';
 
       await Promise.all([
         supabase
           .from('prospects')
-          .update({ roster_status: 'BENCH', slot_position: 'BENCH' })
+          .update({ roster_status: rosterStatusVal, slot_position: 'BENCH' })
           .eq('id', player.id),
         supabase
           .from('active_roster_players')
-          .update({ roster_status: 'BENCH', slot_position: 'BENCH' })
+          .update({ roster_status: rosterStatusVal, slot_position: 'BENCH' })
           .eq('gm_name', selectedGm)
           .eq('player_name', player.player_name)
       ]);
