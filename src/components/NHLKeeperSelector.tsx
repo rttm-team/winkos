@@ -129,7 +129,7 @@ export default function NHLKeeperSelector({ gms, theme = 'dark' }: NHLKeeperSele
           .from('active_roster_players')
           .select('*')
           .eq('gm_name', selectedGm)
-          .eq('roster_status', 'ACTIVE');
+          .eq('roster_status', 'KEEPER');
 
         if (!error && data && data.length > 0) {
           data.forEach((row: any) => {
@@ -257,7 +257,7 @@ export default function NHLKeeperSelector({ gms, theme = 'dark' }: NHLKeeperSele
         .from('active_roster_players')
         .delete()
         .eq('gm_name', selectedGm)
-        .eq('roster_status', 'ACTIVE');
+        .eq('roster_status', 'KEEPER');
 
       const insertRows: any[] = [];
       (Object.entries(slots) as [string, KeeperPlayer | null][]).forEach(([slotKey, player]) => {
@@ -268,7 +268,7 @@ export default function NHLKeeperSelector({ gms, theme = 'dark' }: NHLKeeperSele
             nhl_id: player.nhl_id,
             position: player.position,
             nhl_team: player.nhl_team,
-            roster_status: 'ACTIVE',
+            roster_status: 'KEEPER',
             slot_position: slotKey,
           });
         }

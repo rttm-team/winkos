@@ -472,7 +472,7 @@ export const ActiveSquadManager: React.FC<ActiveSquadManagerProps> = ({
           .from('active_roster_players')
           .select('*')
           .eq('gm_name', gm)
-          .eq('roster_status', 'ACTIVE');
+          .eq('roster_status', 'KEEPER');
 
         if (keeperData && keeperData.length > 0) {
           keeperRecords = keeperData;
