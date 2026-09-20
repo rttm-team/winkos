@@ -388,35 +388,83 @@ export const ActiveSquadManager: React.FC<ActiveSquadManagerProps> = ({
       try {
         const [activeRes, prospectsRes] = await Promise.all([
           supabase.from('active_roster_players').select('*').eq('gm_name', gm).eq('season_id', selectedSeason || '2026-2027'),
-          supabase.from('prospects').select('*').eq('gm_name', gm).eq('promoted', true),
+          supabase.from('prospects').select('*').eq('gm_name', gm),
         ]);
 
         console.log('Active Roster Rows:', activeRes.data);
-        console.log('Promoted Prospects:', prospectsRes.data);
+        console.log('All Prospects Rows:', prospectsRes.data);
 
-        const activeRows = activeRes.data || [];
-        let prospectRows = prospectsRes.data || [];
+        const rawActiveRows = activeRes.data || [];
+        const allProspects = prospectsRes.data || [];
+
+        // Build prospect eligibility lookup maps
+        const prospectByPlayerName = new Map<string, any>();
+        const prospectByNhlId = new Map<string, any>();
+
+        allProspects.forEach((p: any) => {
+          if (!p) return;
+          const nameKey = safeLower(p.player_name || p.name);
+          const idKey = String(p.nhl_id || p.id || '');
+          prospectByPlayerName.set(nameKey, p);
+          if (idKey) prospectByNhlId.set(idKey, p);
+        });
+
+        // Filter active rows: exclude any prospect who has lost protected status (protected === false) or not promoted (promoted === false)
+        const activeRows: any[] = [];
+        for (const row of rawActiveRows) {
+          if (!row) continue;
+          const nameKey = safeLower(row.player_name || row.name);
+          const idKey = String(row.nhl_id || '');
+          
+          const matchingProspect = prospectByPlayerName.get(nameKey) || prospectByNhlId.get(idKey);
+          if (matchingProspect) {
+            const isPromoted = Boolean(matchingProspect.promoted);
+            const isProtected = Boolean(matchingProspect.protected ?? matchingProspect.is_protected ?? matchingProspect.isProtected);
+            
+            if (!isPromoted || !isProtected) {
+              // Un-protected or un-promoted prospect found in active_roster_players -> Purge from DB
+              console.log('Purging ineligible prospect from active_roster_players:', row.player_name);
+              supabase.from('active_roster_players')
+                .delete()
+                .eq('season_id', selectedSeason || '2026-2027')
+                .eq('gm_name', gm)
+                .eq('nhl_id', row.nhl_id)
+                .then();
+              continue; // Skip this row
+            }
+          }
+          activeRows.push(row);
+        }
+
+        // Filter prospect rows: only include prospects where promoted === true && protected === true
+        let prospectRows = allProspects.filter((p: any) => {
+          const isPromoted = Boolean(p.promoted);
+          const isProtected = Boolean(p.protected ?? p.is_protected ?? p.isProtected);
+          return isPromoted && isProtected;
+        });
 
         // Fallback to INITIAL_GMS if Supabase returns 0 records for both
-        if (activeRows.length === 0 && prospectRows.length === 0) {
+        if (activeRows.length === 0 && prospectRows.length === 0 && allProspects.length === 0) {
           const gmObj = INITIAL_GMS.find(g => safeLower(g?.name) === safeLower(gm));
           if (gmObj && gmObj.prospects) {
-            prospectRows = gmObj.prospects.map(p => ({
-              id: p?.id || `p-${p?.name || 'unknown'}`,
-              name: p?.name || 'Unknown Prospect',
-              player_name: p?.name || 'Unknown Prospect',
-              position: p?.position || 'F',
-              nhl_team: p?.nhlTeam || 'NHL Team',
-              nhl_team_abbr: p?.nhlTeamAbbr || 'NHL',
-              promoted: !!p?.promoted,
-              protected: !!p?.isProtected,
-              status: p?.status || 'active',
-              goals: p?.goals || 0,
-              assists: p?.assists || 0,
-              points: p?.points || 0,
-              total_games: p?.totalGames || 0,
-              gm_name: gm,
-            }));
+            prospectRows = gmObj.prospects
+              .filter(p => p?.promoted && p?.isProtected)
+              .map(p => ({
+                id: p?.id || `p-${p?.name || 'unknown'}`,
+                name: p?.name || 'Unknown Prospect',
+                player_name: p?.name || 'Unknown Prospect',
+                position: p?.position || 'F',
+                nhl_team: p?.nhlTeam || 'NHL Team',
+                nhl_team_abbr: p?.nhlTeamAbbr || 'NHL',
+                promoted: true,
+                protected: true,
+                status: p?.status || 'active',
+                goals: p?.goals || 0,
+                assists: p?.assists || 0,
+                points: p?.points || 0,
+                total_games: p?.totalGames || 0,
+                gm_name: gm,
+              }));
           }
         }
 
