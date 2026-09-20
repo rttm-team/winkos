@@ -574,8 +574,9 @@ export default function KeeperSelectionPortal({ gms, theme = 'dark' }: KeeperSel
         }
       });
 
-      const keeperPayload = keepersList.map((player, index) => ({
-        season_id: (activeSeasonId || '2026-2027').substring(0, 10),
+      const keepers = keepersList;
+      const keeperPayload = keepers.map((player, idx) => ({
+        season_id: (selectedSeason || '2026-2027').substring(0, 10),
         gm_name: (selectedGm || 'Adam').substring(0, 10),
         nhl_id: Number(player.nhl_id || player.id || 0),
         player_name: player.player_name || player.name || 'Unknown',
@@ -584,36 +585,49 @@ export default function KeeperSelectionPortal({ gms, theme = 'dark' }: KeeperSel
         is_keeper: true,
         is_locked: lockIn,
         roster_status: 'ACTIVE',
-        slot_position: (player.slot_position || (player.position === 'F' ? `F${index + 1}` : player.position === 'D' ? `D${index + 1}` : 'G1')).substring(0, 10)
+        slot_position: (player.slot_position || (player.position === 'F' ? `F${idx + 1}` : player.position === 'D' ? `D${idx + 1}` : 'G1')).substring(0, 10)
       }));
 
       console.log('Inserting Keeper Payload to active_roster_players:', keeperPayload);
 
       // 1. Delete prior keeper rows for this GM & season in active_roster_players to avoid orphaned slots
-      const { error: delError } = await supabase
+      const { error: deleteError } = await supabase
         .from('active_roster_players')
         .delete()
-        .eq('season_id', activeSeasonId)
+        .eq('season_id', selectedSeason || '2026-2027')
         .eq('gm_name', selectedGm)
         .eq('is_keeper', true);
 
-      if (delError) {
-        console.error('Database error clearing old keepers from active_roster_players:', delError);
+      if (deleteError) {
+        console.error('Delete Error:', deleteError);
+        alert('Failed to clear old keepers: ' + deleteError.message);
+        return;
       }
 
       // 2. Insert the fresh keeper records into active_roster_players
-      if (keeperPayload.length > 0) {
-        const { error: insertError } = await supabase
-          .from('active_roster_players')
-          .insert(keeperPayload);
+      const { error: insertError } = await supabase
+        .from('active_roster_players')
+        .insert(keeperPayload);
 
-        if (insertError) {
-          console.error('Database error inserting keepers into active_roster_players:', insertError);
-          throw insertError;
-        }
+      if (insertError) {
+        console.error('Insert Error:', insertError);
+        alert('Failed to save updated keepers: ' + insertError.message);
+        return;
       }
 
-      // 3. Backup to local storage with season-aware key
+      // 3. Purge stale local storage cache matching winko_keepers_* and winko_roster_*
+      try {
+        for (let i = localStorage.length - 1; i >= 0; i--) {
+          const key = localStorage.key(i);
+          if (key && (key.startsWith('winko_keepers_') || key.startsWith('winko_roster_'))) {
+            localStorage.removeItem(key);
+          }
+        }
+      } catch (e) {
+        console.warn('Error purging stale cache:', e);
+      }
+
+      // Backup to local storage with season-aware key
       const localKey = `winko_keepers_${activeSeasonId}_${selectedGm}`;
       localStorage.setItem(localKey, JSON.stringify({
         slots,
@@ -625,7 +639,7 @@ export default function KeeperSelectionPortal({ gms, theme = 'dark' }: KeeperSel
       setIsLocked(lockIn);
       setSubmittedAt(now);
 
-      showToast('Keepers updated and synchronized to 2026-27 Active Roster! 🔄', 'success');
+      showToast('Keepers locked and synchronized to 2026-27 Active Roster! 🚀', 'success');
     } catch (err: any) {
       console.error('Save keepers error in active_roster_players:', err);
       showToast(`Failed to save keepers: ${err?.message || 'Database error'}`, 'error');

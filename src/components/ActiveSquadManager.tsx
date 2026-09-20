@@ -387,8 +387,8 @@ export const ActiveSquadManager: React.FC<ActiveSquadManagerProps> = ({
 
       try {
         const [activeRes, prospectsRes] = await Promise.all([
-          supabase.from('active_roster_players').select('*').ilike('gm_name', gm),
-          supabase.from('prospects').select('*').ilike('gm_name', gm).eq('promoted', true),
+          supabase.from('active_roster_players').select('*').eq('gm_name', gm).eq('season_id', selectedSeason || '2026-2027'),
+          supabase.from('prospects').select('*').eq('gm_name', gm).eq('promoted', true),
         ]);
 
         console.log('Active Roster Rows:', activeRes.data);
