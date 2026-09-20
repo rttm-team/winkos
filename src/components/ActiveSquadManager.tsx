@@ -467,6 +467,44 @@ export const ActiveSquadManager: React.FC<ActiveSquadManagerProps> = ({
           };
         });
 
+        const { data: keeperData } = await supabase
+          .from('active_roster_players')
+          .select('*')
+          .eq('gm_name', gm)
+          .eq('roster_status', 'ACTIVE');
+
+        if (keeperData && keeperData.length > 0) {
+          keeperData.forEach((kRow: any) => {
+            const kName = kRow.player_name;
+            const existingIndex = mapped.findIndex(m => m.player_name.toLowerCase() === kName.toLowerCase());
+            if (existingIndex >= 0) {
+              mapped[existingIndex].roster_status = 'ACTIVE';
+              mapped[existingIndex].slot_position = kRow.slot_position;
+              if (kRow.nhl_id) mapped[existingIndex].nhl_id = kRow.nhl_id;
+              if (kRow.nhl_team) mapped[existingIndex].team = kRow.nhl_team;
+            } else {
+              mapped.push({
+                id: kRow.id || `keeper-${kName}`,
+                player_name: kName,
+                position: kRow.position || 'F',
+                team: kRow.nhl_team || 'NHL Team',
+                team_abbr: 'NHL',
+                roster_status: 'ACTIVE',
+                slot_position: kRow.slot_position || 'F1',
+                goals: 0, assists: 0, points: 0, wins: 0, shutouts: 0, saves: 0, goals_against: 0, save_pct: 0, total_games: 0,
+                promoted: true,
+                isProtected: true,
+                status: 'active',
+                nhl_id: kRow.nhl_id,
+                fantasy_points: 0,
+                plus_minus: 0, pim: 0, shots: 0, power_play_points: 0, shorthanded_points: 0, game_winning_goals: 0,
+                gm_name: gm,
+                goals_2026_27: 0, assists_2026_27: 0, points_2026_27: 0, plus_minus_2026_27: 0, pim_2026_27: 0, shots_2026_27: 0, power_play_points_2026_27: 0, shorthanded_points_2026_27: 0, game_winning_goals_2026_27: 0, wins_2026_27: 0, shutouts_2026_27: 0, saves_2026_27: 0, goals_against_2026_27: 0, save_pct_2026_27: 0, total_games_2026_27: 0, fantasy_points_2026_27: 0,
+              });
+            }
+          });
+        }
+
         // Filter out any players that have completely moved on / trashed
         const activePlayersList = mapped.filter(p => p.status !== 'trashed');
         setPlayers(activePlayersList);
