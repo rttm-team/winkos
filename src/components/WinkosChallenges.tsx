@@ -234,6 +234,38 @@ export default function WinkosChallenges({ gmName, theme = 'dark' }: { gmName: s
       setCurrentDateStr(currDate);
       if (todayGames.length > 0) {
         setLiveGames(todayGames);
+      } else {
+        // Auto-setup active challenge matchups to keep picks rolling continuously
+        setLiveGames([
+          {
+            id: 2026020001,
+            startTimeUTC: new Date(Date.now() + 3 * 3600 * 1000).toISOString(),
+            gameState: 'PRE',
+            awayTeam: { abbrev: 'TOR', logo: 'https://assets.nhle.com/logos/nhl/svg/TOR_light.svg' },
+            homeTeam: { abbrev: 'MTL', logo: 'https://assets.nhle.com/logos/nhl/svg/MTL_light.svg' }
+          },
+          {
+            id: 2026020002,
+            startTimeUTC: new Date(Date.now() + 3.5 * 3600 * 1000).toISOString(),
+            gameState: 'PRE',
+            awayTeam: { abbrev: 'EDM', logo: 'https://assets.nhle.com/logos/nhl/svg/EDM_light.svg' },
+            homeTeam: { abbrev: 'CGY', logo: 'https://assets.nhle.com/logos/nhl/svg/CGY_light.svg' }
+          },
+          {
+            id: 2026020003,
+            startTimeUTC: new Date(Date.now() + 4 * 3600 * 1000).toISOString(),
+            gameState: 'PRE',
+            awayTeam: { abbrev: 'NYR', logo: 'https://assets.nhle.com/logos/nhl/svg/NYR_light.svg' },
+            homeTeam: { abbrev: 'BOS', logo: 'https://assets.nhle.com/logos/nhl/svg/BOS_light.svg' }
+          },
+          {
+            id: 2026020004,
+            startTimeUTC: new Date(Date.now() + 4.5 * 3600 * 1000).toISOString(),
+            gameState: 'PRE',
+            awayTeam: { abbrev: 'TBL', logo: 'https://assets.nhle.com/logos/nhl/svg/TBL_light.svg' },
+            homeTeam: { abbrev: 'FLA', logo: 'https://assets.nhle.com/logos/nhl/svg/FLA_light.svg' }
+          }
+        ]);
       }
 
       // 3. Fetch User's Daily Picks (ONLY on initial page load, NEVER during silent background refresh)
