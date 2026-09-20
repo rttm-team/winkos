@@ -588,32 +588,33 @@ export default function KeeperSelectionPortal({ gms, theme = 'dark' }: KeeperSel
         slot_position: (player.slot_position || (player.position === 'F' ? `F${idx + 1}` : player.position === 'D' ? `D${idx + 1}` : 'G1')).substring(0, 10)
       }));
 
-      console.log('Inserting Keeper Payload to active_roster_players:', keeperPayload);
+      console.log('Saving Keeper Payload:', keeperPayload);
 
-      // 1. Delete prior keeper rows for this GM & season in active_roster_players to avoid orphaned slots
-      const { error: deleteError } = await supabase
+      // Delete old keepers first
+      const { error: delError } = await supabase
         .from('active_roster_players')
         .delete()
         .eq('season_id', selectedSeason || '2026-2027')
         .eq('gm_name', selectedGm)
         .eq('is_keeper', true);
 
-      if (deleteError) {
-        console.error('Delete Error:', deleteError);
-        alert('Failed to clear old keepers: ' + deleteError.message);
+      if (delError) {
+        alert(`SUPABASE DELETE ERROR:\nCode: ${delError.code}\nMessage: ${delError.message}`);
         return;
       }
 
-      // 2. Insert the fresh keeper records into active_roster_players
-      const { error: insertError } = await supabase
+      // Insert new keepers
+      const { data, error: insError } = await supabase
         .from('active_roster_players')
-        .insert(keeperPayload);
+        .insert(keeperPayload)
+        .select();
 
-      if (insertError) {
-        console.error('Insert Error:', insertError);
-        alert('Failed to save updated keepers: ' + insertError.message);
+      if (insError) {
+        alert(`SUPABASE INSERT ERROR:\nCode: ${insError.code}\nMessage: ${insError.message}\nDetails: ${insError.details}`);
         return;
       }
+
+      alert(`SUCCESS! Saved ${data?.length || 7} keepers to active_roster_players! 🚀`);
 
       // 3. Purge stale local storage cache matching winko_keepers_* and winko_roster_*
       try {
