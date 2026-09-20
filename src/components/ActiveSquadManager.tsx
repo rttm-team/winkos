@@ -505,9 +505,14 @@ export const ActiveSquadManager: React.FC<ActiveSquadManagerProps> = ({
           keeperRecords.forEach((kRow: any) => {
             const kName = kRow.player_name;
             const existingIndex = mapped.findIndex(m => m.player_name.toLowerCase() === kName.toLowerCase());
+            const isBenchSlot = kRow.slot_position && ALL_BENCH_SLOTS.includes(kRow.slot_position);
+            const statusForGrid = isBenchSlot ? 'BENCH' : 'ACTIVE';
+
             if (existingIndex >= 0) {
-              mapped[existingIndex].roster_status = 'ACTIVE';
-              mapped[existingIndex].slot_position = kRow.slot_position;
+              mapped[existingIndex].roster_status = statusForGrid;
+              mapped[existingIndex].slot_position = kRow.slot_position || 'F1';
+              mapped[existingIndex].promoted = true;
+              mapped[existingIndex].isProtected = true;
               if (kRow.nhl_id) mapped[existingIndex].nhl_id = kRow.nhl_id;
               if (kRow.nhl_team) mapped[existingIndex].team = kRow.nhl_team;
             } else {
@@ -517,7 +522,7 @@ export const ActiveSquadManager: React.FC<ActiveSquadManagerProps> = ({
                 position: kRow.position || 'F',
                 team: kRow.nhl_team || 'NHL Team',
                 team_abbr: 'NHL',
-                roster_status: 'ACTIVE',
+                roster_status: statusForGrid,
                 slot_position: kRow.slot_position || 'F1',
                 goals: 0, assists: 0, points: 0, wins: 0, shutouts: 0, saves: 0, goals_against: 0, save_pct: 0, total_games: 0,
                 promoted: true,
@@ -698,6 +703,17 @@ export const ActiveSquadManager: React.FC<ActiveSquadManagerProps> = ({
     addToast(swapMessage, 'success');
 
     try {
+      const checkIsKeeper = (playerName: string) => {
+        try {
+          const stored = localStorage.getItem(`winko_keepers_${selectedGm}`);
+          if (stored) {
+            const slots = JSON.parse(stored);
+            return Object.values(slots).some((p: any) => p && p.player_name.toLowerCase() === playerName.toLowerCase());
+          }
+        } catch (e) {}
+        return false;
+      };
+
       const syncKeeperMovement = (playerName: string, slot: string, status: string) => {
         try {
           const key = `winko_keepers_${selectedGm}`;
@@ -713,13 +729,15 @@ export const ActiveSquadManager: React.FC<ActiveSquadManagerProps> = ({
                 break;
               }
             }
-            if (existingSlot) {
-              slots[existingSlot] = null;
+            if (existingSlot && playerData) {
+              if (['F1', 'F2', 'F3', 'F4', 'D1', 'D2', 'G1'].includes(slot)) {
+                slots[existingSlot] = null;
+                slots[slot] = playerData;
+              } else {
+                slots[existingSlot] = playerData;
+              }
+              localStorage.setItem(key, JSON.stringify(slots));
             }
-            if (ALL_ACTIVE_SLOTS.includes(slot as any) && playerData) {
-              slots[slot] = playerData;
-            }
-            localStorage.setItem(key, JSON.stringify(slots));
           }
         } catch (e) {
           console.error('Error syncing keeper movement:', e);
@@ -736,28 +754,34 @@ export const ActiveSquadManager: React.FC<ActiveSquadManagerProps> = ({
         syncKeeperMovement(occupant.player_name, returnSlot, returnStatus);
       }
 
+      const playerIsKeeper = checkIsKeeper(player.player_name);
+      const occupantIsKeeper = occupant ? checkIsKeeper(occupant.player_name) : false;
+
+      const playerRosterStatus = playerIsKeeper ? 'KEEPER' : targetStatus;
+      const occupantRosterStatus = occupantIsKeeper ? 'KEEPER' : returnStatus;
+
       const updatePlayerProspect = supabase
         .from('prospects')
-        .update({ roster_status: targetStatus, slot_position: targetSlot })
+        .update({ roster_status: playerIsKeeper ? 'KEEPER' : targetStatus, slot_position: targetSlot })
         .eq('id', player.id);
 
       const updatePlayerActiveRoster = supabase
         .from('active_roster_players')
-        .update({ roster_status: targetStatus, slot_position: targetSlot })
+        .update({ roster_status: playerRosterStatus, slot_position: targetSlot })
         .eq('gm_name', selectedGm)
         .eq('player_name', player.player_name);
 
       const updateOccupantProspect = occupant
         ? supabase
             .from('prospects')
-            .update({ roster_status: returnStatus, slot_position: returnSlot })
+            .update({ roster_status: occupantIsKeeper ? 'KEEPER' : returnStatus, slot_position: returnSlot })
             .eq('id', occupant.id)
         : Promise.resolve({ error: null });
 
       const updateOccupantActiveRoster = occupant
         ? supabase
             .from('active_roster_players')
-            .update({ roster_status: returnStatus, slot_position: returnSlot })
+            .update({ roster_status: occupantRosterStatus, slot_position: returnSlot })
             .eq('gm_name', selectedGm)
             .eq('player_name', occupant.player_name)
         : Promise.resolve({ error: null });
