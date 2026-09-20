@@ -791,9 +791,15 @@ export const ActiveSquadManager: React.FC<ActiveSquadManagerProps> = ({
 
       const updatePlayerActiveRoster = supabase
         .from('active_roster_players')
-        .update({ roster_status: playerRosterStatus, slot_position: targetSlot })
-        .eq('gm_name', selectedGm)
-        .eq('player_name', player.player_name);
+        .upsert({
+          gm_name: selectedGm,
+          player_name: player.player_name,
+          position: player.position || 'F',
+          nhl_id: String(player.nhl_id || ''),
+          nhl_team: player.team || player.team_abbr || 'NHL Team',
+          roster_status: playerRosterStatus,
+          slot_position: targetSlot
+        }, { onConflict: 'gm_name,player_name' });
 
       const updateOccupantProspect = occupant
         ? supabase
@@ -805,9 +811,15 @@ export const ActiveSquadManager: React.FC<ActiveSquadManagerProps> = ({
       const updateOccupantActiveRoster = occupant
         ? supabase
             .from('active_roster_players')
-            .update({ roster_status: occupantRosterStatus, slot_position: returnSlot })
-            .eq('gm_name', selectedGm)
-            .eq('player_name', occupant.player_name)
+            .upsert({
+              gm_name: selectedGm,
+              player_name: occupant.player_name,
+              position: occupant.position || 'F',
+              nhl_id: String(occupant.nhl_id || ''),
+              nhl_team: occupant.team || occupant.team_abbr || 'NHL Team',
+              roster_status: occupantRosterStatus,
+              slot_position: returnSlot
+            }, { onConflict: 'gm_name,player_name' })
         : Promise.resolve({ error: null });
 
       const [resA, resB, resC, resD] = await Promise.all([
@@ -897,9 +909,15 @@ export const ActiveSquadManager: React.FC<ActiveSquadManagerProps> = ({
           .eq('id', player.id),
         supabase
           .from('active_roster_players')
-          .update({ roster_status: rosterStatusVal, slot_position: 'BENCH' })
-          .eq('gm_name', selectedGm)
-          .eq('player_name', player.player_name)
+          .upsert({
+            gm_name: selectedGm,
+            player_name: player.player_name,
+            position: player.position || 'F',
+            nhl_id: String(player.nhl_id || ''),
+            nhl_team: player.team || player.team_abbr || 'NHL Team',
+            roster_status: rosterStatusVal,
+            slot_position: 'BENCH'
+          }, { onConflict: 'gm_name,player_name' })
       ]);
     } catch (err: any) {
       console.error('Unassign error:', err);
