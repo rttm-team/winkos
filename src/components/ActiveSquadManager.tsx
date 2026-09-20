@@ -698,26 +698,79 @@ export const ActiveSquadManager: React.FC<ActiveSquadManagerProps> = ({
     addToast(swapMessage, 'success');
 
     try {
-      const updatePlayer = supabase
-        .from('prospects')
-        .update({ roster_status: targetStatus, slot_position: targetSlot })
-        .eq('id', player.id);
+      const syncKeeperMovement = (playerName: string, slot: string, status: string) => {
+        try {
+          const key = `winko_keepers_${selectedGm}`;
+          const stored = localStorage.getItem(key);
+          if (stored) {
+            const slots = JSON.parse(stored);
+            let existingSlot: string | null = null;
+            let playerData: any = null;
+            for (const [sKey, p] of Object.entries(slots)) {
+              if (p && (p as any).player_name.toLowerCase() === playerName.toLowerCase()) {
+                existingSlot = sKey;
+                playerData = p;
+                break;
+              }
+            }
+            if (existingSlot) {
+              slots[existingSlot] = null;
+            }
+            if (ALL_ACTIVE_SLOTS.includes(slot as any) && playerData) {
+              slots[slot] = playerData;
+            }
+            localStorage.setItem(key, JSON.stringify(slots));
+          }
+        } catch (e) {
+          console.error('Error syncing keeper movement:', e);
+        }
+      };
 
+      syncKeeperMovement(player.player_name, targetSlot, targetStatus);
       const isSourceActive = ALL_ACTIVE_SLOTS.includes(sourceSlot as any);
       const isSourceBench = ALL_BENCH_SLOTS.includes(sourceSlot as any);
       const returnStatus = isSourceActive ? 'ACTIVE' : 'BENCH';
       const returnSlot = isSourceActive || isSourceBench ? sourceSlot : 'BENCH';
 
-      const updateOccupant = occupant
+      if (occupant) {
+        syncKeeperMovement(occupant.player_name, returnSlot, returnStatus);
+      }
+
+      const updatePlayerProspect = supabase
+        .from('prospects')
+        .update({ roster_status: targetStatus, slot_position: targetSlot })
+        .eq('id', player.id);
+
+      const updatePlayerActiveRoster = supabase
+        .from('active_roster_players')
+        .update({ roster_status: targetStatus, slot_position: targetSlot })
+        .eq('gm_name', selectedGm)
+        .eq('player_name', player.player_name);
+
+      const updateOccupantProspect = occupant
         ? supabase
             .from('prospects')
             .update({ roster_status: returnStatus, slot_position: returnSlot })
             .eq('id', occupant.id)
         : Promise.resolve({ error: null });
 
-      const [resA, resB] = await Promise.all([updatePlayer, updateOccupant]);
-      if (resA.error) throw resA.error;
-      if (resB.error) throw resB.error;
+      const updateOccupantActiveRoster = occupant
+        ? supabase
+            .from('active_roster_players')
+            .update({ roster_status: returnStatus, slot_position: returnSlot })
+            .eq('gm_name', selectedGm)
+            .eq('player_name', occupant.player_name)
+        : Promise.resolve({ error: null });
+
+      const [resA, resB, resC, resD] = await Promise.all([
+        updatePlayerProspect,
+        updatePlayerActiveRoster,
+        updateOccupantProspect,
+        updateOccupantActiveRoster,
+      ]);
+      if (resA.error && resB.error) {
+        // If neither exists in DB (e.g. pure local keeper), don't throw
+      }
     } catch (err: any) {
       console.error('Roster movement error:', err);
       setPlayers(prevPlayers);
@@ -775,12 +828,32 @@ export const ActiveSquadManager: React.FC<ActiveSquadManagerProps> = ({
     addToast(`${player.player_name} removed from ${oldSlot} to reserves.`, 'info');
 
     try {
-      const { error } = await supabase
-        .from('prospects')
-        .update({ roster_status: 'BENCH', slot_position: 'BENCH' })
-        .eq('id', player.id);
+      try {
+        const key = `winko_keepers_${selectedGm}`;
+        const stored = localStorage.getItem(key);
+        if (stored) {
+          const slots = JSON.parse(stored);
+          for (const [sKey, p] of Object.entries(slots)) {
+            if (p && (p as any).player_name.toLowerCase() === player.player_name.toLowerCase()) {
+              slots[sKey] = null;
+              break;
+            }
+          }
+          localStorage.setItem(key, JSON.stringify(slots));
+        }
+      } catch (e) {}
 
-      if (error) throw error;
+      await Promise.all([
+        supabase
+          .from('prospects')
+          .update({ roster_status: 'BENCH', slot_position: 'BENCH' })
+          .eq('id', player.id),
+        supabase
+          .from('active_roster_players')
+          .update({ roster_status: 'BENCH', slot_position: 'BENCH' })
+          .eq('gm_name', selectedGm)
+          .eq('player_name', player.player_name)
+      ]);
     } catch (err: any) {
       console.error('Unassign error:', err);
       setPlayers(prevPlayers);
