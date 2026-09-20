@@ -197,12 +197,17 @@ export default function WinkosChallenges({ gmName, theme = 'dark' }: { gmName: s
         if (gmData) setWinkoins(gmData.winkoins || 0);
       }
 
-      // 2. Fetch live official NHL schedule & score feed
+      // 2. Fetch live official NHL schedule & score feed with fast timeout
       let currDate = new Date().toISOString().split('T')[0];
       let todayGames: Game[] = [];
 
       try {
-        const res = await fetch(`/api/nhl-proxy?url=${encodeURIComponent('https://api-web.nhle.com/v1/score/now')}`);
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 2500);
+        const res = await fetch(`/api/nhl-proxy?url=${encodeURIComponent('https://api-web.nhle.com/v1/score/now')}`, {
+          signal: controller.signal
+        });
+        clearTimeout(timeoutId);
         if (res.ok) {
           const data = await res.json();
           if (data.currentDate) currDate = data.currentDate;
@@ -229,14 +234,14 @@ export default function WinkosChallenges({ gmName, theme = 'dark' }: { gmName: s
           }
         }
       } catch (err) {
-        console.warn("NHL proxy call notice:", err);
+        console.warn("NHL proxy call notice or timeout:", err);
       }
       setCurrentDateStr(currDate);
-      if (todayGames.length > 0) {
-        setLiveGames(todayGames);
-      } else {
+      
+      let activeGames = todayGames;
+      if (activeGames.length === 0) {
         // Auto-setup active challenge matchups to keep picks rolling continuously
-        setLiveGames([
+        activeGames = [
           {
             id: 2026020001,
             startTimeUTC: new Date(Date.now() + 3 * 3600 * 1000).toISOString(),
@@ -265,8 +270,9 @@ export default function WinkosChallenges({ gmName, theme = 'dark' }: { gmName: s
             awayTeam: { abbrev: 'TBL', logo: 'https://assets.nhle.com/logos/nhl/svg/TBL_light.svg' },
             homeTeam: { abbrev: 'FLA', logo: 'https://assets.nhle.com/logos/nhl/svg/FLA_light.svg' }
           }
-        ]);
+        ];
       }
+      setLiveGames(activeGames);
 
       // 3. Fetch User's Daily Picks (ONLY on initial page load, NEVER during silent background refresh)
       if (gmName && !isSilent) {
@@ -288,8 +294,8 @@ export default function WinkosChallenges({ gmName, theme = 'dark' }: { gmName: s
       }
       
       // 4. Process Tonight's Leaderboard
-      if (todayGames.length > 0) {
-        await processTonightLeaderboard(todayGames, currDate);
+      if (activeGames.length > 0) {
+        await processTonightLeaderboard(activeGames, currDate);
       }
 
       // 5. Process Overall Challenge Leaderboard
@@ -520,9 +526,16 @@ export default function WinkosChallenges({ gmName, theme = 'dark' }: { gmName: s
     });
 
     try {
+      await supabase
+        .from('daily_picks')
+        .delete()
+        .eq('gm_name', gmName)
+        .eq('pick_date', currentDateStr);
+
       const { error } = await supabase
         .from('daily_picks')
-        .upsert(recordsToUpsert, { onConflict: 'gm_name,game_id' });
+        .insert(recordsToUpsert);
+
       if (error) throw error;
       
       setHasUnsavedChanges(false);
