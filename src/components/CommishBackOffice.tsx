@@ -476,19 +476,38 @@ export const CommishBackOffice: React.FC<CommishBackOfficeProps> = ({
         .in('season_id', [seasonId, '2026-2027', '2026-27'])
         .order('slot_position', { ascending: true });
 
-      // 2. Fetch prospects to filter them out
+      // 2. Fetch prospects to filter them
       const { data: prospectData } = await supabase
         .from('prospects')
-        .select('nhl_id')
+        .select('nhl_id, player_name, promoted, protected, is_protected')
         .eq('gm_name', gmName);
 
-      const prospectIds = new Set((prospectData || []).map(p => String(p.nhl_id)));
+      const prospectsMapByNhlId = new Map();
+      const prospectsMapByName = new Map();
+      (prospectData || []).forEach(p => {
+        if (p.nhl_id) prospectsMapByNhlId.set(String(p.nhl_id), p);
+        if (p.player_name) prospectsMapByName.set(p.player_name.toLowerCase().trim(), p);
+      });
       
       if (rosterError) {
         console.warn('Notice fetching active_roster_players:', rosterError.message);
         setRosterPlayers([]);
       } else {
-        setRosterPlayers(rosterData || []);
+        // Filter: If it's a prospect, only show if Promoted AND Protected
+        const filtered = (rosterData || []).filter(r => {
+          const nhlId = String(r.nhl_id);
+          const name = (r.player_name || '').toLowerCase().trim();
+          
+          const prospect = prospectsMapByNhlId.get(nhlId) || prospectsMapByName.get(name);
+          
+          if (!prospect) return true; // Not a prospect record, keep it (NHL pro or keeper)
+          
+          const isPromoted = Boolean(prospect.promoted);
+          const isProtected = Boolean(prospect.protected || prospect.is_protected);
+          
+          return isPromoted && isProtected;
+        });
+        setRosterPlayers(filtered);
       }
     } catch (err) {
       console.error('Failed to fetch active roster:', err);
