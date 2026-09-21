@@ -492,7 +492,7 @@ export const KeeperSelectionPortal: React.FC<KeeperSelectionPortalProps> = ({
         </div>
       )}
 
-      <div className="max-w-6xl mx-auto px-4 space-y-6">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
         {/* Page Title Section positioned outside of the card, exactly styled as Prospect Central */}
         <section className={`mb-8 flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between border-b pb-6 ${
           isLight ? 'border-slate-200' : 'border-slate-800/80'
@@ -594,10 +594,12 @@ export const KeeperSelectionPortal: React.FC<KeeperSelectionPortalProps> = ({
             <span>Loading active roster keepers...</span>
           </div>
         ) : (
-          <div className="space-y-6">
+          <div className="space-y-8">
             {/* Forwards (4) */}
             <div>
-              <h3 className="text-xs font-bold uppercase tracking-wider text-blue-500 mb-3">Forward Slots (4 Required)</h3>
+              <h3 className={`text-base sm:text-lg font-black uppercase tracking-tight mb-4 ${isLight ? 'text-slate-900' : 'text-white'}`}>
+                Forward Slots
+              </h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 {['F1', 'F2', 'F3', 'F4'].map((key) => renderSlotCard(key, 'F', 'Forward'))}
               </div>
@@ -605,7 +607,9 @@ export const KeeperSelectionPortal: React.FC<KeeperSelectionPortalProps> = ({
 
             {/* Defensemen (2) */}
             <div>
-              <h3 className="text-xs font-bold uppercase tracking-wider text-emerald-500 mb-3">Defenseman Slots (2 Required)</h3>
+              <h3 className={`text-base sm:text-lg font-black uppercase tracking-tight mb-4 ${isLight ? 'text-slate-900' : 'text-white'}`}>
+                Defenseman Slots
+              </h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-4">
                 {['D1', 'D2'].map((key) => renderSlotCard(key, 'D', 'Defenseman'))}
               </div>
@@ -613,7 +617,9 @@ export const KeeperSelectionPortal: React.FC<KeeperSelectionPortalProps> = ({
 
             {/* Goalie (1) */}
             <div>
-              <h3 className="text-xs font-bold uppercase tracking-wider text-purple-500 mb-3">Goaltender Slot (1 Required)</h3>
+              <h3 className={`text-base sm:text-lg font-black uppercase tracking-tight mb-4 ${isLight ? 'text-slate-900' : 'text-white'}`}>
+                Goaltender Slot
+              </h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-4">
                 {['G1'].map((key) => renderSlotCard(key, 'G', 'Goaltender'))}
               </div>
@@ -654,29 +660,29 @@ export const KeeperSelectionPortal: React.FC<KeeperSelectionPortalProps> = ({
       {/* Live Master Player Search Modal */}
       {isSearchOpen && (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className={`border rounded-3xl w-full max-w-lg p-6 space-y-4 shadow-2xl transition ${
+          <div className={`border rounded-[32px] w-full max-w-xl p-8 space-y-6 shadow-2xl transition ${
             isLight ? 'bg-white border-slate-200' : 'bg-slate-900 border-slate-800'
           }`}>
-            <div className={`flex items-center justify-between border-b pb-3 ${
+            <div className={`flex items-center justify-between border-b pb-4 ${
               isLight ? 'border-slate-200' : 'border-slate-800'
             }`}>
-              <h3 className={`font-extrabold text-sm ${isLight ? 'text-slate-900' : 'text-slate-100'}`}>
+              <h3 className={`font-black text-base sm:text-lg uppercase tracking-tight ${isLight ? 'text-slate-900' : 'text-slate-100'}`}>
                 Select {activeSlotPosition === 'F' ? 'Forward' : activeSlotPosition === 'D' ? 'Defenseman' : 'Goaltender'} ({activeSlotKey})
               </h3>
-              <button onClick={() => setIsSearchOpen(false)} className={`transition-colors ${isLight ? 'text-slate-400 hover:text-slate-600' : 'text-slate-400 hover:text-white'}`}>
-                <X className="h-5 w-5" />
+              <button onClick={() => setIsSearchOpen(false)} className={`transition-colors p-1 rounded-lg ${isLight ? 'text-slate-400 hover:text-slate-600 hover:bg-slate-100' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}>
+                <X className="h-6 w-6" />
               </button>
             </div>
 
             <div className="relative">
-              <Search className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
+              <Search className="absolute left-4 top-3.5 h-5 w-5 text-slate-400" />
               <input
                 type="text"
                 placeholder="Search NHL players (e.g., Bratt, McDavid, NJD)..."
                 value={searchQuery}
                 onChange={handleSearchChange}
                 autoFocus
-                className={`w-full border rounded-xl pl-9 pr-4 py-2 text-xs font-semibold focus:outline-none focus:border-amber-500 transition ${
+                className={`w-full border rounded-2xl pl-11 pr-4 py-3.5 text-sm font-bold focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition ${
                   isLight 
                     ? 'bg-slate-100 border-slate-200 text-slate-900 placeholder:text-slate-400' 
                     : 'bg-slate-800 border-slate-700 text-white placeholder:text-slate-500'
@@ -684,14 +690,14 @@ export const KeeperSelectionPortal: React.FC<KeeperSelectionPortalProps> = ({
               />
             </div>
 
-            <div className="max-h-64 overflow-y-auto space-y-2 pr-1">
+            <div className="max-h-[400px] overflow-y-auto space-y-3 pr-1">
               {searching ? (
-                <div className={`py-8 text-center text-xs flex items-center justify-center gap-2 ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>
-                  <Loader2 className="h-4 w-4 animate-spin text-amber-500" />
+                <div className={`py-12 text-center text-sm flex items-center justify-center gap-2.5 ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>
+                  <Loader2 className="h-5 w-5 animate-spin text-emerald-500" />
                   <span>Searching NHL Master Database...</span>
                 </div>
               ) : searchResults.length === 0 ? (
-                <p className="py-8 text-center text-xs text-slate-400">
+                <p className="py-12 text-center text-sm font-medium text-slate-400">
                   No {activeSlotPosition} players found matching "{searchQuery}".
                 </p>
               ) : (
@@ -699,19 +705,19 @@ export const KeeperSelectionPortal: React.FC<KeeperSelectionPortalProps> = ({
                   <div
                     key={player.nhl_id}
                     onClick={() => handleSelectPlayer(player)}
-                    className={`flex items-center justify-between p-3 rounded-xl border cursor-pointer transition ${
+                    className={`flex items-center justify-between p-4 rounded-2xl border cursor-pointer transition-all duration-200 ${
                       isLight
-                        ? 'bg-slate-50 hover:bg-slate-100 border-slate-200 shadow-sm'
-                        : 'bg-slate-800/60 hover:bg-slate-800 border border-slate-700/50'
+                        ? 'bg-slate-50 hover:bg-slate-100 border-slate-200/80 hover:border-emerald-500 shadow-sm'
+                        : 'bg-slate-800/60 hover:bg-slate-800 border border-slate-700/50 hover:border-emerald-500'
                     }`}
                   >
                     <div>
-                      <div className={`font-kanit font-extrabold text-xs ${isLight ? 'text-slate-900' : 'text-slate-100'}`}>{player.player_name}</div>
-                      <div className={`text-[10px] mt-0.5 ${isLight ? 'text-slate-500' : 'text-slate-400'}`}>
+                      <div className={`font-kanit font-black text-sm sm:text-base ${isLight ? 'text-slate-900' : 'text-slate-100'}`}>{player.player_name}</div>
+                      <div className={`text-xs mt-1.5 font-semibold ${isLight ? 'text-slate-500' : 'text-slate-400'}`}>
                         {player.position} • {player.nhl_team || 'N/A'} • #{player.nhl_id}
                       </div>
                     </div>
-                    <button className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs transition-all shadow-md cursor-pointer shrink-0">
+                    <button className="px-4.5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs sm:text-sm transition-all shadow-md cursor-pointer shrink-0">
                       + Select
                     </button>
                   </div>
@@ -730,12 +736,14 @@ export const KeeperSelectionPortal: React.FC<KeeperSelectionPortalProps> = ({
       <div
         key={slotKey}
         onClick={() => !player && handleOpenSearch(slotKey, pos)}
-        className={`p-5 rounded-3xl border transition-all flex flex-col justify-between min-h-[140px] ${
+        className={`p-5 rounded-3xl border transition-all duration-300 flex flex-col justify-between min-h-[140px] shadow-md hover:shadow-lg hover:-translate-y-0.5 ${
           player
-            ? (isLight ? 'bg-white border-slate-200 shadow-sm' : 'bg-slate-900 border-slate-700')
+            ? (isLight 
+                ? 'bg-white border-slate-200/80 hover:border-emerald-500 shadow-slate-100' 
+                : 'bg-slate-900 border-slate-700/80 hover:border-emerald-500 shadow-black/40')
             : (isLight 
-                ? 'bg-slate-50/50 border-dashed border-slate-300 hover:border-amber-500 cursor-pointer' 
-                : 'bg-slate-900/40 border-dashed border-slate-700 hover:border-amber-500 cursor-pointer')
+                ? 'bg-slate-50/50 border-dashed border-slate-300 hover:border-emerald-500 hover:bg-white cursor-pointer' 
+                : 'bg-slate-900/40 border-dashed border-slate-700 hover:border-emerald-500 hover:bg-slate-900/60 cursor-pointer')
         }`}
       >
         <div className="flex items-center justify-between">
