@@ -23,7 +23,7 @@ NHL_HEADERS = {
 NHL_TEAMS = [
     'ANA', 'BOS', 'BUF', 'CAR', 'CBJ', 'CGY', 'CHI', 'COL', 
     'DAL', 'DET', 'EDM', 'FLA', 'LAK', 'MIN', 'MTL', 'NJD', 
-    'NSH', 'NYI', 'NYR', 'OTT', 'PHI', 'PIT', 'SJE', 'SEA', 
+    'NSH', 'NYI', 'NYR', 'OTT', 'PHI', 'PIT', 'SJS', 'SEA', 
     'STL', 'TBL', 'TOR', 'UTA', 'VAN', 'VGK', 'WPG', 'WSH'
 ]
 
