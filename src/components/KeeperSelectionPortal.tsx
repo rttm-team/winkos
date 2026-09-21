@@ -274,12 +274,16 @@ export const KeeperSelectionPortal: React.FC<KeeperSelectionPortalProps> = ({
     if (!activeSlotKey) return;
 
     // Prevent selecting the same player twice across different slots
-    const isAlreadySelected = (Object.values(slots) as (KeeperPlayer | null)[]).some(
-      (slot) => slot && String(slot.nhl_id) === String(player.nhl_id)
-    );
+    const isAlreadySelected = Object.entries(slots).some(([slotKey, slotVal]) => {
+      const slot = slotVal as KeeperPlayer | null;
+      if (!slot || slotKey === activeSlotKey) return false;
+      const sameId = slot.nhl_id && player.nhl_id && String(slot.nhl_id) === String(player.nhl_id);
+      const sameName = slot.player_name && player.player_name && slot.player_name.toLowerCase().trim() === player.player_name.toLowerCase().trim();
+      return sameId || sameName;
+    });
 
     if (isAlreadySelected) {
-      showToast(`${player.player_name} is already selected as one of your keepers!`, 'error');
+      showToast(`${player.player_name} is already selected in another keeper slot!`, 'error');
       return;
     }
 
