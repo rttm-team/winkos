@@ -567,11 +567,6 @@ export const ActiveRosterStatsTable: React.FC<ActiveRosterStatsTableProps> = ({
     >
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-6">
         {/* ==========================================
-            POSITION & SLOT GAMES TRACKER
-        ========================================== */}
-        <PositionSlotTracker selectedGM={currentGm} theme={isLight ? 'light' : 'dark'} seasonId="2026-2027" />
-
-        {/* ==========================================
             SUMMARY HEADER (Total Active Squad FP)
         ========================================== */}
         <div
@@ -691,7 +686,7 @@ export const ActiveRosterStatsTable: React.FC<ActiveRosterStatsTableProps> = ({
                     7 Slots
                   </span>
                 </div>
-                <div className="text-xl sm:text-2xl font-black text-amber-600 dark:text-amber-400 tracking-tight font-mono">
+                <div className="text-2xl sm:text-3xl font-black text-amber-600 dark:text-amber-400 tracking-tight font-mono">
                   {totalBenchFP.toLocaleString()}
                   <span className="text-xs font-normal text-slate-400 ml-1">FP</span>
                 </div>
@@ -721,6 +716,11 @@ export const ActiveRosterStatsTable: React.FC<ActiveRosterStatsTableProps> = ({
             </div>
           </div>
         </div>
+
+        {/* ==========================================
+            POSITION & SLOT GAMES TRACKER
+        ========================================== */}
+        <PositionSlotTracker selectedGM={currentGm} theme={isLight ? 'light' : 'dark'} seasonId="2026-2027" />
 
         {/* ==========================================
             ROSTER CONTROLS: Tabs & Search
