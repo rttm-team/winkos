@@ -312,6 +312,17 @@ export default function WaiverWirePortal({
     return result;
   }, [availablePlayers, searchQuery, positionFilter, sortBy, sortOrder]);
 
+  // Lazy Loading Pagination State
+  const [visibleCount, setVisibleCount] = useState<number>(30);
+
+  useEffect(() => {
+    setVisibleCount(30);
+  }, [searchQuery, positionFilter, sortBy, sortOrder]);
+
+  const displayedPlayers = useMemo(() => {
+    return filteredAndSortedPlayers.slice(0, visibleCount);
+  }, [filteredAndSortedPlayers, visibleCount]);
+
   // Pickups calculations
   const maxPickups = tracker?.max_waiver_pickups ?? 3;
   const pickupsUsed = tracker?.waiver_pickups_used ?? 0;
@@ -960,7 +971,7 @@ export default function WaiverWirePortal({
                     </td>
                   </tr>
                 ) : (
-                  filteredAndSortedPlayers.map((player) => {
+                  displayedPlayers.map((player) => {
                     const isGoalie = player.position.toUpperCase() === 'G';
                     const posColor =
                       player.position === 'F' || player.position === 'C' || player.position === 'LW' || player.position === 'RW'
@@ -1091,6 +1102,22 @@ export default function WaiverWirePortal({
               </tbody>
             </table>
           </div>
+
+          {/* Lazy Loading / Load More Bar */}
+          {visibleCount < filteredAndSortedPlayers.length && (
+            <div className={`p-4 border-t text-center ${isLight ? 'bg-slate-50 border-slate-200' : 'bg-slate-950/40 border-slate-800'}`}>
+              <button
+                onClick={() => setVisibleCount((prev) => prev + 30)}
+                className={`px-6 py-2.5 rounded-xl font-black text-xs transition-all cursor-pointer shadow-md ${
+                  isLight
+                    ? 'bg-amber-500 hover:bg-amber-400 text-slate-950'
+                    : 'bg-amber-500 hover:bg-amber-400 text-slate-950'
+                }`}
+              >
+                Load More Players ({displayedPlayers.length} of {filteredAndSortedPlayers.length} shown) ↓
+              </button>
+            </div>
+          )}
         </section>
         </>
         )}

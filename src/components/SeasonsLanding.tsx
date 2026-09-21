@@ -9,9 +9,11 @@ import {
   ChevronRight,
   TrendingUp,
   History,
-  Info
+  Info,
+  Eye
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import ActiveRosterStatsTable from './ActiveRosterStatsTable';
 
 interface SeasonsLandingProps {
   theme: 'light' | 'dark';
@@ -47,6 +49,21 @@ export const SeasonsLanding: React.FC<SeasonsLandingProps> = ({
 }) => {
   const isLight = theme === 'light';
   const [selectedSeasonId, setSelectedSeasonId] = React.useState<string | null>(null);
+  const [viewingRosterGm, setViewingRosterGm] = useState<string | null>(null);
+
+  if (viewingRosterGm) {
+    return (
+      <div className="space-y-6 animate-in fade-in duration-300">
+        <ActiveRosterStatsTable
+          selectedGm={viewingRosterGm}
+          theme={theme}
+          availableGms={gms.map(g => g.name)}
+          onSelectGm={(gm) => setViewingRosterGm(gm)}
+          onNavigateBack={() => setViewingRosterGm(null)}
+        />
+      </div>
+    );
+  }
 
   const getLeaderboardForSeason = (seasonId: string) => {
     if (seasonId === '2026-27') {
@@ -220,13 +237,15 @@ export const SeasonsLanding: React.FC<SeasonsLandingProps> = ({
                         <th className="px-6 py-4">General Manager</th>
                         <th className="px-6 py-4 text-right">Points</th>
                         <th className="px-6 py-4 text-right">W-G-A</th>
+                        <th className="px-6 py-4 text-right">Roster</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
                       {currentLeaderboard.map((gm, idx) => (
                         <tr 
                           key={gm.id} 
-                          className={`group transition-colors ${isLight ? 'hover:bg-slate-50' : 'hover:bg-slate-800/30'}`}
+                          onClick={() => setViewingRosterGm(gm.name)}
+                          className={`group transition-colors cursor-pointer ${isLight ? 'hover:bg-slate-100/80' : 'hover:bg-slate-800/50'}`}
                         >
                           <td className="px-6 py-5">
                             <div className="flex items-center gap-2">
@@ -243,7 +262,7 @@ export const SeasonsLanding: React.FC<SeasonsLandingProps> = ({
                           </td>
                           <td className="px-6 py-5">
                             <div>
-                              <div className={`text-sm font-black ${isLight ? 'text-slate-900' : 'text-white'}`}>
+                              <div className={`text-sm font-black group-hover:text-cyan-500 transition-colors ${isLight ? 'text-slate-900' : 'text-white'}`}>
                                 {gm.teamName}
                               </div>
                               <div className="text-[11px] text-slate-500 flex items-center gap-1 mt-0.5">
@@ -262,6 +281,18 @@ export const SeasonsLanding: React.FC<SeasonsLandingProps> = ({
                             <div className={`text-xs font-mono font-bold ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>
                               {gm.wins}W • {gm.goals}G • {gm.assists}A
                             </div>
+                          </td>
+                          <td className="px-6 py-5 text-right" onClick={(e) => { e.stopPropagation(); setViewingRosterGm(gm.name); }}>
+                            <button
+                              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                                isLight
+                                  ? 'bg-slate-100 text-slate-700 hover:bg-cyan-600 hover:text-white'
+                                  : 'bg-slate-800 text-slate-300 hover:bg-cyan-500 hover:text-slate-950'
+                              }`}
+                            >
+                              <Eye className="h-3.5 w-3.5" />
+                              View Roster
+                            </button>
                           </td>
                         </tr>
                       ))}

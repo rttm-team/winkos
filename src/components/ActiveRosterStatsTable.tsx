@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
 import { INITIAL_GMS, NHL_TEAMS_MAP, getStoredScoringStats, getBaselineScoringStats } from '../data/mockData';
+import PositionSlotTracker from './PositionSlotTracker';
 import {
   Trophy,
   ArrowUpDown,
@@ -565,6 +566,11 @@ export const ActiveRosterStatsTable: React.FC<ActiveRosterStatsTableProps> = ({
       }`}
     >
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-6">
+        {/* ==========================================
+            POSITION & SLOT GAMES TRACKER
+        ========================================== */}
+        <PositionSlotTracker selectedGM={currentGm} theme={isLight ? 'light' : 'dark'} seasonId="2026-2027" />
+
         {/* ==========================================
             SUMMARY HEADER (Total Active Squad FP)
         ========================================== */}
