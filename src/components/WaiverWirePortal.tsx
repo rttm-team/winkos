@@ -534,92 +534,7 @@ export default function WaiverWirePortal({
           </div>
         )}
 
-        {/* ========================================================================= */}
-        {/* 1. TOP HEADER & CONTROL SECTION (Standard style with divider) */}
-        {/* ========================================================================= */}
-        <section
-          id="waiver-portal-header"
-          className={`mb-8 flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between border-b pb-6 ${
-            isLight ? 'border-slate-200' : 'border-slate-800/80'
-          }`}
-        >
-          <div>
-            <div>
-              <div className="flex items-center gap-2.5 flex-wrap">
-                <h2
-                  className={`text-3xl sm:text-4xl font-black tracking-tight ${
-                    isLight ? 'text-slate-900' : 'text-white'
-                  }`}
-                >
-                  Waiver Wire Portal
-                </h2>
-                <span className="px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30">
-                  Rule 5 Claims
-                </span>
-              </div>
-              <p className={`text-xs sm:text-sm mt-1.5 max-w-2xl ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>
-                Claim free agents directly into your active roster and submit drops under official Rule 5 guidelines.
-                Each GM is allocated 3 seasonal waiver pickups.
-              </p>
-            </div>
-          </div>
-
-          {/* GM & Season Controls */}
-          <div className="flex flex-wrap items-center gap-3">
-            {/* Season Badge */}
-            <div
-              className={`flex items-center gap-2 px-3.5 py-2 rounded-2xl border text-xs font-bold shadow-sm ${
-                isLight ? 'bg-white border-slate-200 text-slate-700' : 'bg-slate-900 border-slate-800 text-slate-300'
-              }`}
-            >
-              <Calendar className="h-4 w-4 text-amber-500" />
-              <span>Season: 2026-2027</span>
-            </div>
-
-            {/* GM Selector Dropdown */}
-            <div className="relative">
-              <select
-                id="gm-selector-dropdown"
-                value={selectedGM}
-                onChange={(e) => setSelectedGM(e.target.value)}
-                className={`appearance-none pl-3.5 pr-9 py-2 rounded-2xl border text-xs font-bold shadow-sm cursor-pointer transition-colors focus:outline-none focus:ring-2 focus:ring-amber-500/50 ${
-                  isLight
-                    ? 'bg-white border-slate-200 text-slate-800 hover:bg-slate-50'
-                    : 'bg-slate-900 border-slate-800 text-slate-200 hover:bg-slate-800'
-                }`}
-              >
-                {gmList.map((gm) => (
-                  <option key={gm.id || gm.name} value={gm.name} className="py-1">
-                    GM: {gm.name} {gm.teamName ? `(${gm.teamName})` : ''}
-                  </option>
-                ))}
-              </select>
-              <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 pointer-events-none text-slate-400" />
-            </div>
-
-            {/* Refresh Pool Button */}
-            <button
-              id="refresh-waiver-pool-btn"
-              onClick={() => {
-                fetchGMTracker(selectedGM);
-                fetchPlayersAndTakenPool();
-                showToast('Refreshed waiver wire pool', 'info');
-              }}
-              title="Refresh waiver wire pool"
-              className={`p-2 rounded-2xl border shadow-sm transition-colors ${
-                isLight
-                  ? 'bg-white border-slate-200 text-slate-600 hover:text-slate-900 hover:bg-slate-50'
-                  : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-white hover:bg-slate-800'
-              }`}
-            >
-              <RefreshCw className={`h-4 w-4 ${loadingPlayers || loadingTracker ? 'animate-spin' : ''}`} />
-            </button>
-          </div>
-        </section>
-
-        {/* ========================================================================= */}
-        {/* 1. GM WAIVER COUNTER BANNER */}
-        {/* ========================================================================= */}
+        {/* GM WAIVER COUNTER BANNER */}
         <section
           id="gm-waiver-counter-banner"
           className={`p-6 sm:p-7 rounded-3xl border shadow-xl relative overflow-hidden transition-all duration-300 ${
@@ -637,15 +552,34 @@ export default function WaiverWirePortal({
 
           <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 relative z-10">
             {/* Left: GM Overview & Counter */}
-            <div className="space-y-2">
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-black uppercase tracking-wider text-amber-500">
-                  GM Seasonal Tracker
-                </span>
-                <span className="text-slate-400">•</span>
-                <span className={`text-xs font-bold ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>
-                  {selectedGM}&apos;s Franchise
-                </span>
+            <div className="space-y-2 flex-1">
+              <div className="flex items-center justify-between lg:justify-start lg:gap-4">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-black uppercase tracking-wider text-amber-500">
+                    GM Seasonal Tracker
+                  </span>
+                  <span className="text-slate-400">•</span>
+                  <span className={`text-xs font-bold ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>
+                    {selectedGM}&apos;s Franchise
+                  </span>
+                </div>
+                {/* Refresh Pool Button moved here */}
+                <button
+                  id="refresh-waiver-pool-btn"
+                  onClick={() => {
+                    fetchGMTracker(selectedGM);
+                    fetchPlayersAndTakenPool();
+                    showToast('Refreshed waiver wire pool', 'info');
+                  }}
+                  title="Refresh waiver wire pool"
+                  className={`p-2 rounded-2xl border shadow-sm transition-colors ${
+                    isLight
+                      ? 'bg-white border-slate-200 text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+                      : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-white hover:bg-slate-800'
+                  }`}
+                >
+                  <RefreshCw className={`h-4 w-4 ${loadingPlayers || loadingTracker ? 'animate-spin' : ''}`} />
+                </button>
               </div>
 
               <div className="flex items-baseline gap-3 flex-wrap">
