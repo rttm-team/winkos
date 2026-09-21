@@ -451,6 +451,7 @@ export const CommishBackOffice: React.FC<CommishBackOfficeProps> = ({
     authedGm?.name || activeGm?.name || 'Adam'
   );
   const [rosterPlayers, setRosterPlayers] = useState<ActiveRosterPlayer[]>([]);
+  const [allProspectIds, setAllProspectIds] = useState<Set<number | string>>(new Set());
   const [loadingRoster, setLoadingRoster] = useState(false);
   const [droppingPlayer, setDroppingPlayer] = useState<ActiveRosterPlayer | null>(null);
   const [dropConfirmOpen, setDropConfirmOpen] = useState(false);
@@ -467,18 +468,29 @@ export const CommishBackOffice: React.FC<CommishBackOfficeProps> = ({
   const fetchActiveRoster = useCallback(async (gmName: string) => {
     setLoadingRoster(true);
     try {
-      const { data, error } = await supabase
+      // 1. Fetch active roster players
+      const { data: rosterData, error: rosterError } = await supabase
         .from('active_roster_players')
         .select('*')
         .eq('gm_name', gmName)
         .in('season_id', [seasonId, '2026-2027', '2026-27'])
         .order('slot_position', { ascending: true });
 
-      if (error) {
-        console.warn('Notice fetching active_roster_players:', error.message);
+      // 2. Fetch prospects to filter them out
+      const { data: prospectData } = await supabase
+        .from('prospects')
+        .select('nhl_id')
+        .eq('gm_name', gmName);
+
+      const prospectIds = new Set((prospectData || []).map(p => String(p.nhl_id)));
+      
+      if (rosterError) {
+        console.warn('Notice fetching active_roster_players:', rosterError.message);
         setRosterPlayers([]);
       } else {
-        setRosterPlayers(data || []);
+        // Filter out any player that is in the prospects table
+        const filtered = (rosterData || []).filter(r => !prospectIds.has(String(r.nhl_id)));
+        setRosterPlayers(filtered);
       }
     } catch (err) {
       console.error('Failed to fetch active roster:', err);
@@ -487,6 +499,18 @@ export const CommishBackOffice: React.FC<CommishBackOfficeProps> = ({
       setLoadingRoster(false);
     }
   }, [seasonId]);
+
+  // Fetch all prospects globally to filter Force Add search
+  const fetchGlobalProspects = useCallback(async () => {
+    try {
+      const { data } = await supabase.from('prospects').select('nhl_id');
+      if (data) {
+        setAllProspectIds(new Set(data.map(p => String(p.nhl_id))));
+      }
+    } catch (err) {
+      console.error('Failed to fetch global prospects:', err);
+    }
+  }, []);
 
   // Fetch master players pool for search
   const fetchMasterPlayers = useCallback(async () => {
@@ -516,7 +540,8 @@ export const CommishBackOffice: React.FC<CommishBackOfficeProps> = ({
     fetchSeasonSettings();
     fetchGMTrackers();
     fetchMasterPlayers();
-  }, [fetchSeasonSettings, fetchGMTrackers, fetchMasterPlayers]);
+    fetchGlobalProspects();
+  }, [fetchSeasonSettings, fetchGMTrackers, fetchMasterPlayers, fetchGlobalProspects]);
 
   useEffect(() => {
     if (selectedForceGm) {
@@ -655,6 +680,9 @@ export const CommishBackOffice: React.FC<CommishBackOfficeProps> = ({
     const q = masterQuery.toLowerCase().trim();
     return masterPlayers
       .filter((p) => {
+        // Filter out global prospects
+        if (allProspectIds.has(String(p.nhl_id))) return false;
+
         const matchesQuery =
           !q ||
           p.player_name.toLowerCase().includes(q) ||
@@ -910,6 +938,7 @@ export const CommishBackOffice: React.FC<CommishBackOfficeProps> = ({
               onClick={() => {
                 fetchSeasonSettings();
                 fetchGMTrackers();
+                fetchGlobalProspects();
                 if (selectedForceGm) fetchActiveRoster(selectedForceGm);
                 showToast('Synchronized commissioner data', 'info');
               }}
