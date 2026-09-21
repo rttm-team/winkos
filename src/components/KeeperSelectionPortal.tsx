@@ -722,7 +722,7 @@ export const KeeperSelectionPortal: React.FC<KeeperSelectionPortalProps> = ({
                     }`}
                   >
                     <div>
-                      <div className={`font-kanit font-bold text-sm sm:text-base ${isLight ? 'text-slate-900' : 'text-slate-100'}`}>{player.player_name}</div>
+                      <div className={`font-kanit font-medium text-base truncate ${isLight ? 'text-slate-900' : 'text-slate-100'}`}>{player.player_name}</div>
                       <div className={`text-xs mt-1.5 font-semibold ${isLight ? 'text-slate-500' : 'text-slate-400'}`}>
                         {player.position} • {player.nhl_team || 'N/A'} • #{player.nhl_id}
                       </div>
@@ -777,7 +777,7 @@ export const KeeperSelectionPortal: React.FC<KeeperSelectionPortalProps> = ({
 
         {player ? (
           <div className="mt-3">
-            <h4 className={`font-kanit font-extrabold text-sm ${isLight ? 'text-slate-900' : 'text-slate-100'}`}>{player.player_name}</h4>
+            <h4 className={`font-kanit font-medium text-base truncate ${isLight ? 'text-slate-900' : 'text-slate-100'}`}>{player.player_name}</h4>
             <p className={`text-[11px] mt-0.5 ${isLight ? 'text-slate-500' : 'text-slate-400'}`}>{player.nhl_team}</p>
             {!isLocked && (
               <button

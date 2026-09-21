@@ -1446,7 +1446,7 @@ export const CommishBackOffice: React.FC<CommishBackOfficeProps> = ({
                         </span>
                         <div>
                           <div className="flex items-center gap-2">
-                            <span className={`font-black text-sm ${isLight ? 'text-slate-900' : 'text-white'}`}>
+                            <span className={`font-kanit font-medium text-base truncate ${isLight ? 'text-slate-900' : 'text-slate-100'}`}>
                               {player.player_name}
                             </span>
                             {player.is_keeper && (
@@ -1572,8 +1572,8 @@ export const CommishBackOffice: React.FC<CommishBackOfficeProps> = ({
                             {player.position}
                           </span>
                           <div className="truncate">
-                            <span className={`font-black text-xs block truncate ${
-                              isLight ? 'text-slate-900' : 'text-slate-200'
+                            <span className={`font-kanit font-medium text-base truncate block ${
+                              isLight ? 'text-slate-900' : 'text-slate-100'
                             }`}>
                               {player.player_name}
                             </span>

@@ -616,8 +616,8 @@ export default function SeasonTransactionsFeed({
                           </span>
                         </div>
                         <h4
-                          className={`text-sm sm:text-base font-black tracking-tight ${
-                            isLight ? 'text-slate-900' : 'text-emerald-100'
+                          className={`font-kanit font-medium text-base truncate ${
+                            isLight ? 'text-slate-900' : 'text-slate-100'
                           }`}
                         >
                           {tx?.added_player_name || 'Unknown Player'}
@@ -674,8 +674,8 @@ export default function SeasonTransactionsFeed({
                           </span>
                         </div>
                         <h4
-                          className={`text-sm sm:text-base font-black tracking-tight ${
-                            isLight ? 'text-slate-900' : 'text-rose-100'
+                          className={`font-kanit font-medium text-base truncate ${
+                            isLight ? 'text-slate-900' : 'text-slate-100'
                           }`}
                         >
                           {tx?.dropped_player_name || 'No player dropped'}

@@ -887,7 +887,7 @@ export const ProspectLanding: React.FC<ProspectLandingProps> = ({
                           {/* Player Details */}
                           <div>
                             <div className="flex items-center gap-2">
-                              <span className={`font-bold text-sm ${isLight ? 'text-slate-900' : 'text-slate-100'}`}>
+                              <span className={`font-kanit font-medium text-base truncate ${isLight ? 'text-slate-900' : 'text-slate-100'}`}>
                                 {player.player_name}
                               </span>
                               <span
@@ -1018,7 +1018,7 @@ export const ProspectLanding: React.FC<ProspectLandingProps> = ({
 
                             <div>
                               <div className="flex items-center gap-2">
-                                <span className={`font-bold text-sm ${isLight ? 'text-slate-900' : 'text-slate-100'}`}>
+                                <span className={`font-kanit font-medium text-base truncate ${isLight ? 'text-slate-900' : 'text-slate-100'}`}>
                                   {player.player_name}
                                 </span>
                                 <span
