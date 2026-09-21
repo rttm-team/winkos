@@ -379,6 +379,56 @@ export const ActiveSquadManager: React.FC<ActiveSquadManagerProps> = ({
     );
   };
 
+  // Helper to reliably update or insert active_roster_players without failing on conflict constraints
+  const updateActiveRosterRecord = async (
+    seasonId: string,
+    gmName: string,
+    playerName: string,
+    updates: {
+      roster_status: string;
+      slot_position: string;
+      position?: string;
+      nhl_id?: string | number | null;
+      nhl_team?: string;
+      is_keeper?: boolean;
+    }
+  ) => {
+    const currentSeason = seasonId || '2026-2027';
+    const altSeason = currentSeason === '2026-27' ? '2026-2027' : '2026-27';
+
+    // 1. Try updating existing row
+    const { data: updated, error: updateError } = await supabase
+      .from('active_roster_players')
+      .update({
+        roster_status: updates.roster_status,
+        slot_position: updates.slot_position,
+        position: updates.position,
+        nhl_id: updates.nhl_id ? Number(updates.nhl_id) || null : null,
+        nhl_team: updates.nhl_team,
+        is_keeper: updates.is_keeper,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('gm_name', gmName)
+      .in('season_id', [currentSeason, altSeason, '2026-2027', '2026-27'])
+      .eq('player_name', playerName)
+      .select();
+
+    // 2. If no matching row exists, insert it
+    if (!updateError && (!updated || updated.length === 0)) {
+      await supabase.from('active_roster_players').insert([{
+        season_id: currentSeason,
+        gm_name: gmName,
+        player_name: playerName,
+        position: updates.position || 'F',
+        nhl_id: updates.nhl_id ? Number(updates.nhl_id) || null : null,
+        nhl_team: updates.nhl_team || 'NHL Team',
+        roster_status: updates.roster_status,
+        slot_position: updates.slot_position,
+        is_keeper: Boolean(updates.is_keeper),
+      }]);
+    }
+  };
+
   // Fetch roster from Supabase (with fallback to INITIAL_GMS)
   const loadGmRoster = useCallback(
     async (gm: string, silent = false) => {
@@ -406,7 +456,14 @@ export const ActiveSquadManager: React.FC<ActiveSquadManagerProps> = ({
             .map((p: any) => (p.nhl_id ? String(p.nhl_id) : safeLower(p.player_name || p.name || '')))
         );
 
-        // Filter active rows: include if is_keeper === true, or if prospect exists in validProspects
+        const allProspectsKeys = new Set(
+          allProspects.map((p: any) => (p.nhl_id ? String(p.nhl_id) : safeLower(p.player_name || p.name || '')))
+        );
+
+        // Filter active rows:
+        // - Include all assigned keepers (is_keeper === true)
+        // - Include all NHL roster players (players not in the farm prospect pool, e.g. waiver wire pickups, trades, free agency)
+        // - Include promoted & protected farm prospects
         const activeRows: any[] = [];
         for (const row of rawActiveRows) {
           if (!row) continue;
@@ -418,17 +475,16 @@ export const ActiveSquadManager: React.FC<ActiveSquadManagerProps> = ({
 
           const idKey = row.nhl_id ? String(row.nhl_id) : '';
           const nameKey = safeLower(row.player_name || row.name || '');
+          const isKnownFarmProspect = (idKey && allProspectsKeys.has(idKey)) || (nameKey && allProspectsKeys.has(nameKey));
 
-          if (validProspects.has(idKey) || validProspects.has(nameKey)) {
+          if (!isKnownFarmProspect) {
+            // Player is an NHL roster player (e.g. acquired via Waiver Wire, Free Agency, or Trade)
+            activeRows.push(row);
+          } else if (validProspects.has(idKey) || validProspects.has(nameKey)) {
+            // Promoted & protected farm prospect
             activeRows.push(row);
           } else {
-            console.log('Excluding non-keeper / unprotected prospect from active_roster_players:', row.player_name);
-            supabase.from('active_roster_players')
-              .delete()
-              .eq('season_id', selectedSeason || '2026-2027')
-              .eq('gm_name', gm)
-              .eq('nhl_id', row.nhl_id)
-              .then();
+            console.log('Excluding demoted/unprotected farm prospect from active squad:', row.player_name);
           }
         }
 
@@ -502,6 +558,8 @@ export const ActiveSquadManager: React.FC<ActiveSquadManagerProps> = ({
             slot_position: row.slot_position || (row.is_keeper ? 'F1' : existing.slot_position || 'BENCH'),
             roster_status: row.roster_status || (row.is_keeper ? 'ACTIVE' : existing.roster_status || 'BENCH'),
             promoted: true,
+            protected: true,
+            isProtected: true,
             is_keeper: Boolean(row.is_keeper || existing.is_keeper),
             source: 'active_roster',
           });
@@ -549,7 +607,7 @@ export const ActiveSquadManager: React.FC<ActiveSquadManagerProps> = ({
 
           const fp = calculateFantasyPoints(rawStats);
           const fp2026_27 = calculateFantasyPoints(rawStats2026_27);
-          const isProt = Boolean(row.protected ?? row.is_protected ?? row.isProtected ?? false);
+          const isProt = Boolean(row.isProtected ?? row.protected ?? row.is_protected ?? (row.source === 'active_roster') ?? false);
           const isTrashed = Boolean(
             row.is_inactive === true ||
             row.inactive === true ||
@@ -670,16 +728,44 @@ export const ActiveSquadManager: React.FC<ActiveSquadManagerProps> = ({
                 team_abbr: 'NHL',
                 roster_status: targetStatus,
                 slot_position: targetSlot,
-                goals: 0, assists: 0, points: 0, wins: 0, shutouts: 0, saves: 0, goals_against: 0, save_pct: 0, total_games: 0,
+                goals: rRow.goals ?? 0,
+                assists: rRow.assists ?? 0,
+                points: (rRow.goals ?? 0) + (rRow.assists ?? 0),
+                wins: rRow.wins ?? 0,
+                shutouts: rRow.shutouts ?? 0,
+                saves: rRow.saves ?? 0,
+                goals_against: rRow.goals_against ?? 0,
+                save_pct: rRow.save_pct ?? 0,
+                total_games: rRow.gp ?? rRow.total_games ?? 0,
                 promoted: true,
                 isProtected: true,
                 is_keeper: Boolean(rRow.is_keeper),
                 status: 'active',
                 nhl_id: rRow.nhl_id || null,
-                fantasy_points: 0,
-                plus_minus: 0, pim: 0, shots: 0, power_play_points: 0, shorthanded_points: 0, game_winning_goals: 0,
+                fantasy_points: rRow.fantasy_points ?? 0,
+                plus_minus: rRow.plus_minus ?? 0,
+                pim: rRow.pim ?? 0,
+                shots: rRow.sog ?? rRow.shots ?? 0,
+                power_play_points: rRow.power_play_points ?? 0,
+                shorthanded_points: rRow.shorthanded_points ?? 0,
+                game_winning_goals: rRow.game_winning_goals ?? 0,
                 gm_name: gm,
-                goals_2026_27: 0, assists_2026_27: 0, points_2026_27: 0, plus_minus_2026_27: 0, pim_2026_27: 0, shots_2026_27: 0, power_play_points_2026_27: 0, shorthanded_points_2026_27: 0, game_winning_goals_2026_27: 0, wins_2026_27: 0, shutouts_2026_27: 0, saves_2026_27: 0, goals_against_2026_27: 0, save_pct_2026_27: 0, total_games_2026_27: 0, fantasy_points_2026_27: 0,
+                goals_2026_27: rRow.goals ?? 0,
+                assists_2026_27: rRow.assists ?? 0,
+                points_2026_27: (rRow.goals ?? 0) + (rRow.assists ?? 0),
+                plus_minus_2026_27: rRow.plus_minus ?? 0,
+                pim_2026_27: rRow.pim ?? 0,
+                shots_2026_27: rRow.sog ?? rRow.shots ?? 0,
+                power_play_points_2026_27: rRow.power_play_points ?? 0,
+                shorthanded_points_2026_27: rRow.shorthanded_points ?? 0,
+                game_winning_goals_2026_27: rRow.game_winning_goals ?? 0,
+                wins_2026_27: rRow.wins ?? 0,
+                shutouts_2026_27: rRow.shutouts ?? 0,
+                saves_2026_27: rRow.saves ?? 0,
+                goals_against_2026_27: rRow.goals_against ?? 0,
+                save_pct_2026_27: rRow.save_pct ?? 0,
+                total_games_2026_27: rRow.gp ?? rRow.total_games ?? 0,
+                fantasy_points_2026_27: rRow.fantasy_points ?? 0,
               });
             }
           });
@@ -891,38 +977,26 @@ export const ActiveSquadManager: React.FC<ActiveSquadManagerProps> = ({
         localStorage.setItem(seasonRosterStorageKey, JSON.stringify(eligibleForCache));
       } catch (e) {}
 
-      // 2. Direct upsert into active_roster_players with season_id
-      const updatePlayerActiveRoster = supabase
-        .from('active_roster_players')
-        .upsert({
-          season_id: selectedSeason,
-          gm_name: selectedGm,
-          player_name: player.player_name,
-          position: player.position || 'F',
-          nhl_id: String(player.nhl_id || ''),
-          nhl_team: player.team || player.team_abbr || 'NHL Team',
-          roster_status: targetStatus,
-          slot_position: targetSlot,
-          is_keeper: Boolean(player.is_keeper),
-          updated_at: new Date().toISOString(),
-        }, { onConflict: 'season_id,gm_name,player_name' });
+      // 2. Direct update / insert into active_roster_players with season_id
+      const updatePlayerActiveRoster = updateActiveRosterRecord(selectedSeason, selectedGm, player.player_name, {
+        roster_status: targetStatus,
+        slot_position: targetSlot,
+        position: player.position || 'F',
+        nhl_id: player.nhl_id,
+        nhl_team: player.team || player.team_abbr || 'NHL Team',
+        is_keeper: Boolean(player.is_keeper),
+      });
 
       const updateOccupantActiveRoster = occupant
-        ? supabase
-            .from('active_roster_players')
-            .upsert({
-              season_id: selectedSeason,
-              gm_name: selectedGm,
-              player_name: occupant.player_name,
-              position: occupant.position || 'F',
-              nhl_id: String(occupant.nhl_id || ''),
-              nhl_team: occupant.team || occupant.team_abbr || 'NHL Team',
-              roster_status: returnStatus,
-              slot_position: returnSlot,
-              is_keeper: Boolean(occupant.is_keeper),
-              updated_at: new Date().toISOString(),
-            }, { onConflict: 'season_id,gm_name,player_name' })
-        : Promise.resolve({ error: null });
+        ? updateActiveRosterRecord(selectedSeason, selectedGm, occupant.player_name, {
+            roster_status: returnStatus,
+            slot_position: returnSlot,
+            position: occupant.position || 'F',
+            nhl_id: occupant.nhl_id,
+            nhl_team: occupant.team || occupant.team_abbr || 'NHL Team',
+            is_keeper: Boolean(occupant.is_keeper),
+          })
+        : Promise.resolve();
 
       // Backwards-compatible prospects table update
       const updatePlayerProspect = supabase
@@ -1026,20 +1100,14 @@ export const ActiveSquadManager: React.FC<ActiveSquadManagerProps> = ({
       } catch (e) {}
 
       await Promise.allSettled([
-        supabase
-          .from('active_roster_players')
-          .upsert({
-            season_id: selectedSeason,
-            gm_name: selectedGm,
-            player_name: player.player_name,
-            position: player.position || 'F',
-            nhl_id: String(player.nhl_id || ''),
-            nhl_team: player.team || player.team_abbr || 'NHL Team',
-            roster_status: 'BENCH',
-            slot_position: 'BENCH',
-            is_keeper: Boolean(player.is_keeper),
-            updated_at: new Date().toISOString(),
-          }, { onConflict: 'season_id,gm_name,player_name' }),
+        updateActiveRosterRecord(selectedSeason, selectedGm, player.player_name, {
+          roster_status: 'BENCH',
+          slot_position: 'BENCH',
+          position: player.position || 'F',
+          nhl_id: player.nhl_id,
+          nhl_team: player.team || player.team_abbr || 'NHL Team',
+          is_keeper: Boolean(player.is_keeper),
+        }),
         supabase
           .from('prospects')
           .update({ roster_status: 'BENCH', slot_position: 'BENCH' })
@@ -1233,20 +1301,14 @@ export const ActiveSquadManager: React.FC<ActiveSquadManagerProps> = ({
       const ops = assignments.map(a => {
         const pl = candidates.find(c => c.id === a.id);
         return Promise.allSettled([
-          supabase
-            .from('active_roster_players')
-            .upsert({
-              season_id: selectedSeason,
-              gm_name: selectedGm,
-              player_name: a.name,
-              position: pl?.position || 'F',
-              nhl_id: String(pl?.nhl_id || ''),
-              nhl_team: pl?.team || pl?.team_abbr || 'NHL Team',
-              roster_status: a.status,
-              slot_position: a.slot,
-              is_keeper: Boolean(pl?.is_keeper),
-              updated_at: new Date().toISOString(),
-            }, { onConflict: 'season_id,gm_name,player_name' }),
+          updateActiveRosterRecord(selectedSeason, selectedGm, a.name, {
+            roster_status: a.status,
+            slot_position: a.slot,
+            position: pl?.position || 'F',
+            nhl_id: pl?.nhl_id,
+            nhl_team: pl?.team || pl?.team_abbr || 'NHL Team',
+            is_keeper: Boolean(pl?.is_keeper),
+          }),
           supabase
             .from('prospects')
             .update({ roster_status: a.status, slot_position: a.slot })
@@ -1306,20 +1368,14 @@ export const ActiveSquadManager: React.FC<ActiveSquadManagerProps> = ({
 
       const ops = activePlayers.map(p => {
         return Promise.allSettled([
-          supabase
-            .from('active_roster_players')
-            .upsert({
-              season_id: selectedSeason,
-              gm_name: selectedGm,
-              player_name: p.player_name,
-              position: p.position || 'F',
-              nhl_id: String(p.nhl_id || ''),
-              nhl_team: p.team || p.team_abbr || 'NHL Team',
-              roster_status: 'BENCH',
-              slot_position: 'BENCH',
-              is_keeper: Boolean(p.is_keeper),
-              updated_at: new Date().toISOString(),
-            }, { onConflict: 'season_id,gm_name,player_name' }),
+          updateActiveRosterRecord(selectedSeason, selectedGm, p.player_name, {
+            roster_status: 'BENCH',
+            slot_position: 'BENCH',
+            position: p.position || 'F',
+            nhl_id: p.nhl_id,
+            nhl_team: p.team || p.team_abbr || 'NHL Team',
+            is_keeper: Boolean(p.is_keeper),
+          }),
           supabase
             .from('prospects')
             .update({ roster_status: 'BENCH', slot_position: 'BENCH' })

@@ -403,6 +403,16 @@ export default function WaiverWirePortal({
       setSelectedAddPlayer(null);
       setSelectedDropPlayer(null);
 
+      // Invalidate roster caches so Squad & Bench Manager and active rosters show the new addition immediately
+      try {
+        for (let i = localStorage.length - 1; i >= 0; i--) {
+          const key = localStorage.key(i);
+          if (key && (key.startsWith('winko_roster_') || key.startsWith('winko_keepers_'))) {
+            localStorage.removeItem(key);
+          }
+        }
+      } catch (e) {}
+
       // Refresh GM Counter and Available Players
       await Promise.all([
         fetchGMTracker(selectedGM),
