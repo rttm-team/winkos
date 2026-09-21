@@ -232,53 +232,53 @@ export const SeasonsLanding: React.FC<SeasonsLandingProps> = ({
     ) : (
         <div className="space-y-6">
           {/* Individual Season Standings View */}
-          <section className={`mb-8 flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between border-b pb-8 ${
-            isLight ? 'border-slate-200' : 'border-slate-800/80'
-          }`}>
-            <div>
-              <div className="flex items-center gap-3 mb-2">
-                {selectedSeasonId !== '2026-27' && (
+          <div className="mb-8">
+            <div className="flex flex-wrap items-center justify-between gap-4">
+              <div>
+                <div className="flex items-center gap-3 mb-2">
+                  {selectedSeasonId !== '2026-27' && (
+                    <button
+                      onClick={() => setSelectedSeasonId(null)}
+                      className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-bold transition-all ${
+                        isLight ? 'bg-slate-100 text-slate-600 hover:bg-slate-200' : 'bg-slate-800 text-slate-400 hover:bg-slate-700'
+                      }`}
+                    >
+                      <ArrowRight className="h-3.5 w-3.5 rotate-180" />
+                      Archive
+                    </button>
+                  )}
+                </div>
+                <h2 className={`text-3xl sm:text-4xl font-black tracking-tight ${
+                  isLight ? 'text-slate-900' : 'text-white'
+                }`}>
+                  Pool Standings
+                </h2>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-2">
+                {selectedSeasonId === '2026-27' && (
                   <button
                     onClick={() => setSelectedSeasonId(null)}
-                    className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-bold transition-all ${
-                      isLight ? 'bg-slate-100 text-slate-600 hover:bg-slate-200' : 'bg-slate-800 text-slate-400 hover:bg-slate-700'
+                    className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black border transition-all active:scale-95 ${
+                      isLight 
+                        ? 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50' 
+                        : 'bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700'
                     }`}
                   >
-                    <ArrowRight className="h-3.5 w-3.5 rotate-180" />
-                    Archive
+                    <History className="h-3.5 w-3.5" />
+                    Season Archive
                   </button>
                 )}
-              </div>
-              <h2 className={`text-4xl sm:text-5xl font-black tracking-tight ${
-                isLight ? 'text-slate-900' : 'text-white'
-              }`}>
-                Pool Standings
-              </h2>
-            </div>
-
-            <div className="flex flex-wrap items-center gap-3">
-              {selectedSeasonId === '2026-27' && (
                 <button
-                  onClick={() => setSelectedSeasonId(null)}
-                  className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-black border transition-all active:scale-95 ${
-                    isLight 
-                      ? 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50' 
-                      : 'bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700'
-                  }`}
+                  onClick={onManageTeam}
+                  className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg shadow-emerald-500/20 transition-all active:scale-95"
                 >
-                  <History className="h-4 w-4" />
-                  Season Archive
+                  <LayoutDashboard className="h-3.5 w-3.5" />
+                  Manage Team
                 </button>
-              )}
-              <button
-                onClick={onManageTeam}
-                className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-black bg-emerald-600 hover:bg-emerald-500 text-white shadow-xl shadow-emerald-500/20 transition-all active:scale-95"
-              >
-                <LayoutDashboard className="h-4 w-4" />
-                Manage Team
-              </button>
+              </div>
             </div>
-          </section>
+          </div>
 
           <div className="space-y-12">
             {/* Primary Leaderboard Table */}
