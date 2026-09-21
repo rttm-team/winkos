@@ -2,7 +2,7 @@ import os
 import time
 import requests
 
-# Supabase Credentials
+# Supabase Credentials from Environment Variables
 SUPABASE_URL = os.environ.get("SUPABASE_URL", "https://wltqsayrupcvcrodsjmn.supabase.co")
 SUPABASE_KEY = os.environ.get("SUPABASE_SERVICE_ROLE_KEY") or os.environ.get("SUPABASE_ANON_KEY", "")
 
@@ -66,68 +66,73 @@ def sync_player_season_stats(player):
     target_season_int = format_season_for_nhl_api(season_id)
     api_url = f"https://api-web.nhle.com/v1/player/{nhl_id}/landing"
 
+    # Default zero-stat payload for upcoming / unplayed seasons
+    stats = {
+        "gp": 0,
+        "goals": 0,
+        "assists": 0,
+        "plus_minus": 0,
+        "pim": 0,
+        "sog": 0,
+        "game_winning_goals": 0,
+        "power_play_points": 0,
+        "shorthanded_points": 0,
+        "wins": 0,
+        "goals_against": 0,
+        "saves": 0,
+        "shutouts": 0,
+        "fantasy_points": 0
+    }
+
     try:
         res = requests.get(api_url, timeout=10)
-        if res.status_code != 200:
-            print(f"⚠️ Could not fetch NHL API stats for {name} (ID: {nhl_id}, Status: {res.status_code})")
-            return
+        if res.status_code == 200:
+            data = res.json()
+            season_totals = data.get("seasonTotals", [])
 
-        data = res.json()
-        season_totals = data.get("seasonTotals", [])
+            # Filter exclusively for current regular season games (gameTypeId == 2)
+            matching_entries = [
+                st for st in season_totals
+                if st.get("leagueAbbrev") == "NHL"
+                and st.get("gameTypeId") == 2
+                and st.get("season") == target_season_int
+            ]
 
-        # Filter for NHL regular season games for the matching season_id
-        matching_entries = [
-            st for st in season_totals
-            if st.get("leagueAbbrev") == "NHL"
-            and st.get("gameTypeId") == 2
-            and st.get("season") == target_season_int
-        ]
+            pos_upper = str(position).upper()
 
-        stats = {
-            "gp": 0,
-            "goals": 0,
-            "assists": 0,
-            "plus_minus": 0,
-            "pim": 0,
-            "sog": 0,
-            "game_winning_goals": 0,
-            "power_play_points": 0,
-            "shorthanded_points": 0,
-            "wins": 0,
-            "goals_against": 0,
-            "saves": 0,
-            "shutouts": 0
-        }
+            # Aggregate stats if player has played regular season games
+            if matching_entries:
+                for entry in matching_entries:
+                    stats["gp"] += entry.get("gamesPlayed", 0)
+                    if pos_upper == 'G':
+                        stats["wins"] += entry.get("wins", 0)
+                        stats["goals_against"] += entry.get("goalsAgainst", 0)
+                        stats["saves"] += entry.get("saves", 0)
+                        stats["shutouts"] += entry.get("shutouts", 0)
+                    else:
+                        stats["goals"] += entry.get("goals", 0)
+                        stats["assists"] += entry.get("assists", 0)
+                        stats["plus_minus"] += entry.get("plusMinus", 0)
+                        stats["pim"] += entry.get("pim", 0)
+                        stats["sog"] += entry.get("shots", 0)
+                        stats["game_winning_goals"] += entry.get("gameWinningGoals", 0)
+                        stats["power_play_points"] += entry.get("powerPlayGoals", 0) + entry.get("powerPlayAssists", 0)
+                        stats["shorthanded_points"] += entry.get("shorthandedGoals", 0) + entry.get("shorthandedAssists", 0)
 
-        pos_upper = str(position).upper()
+                stats["fantasy_points"] = calculate_rule_5_points(position, stats)
 
-        # Aggregate stats across multiple team stints within the same season
-        for entry in matching_entries:
-            stats["gp"] += entry.get("gamesPlayed", 0)
-            if pos_upper == 'G':
-                stats["wins"] += entry.get("wins", 0)
-                stats["goals_against"] += entry.get("goalsAgainst", 0)
-                stats["saves"] += entry.get("saves", 0)
-                stats["shutouts"] += entry.get("shutouts", 0)
-            else:
-                stats["goals"] += entry.get("goals", 0)
-                stats["assists"] += entry.get("assists", 0)
-                stats["plus_minus"] += entry.get("plusMinus", 0)
-                stats["pim"] += entry.get("pim", 0)
-                stats["sog"] += entry.get("shots", 0)
-                stats["game_winning_goals"] += entry.get("gameWinningGoals", 0)
-                stats["power_play_points"] += entry.get("powerPlayGoals", 0) + entry.get("powerPlayAssists", 0)
-                stats["shorthanded_points"] += entry.get("shorthandedGoals", 0) + entry.get("shorthandedAssists", 0)
+        else:
+            print(f"⚠️ NHL API returned {res.status_code} for {name} (ID: {nhl_id}). Defaulting to 0 stats.")
 
-        fpts = calculate_rule_5_points(position, stats)
-        stats["fantasy_points"] = fpts
-
-        # Update Supabase active_roster_players record
+        # Update Supabase active_roster_players record (enforces 0 stats if no games played yet)
         patch_url = f"{SUPABASE_URL}/rest/v1/active_roster_players?id=eq.{row_id}"
         patch_res = requests.patch(patch_url, headers=HEADERS, json=stats)
 
         if patch_res.status_code in (200, 204):
-            print(f"✅ Synced {name} ({season_id}): {stats['gp']} GP, {fpts} FPts")
+            if stats["gp"] > 0:
+                print(f"✅ Synced {name} ({season_id}): {stats['gp']} GP, {stats['fantasy_points']} FPts")
+            else:
+                print(f"🔄 Zeroed {name} ({season_id}): 0 GP (Pre-season / No games played)")
         else:
             print(f"❌ Failed to update {name}: {patch_res.status_code} - {patch_res.text}")
 
@@ -155,7 +160,7 @@ def main():
         for idx, player in enumerate(players, 1):
             print(f"[{idx}/{len(players)}]", end=" ")
             sync_player_season_stats(player)
-            time.sleep(0.15)  # Rate limiting respect for NHL API
+            time.sleep(0.15)  # Respect NHL API rate limits
 
         print("\n🎉 Active Roster Sync completed successfully!")
 
