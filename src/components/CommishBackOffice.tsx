@@ -488,9 +488,7 @@ export const CommishBackOffice: React.FC<CommishBackOfficeProps> = ({
         console.warn('Notice fetching active_roster_players:', rosterError.message);
         setRosterPlayers([]);
       } else {
-        // Filter out any player that is in the prospects table
-        const filtered = (rosterData || []).filter(r => !prospectIds.has(String(r.nhl_id)));
-        setRosterPlayers(filtered);
+        setRosterPlayers(rosterData || []);
       }
     } catch (err) {
       console.error('Failed to fetch active roster:', err);
