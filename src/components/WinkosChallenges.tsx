@@ -724,11 +724,11 @@ export default function WinkosChallenges({ gmName, theme = 'dark' }: { gmName: s
                   Daily Mini-Games
                 </span>
               </div>
-              <h1 className={`text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight ${
+              <h2 className={`text-3xl sm:text-4xl font-black tracking-tight ${
                 isLight ? 'text-slate-900' : 'text-white'
               }`}>
                 Winko's Challenges
-              </h1>
+              </h2>
               <p className={`text-xs sm:text-sm mt-1.5 max-w-2xl ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>
                 Compete in daily hockey challenges, win Winkoins, and claim pool supremacy.
               </p>

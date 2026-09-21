@@ -237,7 +237,7 @@ export const SeasonsLanding: React.FC<SeasonsLandingProps> = ({
           }`}>
             <div>
               <div className="flex items-center gap-3 mb-2">
-                {selectedSeasonId !== '2026-27' ? (
+                {selectedSeasonId !== '2026-27' && (
                   <button
                     onClick={() => setSelectedSeasonId(null)}
                     className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-bold transition-all ${
@@ -247,19 +247,13 @@ export const SeasonsLanding: React.FC<SeasonsLandingProps> = ({
                     <ArrowRight className="h-3.5 w-3.5 rotate-180" />
                     Archive
                   </button>
-                ) : (
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className={`text-xs font-black uppercase tracking-widest ${isLight ? 'text-slate-400' : 'text-slate-500'}`}>
-                      {selectedSeasonId === '2026-27' ? '2026-27 League Race' : SEASONS.find(s => s.id === selectedSeasonId)?.label}
-                    </span>
-                  </div>
                 )}
               </div>
-              <h1 className={`text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight ${
+              <h2 className={`text-4xl sm:text-5xl font-black tracking-tight ${
                 isLight ? 'text-slate-900' : 'text-white'
               }`}>
                 Pool Standings
-              </h1>
+              </h2>
             </div>
 
             <div className="flex flex-wrap items-center gap-3">
@@ -278,7 +272,7 @@ export const SeasonsLanding: React.FC<SeasonsLandingProps> = ({
               )}
               <button
                 onClick={onManageTeam}
-                className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-black bg-slate-900 dark:bg-white text-white dark:text-slate-950 shadow-xl transition-all active:scale-95"
+                className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-black bg-emerald-600 hover:bg-emerald-500 text-white shadow-xl shadow-emerald-500/20 transition-all active:scale-95"
               >
                 <LayoutDashboard className="h-4 w-4" />
                 Manage Team
@@ -301,11 +295,10 @@ export const SeasonsLanding: React.FC<SeasonsLandingProps> = ({
                       : 'bg-slate-950/80 text-slate-400 border-slate-800/80'
                   }`}>
                     <tr>
-                      <th className="px-6 py-5 w-16 text-center">Rank</th>
-                      <th className="px-6 py-5">General Manager / Team</th>
-                      <th className="px-6 py-5 text-right">Goals / Assists</th>
-                      <th className="px-6 py-5 text-right">Fantasy Points</th>
-                      <th className="px-6 py-5 text-right w-32">Action</th>
+                      <th className="px-6 py-4 w-16 text-center">Rank</th>
+                      <th className="px-6 py-4">General Manager / Team</th>
+                      <th className="px-6 py-4 text-right">Fantasy Points</th>
+                      <th className="px-6 py-4 text-right w-40">Roster</th>
                     </tr>
                   </thead>
                   <tbody className={`divide-y ${isLight ? 'divide-slate-100' : 'divide-slate-800/70'}`}>
@@ -317,10 +310,10 @@ export const SeasonsLanding: React.FC<SeasonsLandingProps> = ({
                           isLight ? 'hover:bg-slate-50/80' : 'hover:bg-slate-800/40'
                         }`}
                       >
-                        <td className="px-6 py-5 text-center">
+                        <td className="px-6 py-3.5 text-center">
                           {idx === 0 ? (
-                            <div className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-amber-500/15 text-amber-500 font-black ring-1 ring-amber-500/40 shadow-sm">
-                              <Crown className="h-5 w-5" />
+                            <div className="inline-flex h-8 w-8 items-center justify-center rounded-xl bg-amber-500/15 text-amber-500 font-black ring-1 ring-amber-500/40 shadow-sm">
+                              <Crown className="h-4 w-4" />
                             </div>
                           ) : (
                             <span className={`text-sm font-black tabular-nums ${isLight ? 'text-slate-400' : 'text-slate-500'}`}>
@@ -329,45 +322,34 @@ export const SeasonsLanding: React.FC<SeasonsLandingProps> = ({
                           )}
                         </td>
 
-                        <td className="px-6 py-5">
+                        <td className="px-6 py-3.5">
                           <div className="flex flex-col">
-                            <span className={`text-base font-black ${isLight ? 'text-slate-900' : 'text-white group-hover:text-cyan-400 transition-colors'}`}>
+                            <span className={`text-sm font-black ${isLight ? 'text-slate-900' : 'text-white group-hover:text-cyan-400 transition-colors'}`}>
                               {gm.teamName}
                             </span>
-                            <span className="text-[11px] font-bold text-slate-500 flex items-center gap-1 uppercase tracking-wide">
-                              <Users className="h-3 w-3" />
+                            <span className="text-[10px] font-bold text-slate-500 flex items-center gap-1 uppercase tracking-wide">
                               {gm.name}
                             </span>
                           </div>
                         </td>
 
-                        <td className="px-6 py-5 text-right">
-                          <div className={`text-sm font-black font-mono ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>
-                            {gm.goals}<span className="text-[10px] text-slate-500 ml-0.5">G</span>
-                            <span className="mx-2 text-slate-700">•</span>
-                            {gm.assists}<span className="text-[10px] text-slate-500 ml-0.5">A</span>
-                          </div>
+                        <td className="px-6 py-3.5 text-right">
+                          <span className="text-lg font-black text-cyan-500 tabular-nums">
+                            {gm.total_fantasy_points.toLocaleString()}
+                          </span>
                         </td>
 
-                        <td className="px-6 py-5 text-right">
-                          <div className="flex flex-col items-end">
-                            <span className="text-xl font-black text-cyan-500 tabular-nums">
-                              {gm.total_fantasy_points.toLocaleString()}
-                            </span>
-                            <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Winko Points</span>
-                          </div>
-                        </td>
-
-                        <td className="px-6 py-5 text-right">
+                        <td className="px-6 py-3.5 text-right">
                           <button
                             onClick={(e) => { e.stopPropagation(); setViewingRosterGm(gm.name); }}
-                            className={`p-2 rounded-xl border transition-all ${
+                            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all ${
                               isLight
-                                ? 'bg-slate-100 border-slate-200 text-slate-600 hover:bg-slate-900 hover:text-white hover:border-slate-900 shadow-sm'
-                                : 'bg-slate-800/80 border-slate-700 text-slate-400 hover:bg-white hover:text-slate-950 hover:border-white shadow-lg'
+                                ? 'bg-slate-100 text-slate-600 hover:bg-slate-900 hover:text-white'
+                                : 'bg-slate-800 text-slate-400 hover:bg-white hover:text-slate-950'
                             }`}
                           >
-                            <Eye className="h-5 w-5" />
+                            <LayoutDashboard className="h-3 w-3" />
+                            View Roster
                           </button>
                         </td>
                       </tr>

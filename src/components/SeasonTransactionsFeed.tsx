@@ -268,13 +268,13 @@ export default function SeasonTransactionsFeed({
           <div>
             <div>
               <div className="flex items-center gap-3 flex-wrap">
-                <h1
-                  className={`text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight ${
+                <h2
+                  className={`text-3xl sm:text-4xl font-black tracking-tight ${
                     isLight ? 'text-slate-900' : 'text-white'
                   }`}
                 >
                   2026-27 League Transaction Log
-                </h1>
+                </h2>
                 {/* Live pulsing status indicator */}
                 <div
                   id="live-status-pill"

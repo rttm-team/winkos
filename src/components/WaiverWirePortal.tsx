@@ -546,13 +546,13 @@ export default function WaiverWirePortal({
           <div>
             <div>
               <div className="flex items-center gap-2.5 flex-wrap">
-                <h1
-                  className={`text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight ${
+                <h2
+                  className={`text-3xl sm:text-4xl font-black tracking-tight ${
                     isLight ? 'text-slate-900' : 'text-white'
                   }`}
                 >
                   Waiver Wire Portal
-                </h1>
+                </h2>
                 <span className="px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30">
                   Rule 5 Claims
                 </span>

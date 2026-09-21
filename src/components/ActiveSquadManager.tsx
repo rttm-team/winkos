@@ -1889,9 +1889,9 @@ export const ActiveSquadManager: React.FC<ActiveSquadManagerProps> = ({
           ========================================== */}
           <div>
             <div className="flex flex-wrap items-center justify-between gap-4">
-              <h1 className={`text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight ${isLight ? 'text-slate-900' : 'text-white'}`}>
+              <h2 className={`text-3xl sm:text-4xl font-black tracking-tight ${isLight ? 'text-slate-900' : 'text-white'}`}>
                 Active Roster
-              </h1>
+              </h2>
 
               {/* Top Quick Actions (Unified & Compact) */}
               <div className="flex items-center gap-2">
