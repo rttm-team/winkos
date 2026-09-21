@@ -1888,78 +1888,13 @@ export const ActiveSquadManager: React.FC<ActiveSquadManagerProps> = ({
               PAGE TITLE OUTSIDE CARD
           ========================================== */}
           <div>
-            <h1 className={`text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight ${isLight ? 'text-slate-900' : 'text-white'}`}>
-              Active Roster
-            </h1>
-          </div>
+            <div className="flex flex-wrap items-center justify-between gap-4">
+              <h1 className={`text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight ${isLight ? 'text-slate-900' : 'text-white'}`}>
+                Active Roster
+              </h1>
 
-          {/* ==========================================
-              CONTROLS CARD
-          ========================================== */}
-          <div
-            className={`p-6 rounded-2xl border transition-all ${
-              isLight
-                ? 'bg-white border-slate-200 shadow-xs'
-                : 'bg-gradient-to-b from-slate-900 via-slate-900 to-slate-950 border-slate-800 shadow-lg shadow-black/30'
-            }`}
-          >
-            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-              <div className={`text-xs font-bold uppercase tracking-wider ${isLight ? 'text-slate-500' : 'text-slate-400'}`}>
-                Roster Controls &amp; Settings
-              </div>
-
-              {/* GM Selector, Season Selector & Quick actions */}
-              <div className="flex flex-wrap items-center gap-3">
-                {/* Season Selector Dropdown */}
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Season:</span>
-                  <div className="relative">
-                    <select
-                      value={selectedSeason}
-                      onChange={e => setSelectedSeason(e.target.value)}
-                      className={`appearance-none pl-3.5 pr-9 py-2 rounded-xl text-sm font-black border cursor-pointer transition-all ${
-                        isLight
-                          ? 'bg-slate-100 hover:bg-slate-200/80 border-slate-300 text-slate-900'
-                          : 'bg-slate-800 hover:bg-slate-750 border-slate-700 text-white'
-                      }`}
-                    >
-                      {availableSeasons.length > 0 ? (
-                        availableSeasons.map(s => (
-                          <option key={s.id} value={s.id}>
-                            {s.label} {s.is_current ? '(Current)' : ''}
-                          </option>
-                        ))
-                      ) : (
-                        <option value="2026-27">2026-27 Season</option>
-                      )}
-                    </select>
-                    <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 pointer-events-none text-slate-400" />
-                  </div>
-                </div>
-
-                {/* GM Selector Dropdown */}
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">GM:</span>
-                  <div className="relative">
-                    <select
-                      value={selectedGm}
-                      onChange={e => setSelectedGm(e.target.value)}
-                      className={`appearance-none pl-3.5 pr-9 py-2 rounded-xl text-sm font-black border cursor-pointer transition-all ${
-                        isLight
-                          ? 'bg-slate-100 hover:bg-slate-200/80 border-slate-300 text-slate-900'
-                          : 'bg-slate-800 hover:bg-slate-750 border-slate-700 text-white'
-                      }`}
-                    >
-                      {PRIMARY_GMS.map(gm => (
-                        <option key={gm} value={gm}>
-                          GM {gm}
-                        </option>
-                      ))}
-                    </select>
-                    <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 pointer-events-none text-slate-400" />
-                  </div>
-                </div>
-
+              {/* Top Quick Actions (Unified & Compact) */}
+              <div className="flex items-center gap-2">
                 {/* Save Status Indicator */}
                 {saveStatus !== 'idle' && (
                   <div
@@ -1981,9 +1916,7 @@ export const ActiveSquadManager: React.FC<ActiveSquadManagerProps> = ({
                       }`}
                     />
                     <span>
-                      {saveStatus === 'saving'
-                        ? 'Saving... 🟡'
-                        : `Saved to ${selectedSeason} 🟢`}
+                      {saveStatus === 'saving' ? 'Saving...' : 'All Saved'}
                     </span>
                   </div>
                 )}
@@ -1992,30 +1925,28 @@ export const ActiveSquadManager: React.FC<ActiveSquadManagerProps> = ({
                 <button
                   type="button"
                   onClick={handleAutoOptimizeRoster}
-                  className={`inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold border transition-all cursor-pointer ${
+                  className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-black border transition-all cursor-pointer shadow-sm ${
                     isLight
-                      ? 'bg-emerald-50 hover:bg-emerald-100 border-emerald-200 text-emerald-800'
-                      : 'bg-emerald-950/60 hover:bg-emerald-900/80 border-emerald-700/60 text-emerald-300'
+                      ? 'bg-emerald-600 hover:bg-emerald-500 border-emerald-500 text-white'
+                      : 'bg-emerald-600 hover:bg-emerald-500 border-emerald-500 text-white'
                   }`}
-                  title="Auto-fill top scorers into Active and next into Bench slots"
                 >
-                  <Sparkles className="h-3.5 w-3.5 text-emerald-400" />
+                  <Sparkles className="h-3.5 w-3.5" />
                   <span>Auto-Optimize</span>
                 </button>
 
-                {/* Clear / Bench All */}
+                {/* Bench All */}
                 <button
                   type="button"
                   onClick={handleBenchAll}
                   disabled={totalActiveCount === 0}
-                  className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold border transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed ${
+                  className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-black border transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed ${
                     isLight
                       ? 'bg-slate-100 hover:bg-slate-200 border-slate-300 text-slate-700'
                       : 'bg-slate-800 hover:bg-slate-700 border-slate-700 text-slate-300'
                   }`}
-                  title="Move all active players to bench"
                 >
-                  <RotateCcw className="h-3.5 w-3.5 text-slate-400" />
+                  <RotateCcw className="h-3.5 w-3.5" />
                   <span>Bench All</span>
                 </button>
 
@@ -2028,7 +1959,6 @@ export const ActiveSquadManager: React.FC<ActiveSquadManagerProps> = ({
                       ? 'bg-slate-100 hover:bg-slate-200 border-slate-300 text-slate-700'
                       : 'bg-slate-800 hover:bg-slate-700 border-slate-700 text-slate-300'
                   }`}
-                  title="Reload roster from database"
                 >
                   <RefreshCw className={`h-4 w-4 ${isSyncing ? 'animate-spin text-emerald-500' : 'text-slate-400'}`} />
                 </button>
@@ -2043,142 +1973,142 @@ export const ActiveSquadManager: React.FC<ActiveSquadManagerProps> = ({
             </div>
           ) : (
             <>
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
               {/* ==========================================
-                  SECTION 1: ACTIVE SQUAD (15 SLOTS MAX)
-                  Earns Rule 5 Fantasy Points
+                  1. FORWARDS (Active + Bench)
               ========================================== */}
               <div
-                className={`p-6 rounded-2xl border transition-all ${
+                className={`p-6 rounded-3xl border transition-all flex flex-col space-y-6 ${
                   isLight
-                    ? 'bg-white border-slate-200 shadow-xs'
-                    : 'bg-slate-900/90 border-slate-800 shadow-lg shadow-black/20'
+                    ? 'bg-white border-slate-200 shadow-sm'
+                    : 'bg-slate-900/90 border-slate-800 shadow-xl'
                 }`}
               >
-                {/* Active Squad Header with Slot Counters */}
-                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-5 border-b border-slate-200 dark:border-slate-800">
-                  <div>
-                    <h2 className={`text-xl font-black ${isLight ? 'text-slate-900' : 'text-white'}`}>
-                      Active Starting Lineup
-                    </h2>
-                    <p className={`text-xs mt-0.5 ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>
-                      Only promoted players in these 15 active slots produce fantasy points for your GM total.
-                    </p>
+                <div className="border-b border-slate-200 dark:border-slate-800 pb-4">
+                  <div className="flex items-center gap-2 mb-1">
+                    <div className="h-2 w-2 rounded-full bg-blue-400" />
+                    <span className="text-xs font-black uppercase tracking-wider text-blue-500">
+                      Position Group
+                    </span>
                   </div>
+                  <h2 className={`text-2xl font-black ${isLight ? 'text-slate-900' : 'text-white'}`}>
+                    Forwards
+                  </h2>
                 </div>
 
-                {/* ACTIVE SLOTS LIST VIEW (Clean List Layout with Drag & Drop) */}
-                <div className="mt-6 space-y-6">
-                  {/* Active Forwards (F1 to F9) */}
+                <div className="space-y-6 flex-1">
+                  {/* Active Forwards */}
                   <div>
-                    <div className="flex items-center justify-between mb-2.5">
-                      <div className="flex items-center gap-2">
-                        <div className="h-2 w-2 rounded-full bg-blue-400" />
-                        <h3 className={`text-xs font-black uppercase tracking-wider ${isLight ? 'text-slate-800' : 'text-slate-300'}`}>
-                          Active Forwards (9 Slots: F1 - F9)
-                        </h3>
-                      </div>
-                      <span className="text-xs font-mono font-semibold text-slate-400">
-                        {activeFCount} / 9 Filled
-                      </span>
-                    </div>
-                    <div className="divide-y divide-slate-200 dark:divide-slate-800/60 rounded-xl border border-slate-200 dark:border-slate-800 shadow-xs">
+                    <h3 className={`text-[11px] font-black uppercase tracking-[0.15em] mb-3 ${isLight ? 'text-slate-500' : 'text-slate-500'}`}>
+                      Active Lineup (9 Slots)
+                    </h3>
+                    <div className="divide-y divide-slate-200 dark:divide-slate-800/60 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs overflow-hidden">
                       {ACTIVE_FORWARD_SLOTS.map(slot => renderActivePlayerRow(slot, activeSlotMap.get(slot)))}
                     </div>
                   </div>
 
-                  {/* Bench Forwards (BF1 to BF3) */}
+                  {/* Bench Forwards */}
                   <div>
-                    <div className="flex items-center justify-between mb-2.5">
-                      <div className="flex items-center gap-2">
-                        <div className="h-2 w-2 rounded-full bg-blue-400" />
-                        <h3 className={`text-xs font-black uppercase tracking-wider ${isLight ? 'text-slate-800' : 'text-slate-300'}`}>
-                          Bench Forwards (3 Slots: BF1 - BF3)
-                        </h3>
-                      </div>
-                      <span className="text-xs font-mono font-semibold text-slate-400">
-                        {benchFCount} / 3 Filled
-                      </span>
-                    </div>
-                    <div className="divide-y divide-slate-200 dark:divide-slate-800/60 rounded-xl border border-slate-200 dark:border-slate-800 shadow-xs">
+                    <h3 className={`text-[11px] font-black uppercase tracking-[0.15em] mb-3 ${isLight ? 'text-slate-500' : 'text-slate-500'}`}>
+                      Bench (3 Slots)
+                    </h3>
+                    <div className="divide-y divide-slate-200 dark:divide-slate-800/60 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs overflow-hidden">
                       {BENCH_FORWARD_SLOTS.map(slot => renderBenchPlayerRow(slot, benchSlotMap.get(slot)))}
-                    </div>
-                  </div>
-
-                  {/* Active Defense (D1 to D4) */}
-                  <div>
-                    <div className="flex items-center justify-between mb-2.5">
-                      <div className="flex items-center gap-2">
-                        <div className="h-2 w-2 rounded-full bg-amber-400" />
-                        <h3 className={`text-xs font-black uppercase tracking-wider ${isLight ? 'text-slate-800' : 'text-slate-300'}`}>
-                          Active Defensemen (4 Slots: D1 - D4)
-                        </h3>
-                      </div>
-                      <span className="text-xs font-mono font-semibold text-slate-400">
-                        {activeDCount} / 4 Filled
-                      </span>
-                    </div>
-                    <div className="divide-y divide-slate-200 dark:divide-slate-800/60 rounded-xl border border-slate-200 dark:border-slate-800 shadow-xs">
-                      {ACTIVE_DEFENSE_SLOTS.map(slot => renderActivePlayerRow(slot, activeSlotMap.get(slot)))}
-                    </div>
-                  </div>
-
-                  {/* Bench Defense (BD1 to BD2) */}
-                  <div>
-                    <div className="flex items-center justify-between mb-2.5">
-                      <div className="flex items-center gap-2">
-                        <div className="h-2 w-2 rounded-full bg-amber-400" />
-                        <h3 className={`text-xs font-black uppercase tracking-wider ${isLight ? 'text-slate-800' : 'text-slate-300'}`}>
-                          Bench Defensemen (2 Slots: BD1 - BD2)
-                        </h3>
-                      </div>
-                      <span className="text-xs font-mono font-semibold text-slate-400">
-                        {benchDCount} / 2 Filled
-                      </span>
-                    </div>
-                    <div className="divide-y divide-slate-200 dark:divide-slate-800/60 rounded-xl border border-slate-200 dark:border-slate-800 shadow-xs">
-                      {BENCH_DEFENSE_SLOTS.map(slot => renderBenchPlayerRow(slot, benchSlotMap.get(slot)))}
-                    </div>
-                  </div>
-
-                  {/* Active Goalies (G1 to G2) */}
-                  <div>
-                    <div className="flex items-center justify-between mb-2.5">
-                      <div className="flex items-center gap-2">
-                        <div className="h-2 w-2 rounded-full bg-purple-400" />
-                        <h3 className={`text-xs font-black uppercase tracking-wider ${isLight ? 'text-slate-800' : 'text-slate-300'}`}>
-                          Active Goalies (2 Slots: G1 - G2)
-                        </h3>
-                      </div>
-                      <span className="text-xs font-mono font-semibold text-slate-400">
-                        {activeGCount} / 2 Filled
-                      </span>
-                    </div>
-                    <div className="divide-y divide-slate-200 dark:divide-slate-800/60 rounded-xl border border-slate-200 dark:border-slate-800 shadow-xs">
-                      {ACTIVE_GOALIE_SLOTS.map(slot => renderActivePlayerRow(slot, activeSlotMap.get(slot)))}
-                    </div>
-                  </div>
-
-                  {/* Bench Goalies (BG1 to BG2) */}
-                  <div>
-                    <div className="flex items-center justify-between mb-2.5">
-                      <div className="flex items-center gap-2">
-                        <div className="h-2 w-2 rounded-full bg-purple-400" />
-                        <h3 className={`text-xs font-black uppercase tracking-wider ${isLight ? 'text-slate-800' : 'text-slate-300'}`}>
-                          Bench Goalies (2 Slots: BG1 - BG2)
-                        </h3>
-                      </div>
-                      <span className="text-xs font-mono font-semibold text-slate-400">
-                        {benchGCount} / 2 Filled
-                      </span>
-                    </div>
-                    <div className="divide-y divide-slate-200 dark:divide-slate-800/60 rounded-xl border border-slate-200 dark:border-slate-800 shadow-xs">
-                      {BENCH_GOALIE_SLOTS.map(slot => renderBenchPlayerRow(slot, benchSlotMap.get(slot)))}
                     </div>
                   </div>
                 </div>
               </div>
 
+              {/* ==========================================
+                  2. DEFENSE (Active + Bench)
+              ========================================== */}
+              <div
+                className={`p-6 rounded-3xl border transition-all flex flex-col space-y-6 ${
+                  isLight
+                    ? 'bg-white border-slate-200 shadow-sm'
+                    : 'bg-slate-900/90 border-slate-800 shadow-xl'
+                }`}
+              >
+                <div className="border-b border-slate-200 dark:border-slate-800 pb-4">
+                  <div className="flex items-center gap-2 mb-1">
+                    <div className="h-2 w-2 rounded-full bg-amber-400" />
+                    <span className="text-xs font-black uppercase tracking-wider text-amber-500">
+                      Position Group
+                    </span>
+                  </div>
+                  <h2 className={`text-2xl font-black ${isLight ? 'text-slate-900' : 'text-white'}`}>
+                    Defense
+                  </h2>
+                </div>
 
+                <div className="space-y-6 flex-1">
+                  {/* Active Defense */}
+                  <div>
+                    <h3 className={`text-[11px] font-black uppercase tracking-[0.15em] mb-3 ${isLight ? 'text-slate-500' : 'text-slate-500'}`}>
+                      Active Lineup (4 Slots)
+                    </h3>
+                    <div className="divide-y divide-slate-200 dark:divide-slate-800/60 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs overflow-hidden">
+                      {ACTIVE_DEFENSE_SLOTS.map(slot => renderActivePlayerRow(slot, activeSlotMap.get(slot)))}
+                    </div>
+                  </div>
+
+                  {/* Bench Defense */}
+                  <div>
+                    <h3 className={`text-[11px] font-black uppercase tracking-[0.15em] mb-3 ${isLight ? 'text-slate-500' : 'text-slate-500'}`}>
+                      Bench (2 Slots)
+                    </h3>
+                    <div className="divide-y divide-slate-200 dark:divide-slate-800/60 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs overflow-hidden">
+                      {BENCH_DEFENSE_SLOTS.map(slot => renderBenchPlayerRow(slot, benchSlotMap.get(slot)))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* ==========================================
+                  3. GOALIES (Active + Bench)
+              ========================================== */}
+              <div
+                className={`p-6 rounded-3xl border transition-all flex flex-col space-y-6 ${
+                  isLight
+                    ? 'bg-white border-slate-200 shadow-sm'
+                    : 'bg-slate-900/90 border-slate-800 shadow-xl'
+                }`}
+              >
+                <div className="border-b border-slate-200 dark:border-slate-800 pb-4">
+                  <div className="flex items-center gap-2 mb-1">
+                    <div className="h-2 w-2 rounded-full bg-purple-400" />
+                    <span className="text-xs font-black uppercase tracking-wider text-purple-500">
+                      Position Group
+                    </span>
+                  </div>
+                  <h2 className={`text-2xl font-black ${isLight ? 'text-slate-900' : 'text-white'}`}>
+                    Goalies
+                  </h2>
+                </div>
+
+                <div className="space-y-6 flex-1">
+                  {/* Active Goalies */}
+                  <div>
+                    <h3 className={`text-[11px] font-black uppercase tracking-[0.15em] mb-3 ${isLight ? 'text-slate-500' : 'text-slate-500'}`}>
+                      Active Lineup (2 Slots)
+                    </h3>
+                    <div className="divide-y divide-slate-200 dark:divide-slate-800/60 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs overflow-hidden">
+                      {ACTIVE_GOALIE_SLOTS.map(slot => renderActivePlayerRow(slot, activeSlotMap.get(slot)))}
+                    </div>
+                  </div>
+
+                  {/* Bench Goalies */}
+                  <div>
+                    <h3 className={`text-[11px] font-black uppercase tracking-[0.15em] mb-3 ${isLight ? 'text-slate-500' : 'text-slate-500'}`}>
+                      Bench (2 Slots)
+                    </h3>
+                    <div className="divide-y divide-slate-200 dark:divide-slate-800/60 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs overflow-hidden">
+                      {BENCH_GOALIE_SLOTS.map(slot => renderBenchPlayerRow(slot, benchSlotMap.get(slot)))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
                 {/* UNASSIGNED RESERVES (If GM has additional drafted/promoted & protected players waiting for slots) */}
                 {unassignedBenchPlayers.length > 0 && (
                   <div className="mt-8 pt-6 border-t border-slate-200 dark:border-slate-800">
