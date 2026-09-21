@@ -364,16 +364,34 @@ function UnlockedView({ activeGm, leaderboard, isArcadeComingSoon, onNavigate, i
   return (
     <>
       {/* Hero */}
-      <div className={`py-6 sm:py-8 border-b pb-6 mb-8 ${isLight ? 'border-slate-200' : 'border-slate-800/80'}`}>
-        <p className={`text-sm font-semibold uppercase tracking-[0.2em] mb-2 ${isLight ? 'text-sky-700' : 'text-sky-400'}`}>
-          Welcome back{firstName ? `, ${firstName}` : ''}
-        </p>
-        <h2 className={`max-w-2xl text-4xl sm:text-5xl font-black leading-tight ${isLight ? 'text-slate-900' : 'text-white'}`}>
-          Run your roster. Rack up Winkoins.
-        </h2>
-        <p className={`mt-1 max-w-xl text-xs sm:text-sm ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>
-          Track live NHL promotions, explore the season standings, and jump into the daily challenges.
-        </p>
+      <div className={`py-6 sm:py-8 border-b pb-6 mb-8 flex flex-col md:flex-row md:items-center md:justify-between gap-4 ${isLight ? 'border-slate-200' : 'border-slate-800/80'}`}>
+        <div>
+          <p className={`text-sm font-semibold uppercase tracking-[0.2em] mb-2 ${isLight ? 'text-sky-700' : 'text-sky-400'}`}>
+            Welcome back{firstName ? `, ${firstName}` : ''}
+          </p>
+          <h2 className={`max-w-2xl text-4xl sm:text-5xl font-black leading-tight ${isLight ? 'text-slate-900' : 'text-white'}`}>
+            Run your roster. Rack up Winkoins.
+          </h2>
+          <p className={`mt-1 max-w-xl text-xs sm:text-sm ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>
+            Track live NHL promotions, explore the season standings, and jump into the daily challenges.
+          </p>
+        </div>
+
+        {(activeGm?.is_commish || activeGm?.name?.toLowerCase() === 'adam') && (
+          <button
+            type="button"
+            id="hub-commish-office-btn"
+            onClick={() => onNavigate('commish')}
+            className={`self-start md:self-center px-4 py-2.5 rounded-2xl border flex items-center gap-2.5 font-black text-xs uppercase tracking-wider transition-all shadow-md active:scale-95 cursor-pointer shrink-0 ${
+              isLight
+                ? 'bg-amber-50 hover:bg-amber-100 border-amber-300 text-amber-900 shadow-amber-900/10'
+                : 'bg-amber-500/15 hover:bg-amber-500/25 border-amber-500/40 text-amber-300 shadow-amber-500/15'
+            }`}
+          >
+            <ShieldCheck className="h-5 w-5 text-amber-400" />
+            <span>Commish Back Office</span>
+          </button>
+        )}
       </div>
 
       {/* Feature cards */}

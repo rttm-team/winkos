@@ -12,14 +12,15 @@ import {
   ChevronDown,
   Shield,
   Trophy,
+  ArrowRightLeft,
 } from 'lucide-react';
 import logoLight from '../assets/images/winkos-logo-light.png';
 import logoDark from '../assets/images/winkos-logo-dark.png';
 
 interface HeaderProps {
-  onNavigate: (view: 'hub' | 'seasons' | 'keepers' | 'prospect-central' | 'prospects' | 'arcade' | 'active-squad') => void;
+  onNavigate: (view: 'hub' | 'seasons' | 'keepers' | 'waivers' | 'transactions' | 'prospect-central' | 'prospects' | 'arcade' | 'active-squad' | 'commish') => void;
   onOpenRules: () => void;
-  activeView: 'hub' | 'seasons' | 'keepers' | 'prospect-central' | 'prospects' | 'arcade' | 'active-squad' | string;
+  activeView: 'hub' | 'seasons' | 'keepers' | 'waivers' | 'transactions' | 'prospect-central' | 'prospects' | 'arcade' | 'active-squad' | 'commish' | string;
   theme: 'light' | 'dark';
   onToggleTheme: () => void;
   activeGm?: any;
@@ -89,6 +90,7 @@ export const Header: React.FC<HeaderProps> = ({
               <NavItem icon={Home} label="Hub" onClick={() => onNavigate('hub')} active={activeView === 'hub'} theme={theme} />
               <NavItem icon={Trophy} label="Seasons" onClick={() => onNavigate('seasons')} active={activeView === 'seasons'} theme={theme} />
               <NavItem icon={Shield} label="Keepers" onClick={() => onNavigate('keepers')} active={activeView === 'keepers'} theme={theme} />
+              <NavItem icon={ArrowRightLeft} label="Waivers" onClick={() => onNavigate('waivers')} active={activeView === 'waivers'} theme={theme} />
               <NavItem icon={LayoutGrid} label="Prospect Central" onClick={() => onNavigate('prospect-central')} active={activeView === 'prospect-central'} theme={theme} />
               <NavItem icon={Users} label="GM Pools" onClick={() => onNavigate('prospects')} active={activeView === 'prospects'} theme={theme} />
               <NavItem icon={Dice5} label="Challenges" onClick={() => onNavigate('arcade')} active={activeView === 'arcade'} theme={theme} />
@@ -138,6 +140,21 @@ export const Header: React.FC<HeaderProps> = ({
                         <div className={`px-2 py-1.5 text-[10px] font-bold uppercase tracking-wider ${isLight ? 'text-slate-500' : 'text-slate-400'}`}>
                           Commish Tools
                         </div>
+                        <button
+                          id="settings-commish-backoffice-btn"
+                          onClick={() => {
+                            onNavigate('commish');
+                            setSettingsOpen(false);
+                          }}
+                          className={`w-full flex items-center gap-2.5 px-3 py-2 text-xs font-black rounded-lg transition-colors mb-1.5 cursor-pointer ${
+                            isLight
+                              ? 'bg-amber-50 text-amber-900 hover:bg-amber-100 border border-amber-300'
+                              : 'bg-amber-950/50 text-amber-300 hover:bg-amber-900/60 border border-amber-500/40'
+                          }`}
+                        >
+                          <Shield className="h-3.5 w-3.5 text-amber-400 shrink-0" />
+                          <span>Commish Back Office</span>
+                        </button>
                         <button
                           id="settings-commish-squads-btn"
                           onClick={() => {

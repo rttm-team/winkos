@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
 import { GeneralManager } from '../types';
 import { 
@@ -14,7 +14,8 @@ import {
   Plus, 
   Trash2, 
   Calendar,
-  Save
+  Save,
+  Database
 } from 'lucide-react';
 
 export interface KeeperSelectionPortalProps {
@@ -54,43 +55,17 @@ const DEFAULT_GMS = [
   { id: '12', name: 'Seb', teamName: "Seb's Team" },
 ];
 
-const NHL_PLAYER_DATABASE: KeeperPlayer[] = [
-  { player_name: 'Seth Jarvis', nhl_id: '8482103', position: 'F', nhl_team: 'Carolina Hurricanes' },
-  { player_name: 'Connor McDavid', nhl_id: '8479318', position: 'F', nhl_team: 'Edmonton Oilers' },
-  { player_name: 'Nathan MacKinnon', nhl_id: '8477492', position: 'F', nhl_team: 'Colorado Avalanche' },
-  { player_name: 'Auston Matthews', nhl_id: '8479314', position: 'F', nhl_team: 'Toronto Maple Leafs' },
-  { player_name: 'Nikita Kucherov', nhl_id: '8476826', position: 'F', nhl_team: 'Tampa Bay Lightning' },
-  { player_name: 'Leon Draisaitl', nhl_id: '8477934', position: 'F', nhl_team: 'Edmonton Oilers' },
-  { player_name: 'David Pastrnak', nhl_id: '8477956', position: 'F', nhl_team: 'Boston Bruins' },
-  { player_name: 'Artemi Panarin', nhl_id: '8478550', position: 'F', nhl_team: 'New York Rangers' },
-  { player_name: 'Mikko Rantanen', nhl_id: '8478420', position: 'F', nhl_team: 'Colorado Avalanche' },
-  { player_name: 'Cale Makar', nhl_id: '8479397', position: 'D', nhl_team: 'Colorado Avalanche' },
-  { player_name: 'Roman Josi', nhl_id: '8474600', position: 'D', nhl_team: 'Nashville Predators' },
-  { player_name: 'Adam Fox', nhl_id: '8479323', position: 'D', nhl_team: 'New York Rangers' },
-  { player_name: 'Quinn Hughes', nhl_id: '8480829', position: 'D', nhl_team: 'Vancouver Canucks' },
-  { player_name: 'Victor Hedman', nhl_id: '8474564', position: 'D', nhl_team: 'Tampa Bay Lightning' },
-  { player_name: 'Evan Bouchard', nhl_id: '8480873', position: 'D', nhl_team: 'Edmonton Oilers' },
-  { player_name: 'Igor Shesterkin', nhl_id: '8478048', position: 'G', nhl_team: 'New York Rangers' },
-  { player_name: 'Connor Hellebuyck', nhl_id: '8477479', position: 'G', nhl_team: 'Winnipeg Jets' },
-  { player_name: 'Andrei Vasilevskiy', nhl_id: '8476883', position: 'G', nhl_team: 'Tampa Bay Lightning' },
-  { player_name: 'Juuse Saros', nhl_id: '8477424', position: 'G', nhl_team: 'Nashville Predators' },
-  { player_name: 'Jack Hughes', nhl_id: '8481559', position: 'F', nhl_team: 'New Jersey Devils' },
-  { player_name: 'Kirill Kaprizov', nhl_id: '8478864', position: 'F', nhl_team: 'Minnesota Wild' },
-  { player_name: 'Jason Robertson', nhl_id: '8479975', position: 'F', nhl_team: 'Dallas Stars' },
-  { player_name: 'Matthew Tkachuk', nhl_id: '8479337', position: 'F', nhl_team: 'Florida Panthers' },
-  { player_name: 'Brady Tkachuk', nhl_id: '8480801', position: 'F', nhl_team: 'Ottawa Senators' },
-  { player_name: 'Jesper Bratt', nhl_id: '8479420', position: 'F', nhl_team: 'New Jersey Devils' },
-  { player_name: 'Rasmus Dahlin', nhl_id: '8480827', position: 'D', nhl_team: 'Buffalo Sabres' },
-  { player_name: 'Noah Dobson', nhl_id: '8480867', position: 'D', nhl_team: 'New York Islanders' },
-  { player_name: 'Wyatt Johnston', nhl_id: '8482684', position: 'F', nhl_team: 'Dallas Stars' },
-  { player_name: 'Macklin Celebrini', nhl_id: '8484144', position: 'F', nhl_team: 'San Jose Sharks' },
-  { player_name: 'Matvei Michkov', nhl_id: '8484389', position: 'F', nhl_team: 'Philadelphia Flyers' },
-  { player_name: 'Adam Fantilli', nhl_id: '8484166', position: 'F', nhl_team: 'Columbus Blue Jackets' },
-  { player_name: 'Logan Stankoven', nhl_id: '8482702', position: 'F', nhl_team: 'Dallas Stars' },
-  { player_name: 'Jake Oettinger', nhl_id: '8479979', position: 'G', nhl_team: 'Dallas Stars' },
-  { player_name: 'Jeremy Swayman', nhl_id: '8480280', position: 'G', nhl_team: 'Boston Bruins' },
-  { player_name: 'Stuart Skinner', nhl_id: '8479973', position: 'G', nhl_team: 'Edmonton Oilers' },
-];
+export interface MasterPlayer {
+  nhl_id: number | string;
+  player_name: string;
+  position: string;
+  nhl_team?: string | null;
+  team?: string | null;
+  gp?: number;
+  goals?: number;
+  assists?: number;
+  fantasy_points?: number;
+}
 
 export default function KeeperSelectionPortal({ gms, theme = 'dark' }: KeeperSelectionPortalProps) {
   const isLight = theme === 'light';
@@ -116,8 +91,9 @@ export default function KeeperSelectionPortal({ gms, theme = 'dark' }: KeeperSel
   const [saving, setSaving] = useState<boolean>(false);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
 
-  // Player search pool (NHL database + league prospects)
-  const [searchablePlayers, setSearchablePlayers] = useState<KeeperPlayer[]>(NHL_PLAYER_DATABASE);
+  // Master Players searched exclusively from nhl_master_players table in the db
+  const [masterPlayers, setMasterPlayers] = useState<MasterPlayer[]>([]);
+  const [loadingMaster, setLoadingMaster] = useState<boolean>(false);
 
   // Search Modal state
   const [isSearchOpen, setIsSearchOpen] = useState<boolean>(false);
@@ -162,50 +138,30 @@ export default function KeeperSelectionPortal({ gms, theme = 'dark' }: KeeperSel
     loadSeasons();
   }, []);
 
-  // 2. Load prospects to enhance search catalog
-  useEffect(() => {
-    async function loadProspectCatalog() {
-      try {
-        const { data } = await supabase
-          .from('prospects')
-          .select('player_name, nhl_id, position, team, gm_name');
-        
-        if (data && data.length > 0) {
-          const mapped: KeeperPlayer[] = data.map((p: any) => {
-            const rawPos = (p.position || 'F').toUpperCase();
-            const cleanPos: 'F' | 'D' | 'G' = rawPos.includes('G') ? 'G' : rawPos.includes('D') ? 'D' : 'F';
-            return {
-              player_name: p.player_name,
-              nhl_id: String(p.nhl_id || ''),
-              position: cleanPos,
-              nhl_team: p.team || 'NHL Team'
-            };
-          });
+  // 2. Fetch master players exclusively from nhl_master_players table
+  const fetchMasterPlayers = useCallback(async () => {
+    setLoadingMaster(true);
+    try {
+      const { data, error } = await supabase
+        .from('nhl_master_players')
+        .select('*')
+        .order('fantasy_points', { ascending: false });
 
-          setSearchablePlayers(prev => {
-            const map = new Map<string, KeeperPlayer>();
-            mapped.forEach(p => {
-              if (p && p.player_name) {
-                map.set((p.player_name || '').toLowerCase(), p);
-              }
-            });
-            prev.forEach(p => {
-              if (p && p.player_name) {
-                const key = (p.player_name || '').toLowerCase();
-                if (!map.has(key)) {
-                  map.set(key, p);
-                }
-              }
-            });
-            return Array.from(map.values());
-          });
-        }
-      } catch (e) {
-        console.warn('Could not populate prospects into keeper player search pool:', e);
+      if (error) {
+        console.error('Error querying nhl_master_players for keepers:', error);
+      } else if (data) {
+        setMasterPlayers(data);
       }
+    } catch (err) {
+      console.error('Failed to query nhl_master_players:', err);
+    } finally {
+      setLoadingMaster(false);
     }
-    loadProspectCatalog();
   }, []);
+
+  useEffect(() => {
+    fetchMasterPlayers();
+  }, [fetchMasterPlayers]);
 
   // 3. Fetch existing keepers directly from active_roster_players
   // SELECT * FROM active_roster_players WHERE season_id = selectedSeason AND gm_name = selectedGM AND is_keeper = true
@@ -337,19 +293,30 @@ export default function KeeperSelectionPortal({ gms, theme = 'dark' }: KeeperSel
     setIsSearchOpen(true);
   };
 
-  // Select player from modal with strict position validation
-  const handleSelectPlayer = (player: KeeperPlayer) => {
+  // Select player from modal (searching exclusively from nhl_master_players)
+  const handleSelectPlayer = (player: MasterPlayer) => {
     if (!activeSlotKey) return;
     
-    // Exact position verification
-    if (player.position !== activeSlotPosition) {
+    const rawPos = (player.position || activeSlotPosition).toUpperCase();
+    const cleanPos: 'F' | 'D' | 'G' = rawPos.includes('G') ? 'G' : rawPos.includes('D') ? 'D' : 'F';
+
+    // Position verification
+    if (cleanPos !== activeSlotPosition) {
       showToast(`Position mismatch! ${player.player_name} is a ${player.position}, but this is a ${activeSlotPosition} slot.`, 'error');
       return;
     }
 
+    const keeperObj: KeeperPlayer = {
+      player_name: player.player_name,
+      nhl_id: String(player.nhl_id),
+      position: cleanPos,
+      nhl_team: player.nhl_team || player.team || 'NHL Team',
+      slot_position: activeSlotKey
+    };
+
     setSlots(prev => ({
       ...prev,
-      [activeSlotKey]: player
+      [activeSlotKey]: keeperObj
     }));
 
     setIsSearchOpen(false);
@@ -680,18 +647,43 @@ export default function KeeperSelectionPortal({ gms, theme = 'dark' }: KeeperSel
     }
   };
 
-  // Filtered NHL player search results
+  // Filtered NHL player search results querying exclusively from nhl_master_players
   const filteredPlayers = useMemo(() => {
     const q = (searchQuery || '').toLowerCase().trim();
-    return searchablePlayers.filter(p => {
+    return masterPlayers.filter((p) => {
       if (!p || !p.player_name) return false;
-      const matchesQuery = !q ||
-        (p.player_name || '').toLowerCase().includes(q) ||
-        (p.nhl_team || '').toLowerCase().includes(q);
-      const matchesPosition = p.position === activeSlotPosition;
-      return matchesQuery && matchesPosition;
+
+      // Position matching
+      const pos = (p.position || '').toUpperCase();
+      let matchesPosition = false;
+      if (activeSlotPosition === 'F') {
+        matchesPosition =
+          pos === 'F' ||
+          pos === 'C' ||
+          pos === 'L' ||
+          pos === 'R' ||
+          pos === 'LW' ||
+          pos === 'RW' ||
+          pos.includes('W') ||
+          pos.includes('C');
+      } else if (activeSlotPosition === 'D') {
+        matchesPosition = pos === 'D' || pos.includes('D');
+      } else if (activeSlotPosition === 'G') {
+        matchesPosition = pos === 'G';
+      }
+
+      if (!matchesPosition) return false;
+
+      // Search matching across player name, nhl_team, or nhl_id
+      if (!q) return true;
+      return (
+        p.player_name.toLowerCase().includes(q) ||
+        (p.nhl_team && p.nhl_team.toLowerCase().includes(q)) ||
+        (p.team && p.team.toLowerCase().includes(q)) ||
+        String(p.nhl_id).includes(q)
+      );
     });
-  }, [searchablePlayers, searchQuery, activeSlotPosition]);
+  }, [masterPlayers, searchQuery, activeSlotPosition]);
 
   const filledCount = Object.values(slots).filter(Boolean).length;
   const isReadyToLock = filledCount === 7;
@@ -949,7 +941,7 @@ export default function KeeperSelectionPortal({ gms, theme = 'dark' }: KeeperSel
           </div>
         )}
 
-        {/* Player Search Modal */}
+        {/* Player Search Modal (Exclusively from nhl_master_players database) */}
         {isSearchOpen && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
             <div className={`w-full max-w-xl rounded-3xl border shadow-2xl overflow-hidden flex flex-col max-h-[85vh] ${
@@ -958,8 +950,19 @@ export default function KeeperSelectionPortal({ gms, theme = 'dark' }: KeeperSel
               {/* Modal Header */}
               <div className="p-6 border-b flex items-center justify-between border-slate-200 dark:border-slate-800">
                 <div>
-                  <h3 className="text-lg font-black">Select Keeper for {activeSlotKey} ({activeSlotPosition === 'F' ? 'Forward' : activeSlotPosition === 'D' ? 'Defenseman' : 'Goalie'})</h3>
-                  <p className={`text-xs mt-0.5 ${isLight ? 'text-slate-500' : 'text-slate-400'}`}>Search current NHL & league players by name or team</p>
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-500/10 text-emerald-500 border border-emerald-500/20">
+                      <Database className="h-3 w-3" />
+                      nhl_master_players
+                    </span>
+                    <span className="text-xs font-bold text-slate-400">
+                      {activeSlotKey} • {activeSlotPosition === 'F' ? 'Forward' : activeSlotPosition === 'D' ? 'Defenseman' : 'Goalie'}
+                    </span>
+                  </div>
+                  <h3 className="text-lg font-black">Select Keeper for {activeSlotKey}</h3>
+                  <p className={`text-xs mt-0.5 ${isLight ? 'text-slate-500' : 'text-slate-400'}`}>
+                    Searching exclusively from the <span className="font-semibold text-emerald-500">nhl_master_players</span> database table.
+                  </p>
                 </div>
                 <button
                   onClick={() => setIsSearchOpen(false)}
@@ -975,55 +978,108 @@ export default function KeeperSelectionPortal({ gms, theme = 'dark' }: KeeperSel
                   <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
                   <input
                     type="text"
-                    placeholder="Search player (e.g. Seth Jarvis, Connor McDavid)..."
+                    placeholder="Search nhl_master_players (e.g. Seth Jarvis, McDavid, Makar)..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     autoFocus
-                    className={`w-full pl-10 pr-4 py-2.5 rounded-xl border text-sm font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 ${
+                    className={`w-full pl-10 pr-10 py-2.5 rounded-xl border text-sm font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-emerald-500 ${
                       isLight 
                         ? 'bg-slate-50 border-slate-200 text-slate-800' 
                         : 'bg-slate-800 border-slate-700 text-slate-200'
                     }`}
                   />
+                  {searchQuery && (
+                    <button
+                      onClick={() => setSearchQuery('')}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-200"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  )}
+                </div>
+
+                <div className="flex items-center justify-between mt-2.5 px-1 text-[11px] text-slate-400 font-semibold">
+                  <span>Showing eligible {activeSlotPosition === 'F' ? 'Forwards' : activeSlotPosition === 'D' ? 'Defensemen' : 'Goalies'}</span>
+                  <span>{filteredPlayers.length} player{filteredPlayers.length === 1 ? '' : 's'} available</span>
                 </div>
               </div>
 
               {/* Results List */}
               <div className="flex-1 overflow-y-auto p-4 space-y-2">
-                {filteredPlayers.length === 0 ? (
-                  <div className="text-center py-12">
-                    <p className={`text-sm font-semibold ${isLight ? 'text-slate-500' : 'text-slate-400'}`}>No players found matching "{searchQuery}" for position {activeSlotPosition}.</p>
+                {loadingMaster && masterPlayers.length === 0 ? (
+                  <div className="text-center py-16 flex flex-col items-center justify-center gap-3">
+                    <RefreshCw className="h-6 w-6 animate-spin text-emerald-500" />
+                    <p className={`text-sm font-semibold ${isLight ? 'text-slate-500' : 'text-slate-400'}`}>
+                      Querying nhl_master_players database...
+                    </p>
+                  </div>
+                ) : filteredPlayers.length === 0 ? (
+                  <div className="text-center py-14 px-4">
+                    <div className="w-12 h-12 mx-auto mb-3 rounded-2xl bg-slate-800/40 border border-slate-700 flex items-center justify-center text-slate-400">
+                      <Search className="h-6 w-6" />
+                    </div>
+                    <p className="text-sm font-bold">No players found in nhl_master_players</p>
+                    <p className={`text-xs mt-1 ${isLight ? 'text-slate-500' : 'text-slate-400'}`}>
+                      {searchQuery
+                        ? `No matching ${activeSlotPosition === 'F' ? 'Forwards' : activeSlotPosition === 'D' ? 'Defensemen' : 'Goalies'} for "${searchQuery}".`
+                        : `No eligible players found in the database for position ${activeSlotPosition}.`}
+                    </p>
                   </div>
                 ) : (
-                  filteredPlayers.map((player) => (
-                    <div
-                      key={`${player.nhl_id}-${player.player_name}`}
-                      onClick={() => handleSelectPlayer(player)}
-                      className={`p-3.5 rounded-2xl border transition-all cursor-pointer flex items-center justify-between group ${
-                        isLight
-                          ? 'border-slate-200 hover:border-indigo-500 hover:bg-indigo-50/50'
-                          : 'border-slate-800 hover:border-indigo-500 hover:bg-indigo-950/30'
-                      }`}
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-black text-sm ${
-                          player.position === 'F' ? 'bg-blue-500/10 text-blue-500 border border-blue-500/20' :
-                          player.position === 'D' ? 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20' :
-                          'bg-purple-500/10 text-purple-500 border border-purple-500/20'
-                        }`}>
-                          {player.position}
-                        </div>
-                        <div>
-                          <h4 className="font-bold text-sm group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">{player.player_name}</h4>
-                          <p className={`text-xs ${isLight ? 'text-slate-500' : 'text-slate-400'}`}>{player.nhl_team} • NHL ID: {player.nhl_id || 'N/A'}</p>
-                        </div>
-                      </div>
+                  filteredPlayers.map((player) => {
+                    const alreadyAssignedSlot = Object.entries(slots).find(
+                      ([key, p]) => key !== activeSlotKey && p && String((p as KeeperPlayer).nhl_id) === String(player.nhl_id)
+                    );
 
-                      <button className="px-3 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs transition-colors shadow-sm">
-                        Select
-                      </button>
-                    </div>
-                  ))
+                    return (
+                      <div
+                        key={`${player.nhl_id}-${player.player_name}`}
+                        onClick={() => handleSelectPlayer(player)}
+                        className={`p-3.5 rounded-2xl border transition-all cursor-pointer flex items-center justify-between group ${
+                          isLight
+                            ? 'border-slate-200 hover:border-emerald-500 hover:bg-emerald-50/40'
+                            : 'border-slate-800 hover:border-emerald-500/50 hover:bg-emerald-950/20'
+                        }`}
+                      >
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-black text-xs shrink-0 ${
+                            activeSlotPosition === 'F' ? 'bg-blue-500/10 text-blue-500 border border-blue-500/20' :
+                            activeSlotPosition === 'D' ? 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20' :
+                            'bg-purple-500/10 text-purple-500 border border-purple-500/20'
+                          }`}>
+                            {player.position || activeSlotPosition}
+                          </div>
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-2">
+                              <h4 className="font-bold text-sm truncate group-hover:text-emerald-500 transition-colors">
+                                {player.player_name}
+                              </h4>
+                              {alreadyAssignedSlot && (
+                                <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-500/15 text-amber-400 border border-amber-500/30">
+                                  In {alreadyAssignedSlot[0]}
+                                </span>
+                              )}
+                            </div>
+                            <p className={`text-xs truncate ${isLight ? 'text-slate-500' : 'text-slate-400'}`}>
+                              {player.nhl_team || player.team || 'NHL Team'} • NHL ID: {player.nhl_id || 'N/A'}
+                              {player.fantasy_points != null && ` • ${player.fantasy_points} FPTS`}
+                            </p>
+                          </div>
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleSelectPlayer(player);
+                          }}
+                          className="px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs transition-colors shadow-sm shrink-0 active:scale-95 cursor-pointer"
+                        >
+                          Select
+                        </button>
+                      </div>
+                    );
+                  })
                 )}
               </div>
             </div>

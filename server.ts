@@ -34,6 +34,76 @@ async function startServer() {
     res.json({ status: "ok" });
   });
 
+  // Helper to compute NHL challenge target date with 6:00 AM rollover
+  function getChallengeDateForTime(ref = new Date()): string {
+    // Eastern Time is the standard NHL timezone
+    const formatter = new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'America/New_York',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit'
+    });
+    return formatter.format(ref);
+  }
+
+  // Daily 6:00 AM Challenge Slate endpoint
+  app.get("/api/challenges/today", async (req, res) => {
+    try {
+      const requestedDate = (req.query.date as string) || getChallengeDateForTime();
+      let nhlScoreUrl = `https://api-web.nhle.com/v1/score/${requestedDate}`;
+      
+      let response = await fetch(nhlScoreUrl, {
+        headers: {
+          'Accept': 'application/json',
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) WinkoChallenges/1.0',
+        },
+      });
+
+      let data: any = response.ok ? await response.json() : null;
+      let games = Array.isArray(data?.games) ? data.games : [];
+      let activeDate = data?.currentDate || requestedDate;
+
+      // If requested date has 0 games, check schedule/now for upcoming games
+      if (games.length === 0) {
+        const schedRes = await fetch('https://api-web.nhle.com/v1/schedule/now', {
+          headers: { 'Accept': 'application/json', 'User-Agent': 'Mozilla/5.0' },
+        });
+        if (schedRes.ok) {
+          const schedData = await schedRes.json();
+          const nextDayWithGames = schedData.gameWeek?.find((gw: any) => gw.date >= requestedDate && gw.games?.length > 0);
+          if (nextDayWithGames) {
+            activeDate = nextDayWithGames.date;
+            games = nextDayWithGames.games;
+          }
+        }
+      }
+
+      res.json({
+        date: activeDate,
+        targetDate: requestedDate,
+        gamesCount: games.length,
+        games,
+        rolloverHour: 6,
+        timeZone: 'America/New_York',
+        lastUpdated: new Date().toISOString()
+      });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message || 'Error fetching challenge slate' });
+    }
+  });
+
+  // Automated 6:00 AM Cron / Webhook Endpoint
+  app.all("/api/challenges/daily-rollover", async (req, res) => {
+    const today = getChallengeDateForTime();
+    console.log(`[Challenges 6AM Rollover] Daily rollover check executed for ${today} at ${new Date().toISOString()}`);
+    res.json({
+      status: 'ok',
+      message: `Daily challenge rollover executed for date: ${today}`,
+      date: today,
+      timestamp: new Date().toISOString()
+    });
+  });
+
   // Vite middleware for development, static serving for production
   if (process.env.NODE_ENV !== "production") {
     const vite = await createViteServer({

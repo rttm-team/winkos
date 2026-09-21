@@ -23,6 +23,9 @@ import { ProspectLanding } from './components/ProspectLanding';
 import { SeasonsLanding } from './components/SeasonsLanding';
 import ActiveSquadManager from './components/ActiveSquadManager';
 import KeeperSelectionPortal from './components/KeeperSelectionPortal';
+import WaiverWirePortal from './components/WaiverWirePortal';
+import SeasonTransactionsFeed from './components/SeasonTransactionsFeed';
+import CommishBackOffice from './components/CommishBackOffice';
 import { syncProspectWithNhlApi, setStored25PlusSeasons } from './services/nhlApi';
 import { supabase, fetchLeagueData, mapProspectRow, addDeletedProspectId } from './lib/supabase';
 import {
@@ -42,7 +45,7 @@ export default function App() {
   const [gms, setGms] = useState<GeneralManager[]>(INITIAL_GMS);
   const [selectedGmId, setSelectedGmId] = useState<string>('gm-adam');
   const [authedGmId, setAuthedGmId] = useState<string | null>(null);
-  const [view, setView] = useState<'hub' | 'seasons' | 'prospect-central' | 'prospects' | 'arcade' | 'active-squad'>('hub');
+  const [view, setView] = useState<'hub' | 'seasons' | 'keepers' | 'waivers' | 'transactions' | 'prospect-central' | 'prospects' | 'arcade' | 'active-squad' | 'commish'>('hub');
   const [selectedSeason, setSelectedSeason] = useState<string>('2026-27');
   const [positionFilter, setPositionFilter] = useState<PositionFilter>('ALL');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('ALL');
@@ -1294,6 +1297,24 @@ export default function App() {
         <KeeperSelectionPortal gms={gms} theme={theme} />
       )}
 
+      {view === 'waivers' && (
+        <WaiverWirePortal
+          gms={gms}
+          theme={theme}
+          initialGm={authedGm?.name || activeGm?.name || 'Adam'}
+          onNavigateBack={() => setView('hub')}
+        />
+      )}
+
+      {view === 'transactions' && (
+        <SeasonTransactionsFeed
+          gms={gms}
+          theme={theme}
+          seasonId="2026-2027"
+          onNavigateToWaivers={() => setView('waivers')}
+        />
+      )}
+
       {view === 'arcade' && (
         <WinkosChallenges gmName={authedGm?.name || ''} theme={theme} />
       )}
@@ -1310,6 +1331,17 @@ export default function App() {
             <p className="text-sm font-bold text-slate-400">Commissioner access required.</p>
           </div>
         )
+      )}
+
+      {view === 'commish' && (
+        <CommishBackOffice
+          gms={gms}
+          activeGm={activeGm}
+          authedGm={authedGm}
+          theme={theme}
+          seasonId="2026-2027"
+          onNavigateBack={() => setView('hub')}
+        />
       )}
 
       {view === 'prospect-central' && (

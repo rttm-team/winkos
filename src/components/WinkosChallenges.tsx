@@ -20,7 +20,8 @@ import {
   Calendar,
   Gamepad2,
   HelpCircle,
-  Activity
+  Activity,
+  RotateCw
 } from 'lucide-react';
 
 interface Game {
@@ -121,6 +122,35 @@ export default function WinkosChallenges({ gmName, theme = 'dark' }: { gmName: s
     return () => clearInterval(timer);
   }, []);
 
+  // 6:00 AM Daily Automatic Rollover Scheduler
+  useEffect(() => {
+    let timerId: any;
+
+    const scheduleRollover = () => {
+      const nowDate = new Date();
+      // Calculate target next 6:00 AM
+      const next6AM = new Date(nowDate);
+      if (nowDate.getHours() >= 6) {
+        next6AM.setDate(next6AM.getDate() + 1);
+      }
+      next6AM.setHours(6, 0, 0, 0);
+
+      const msUntil6AM = Math.max(1000, next6AM.getTime() - nowDate.getTime());
+      console.log(`[Challenges] ⏰ Daily 6:00 AM rollover scheduled in ${Math.round(msUntil6AM / 60000)} minutes (${next6AM.toLocaleTimeString()})`);
+
+      timerId = setTimeout(() => {
+        console.log("[Challenges] 🌅 6:00 AM Rollover reached! Updating to today's games...");
+        if (!hasUnsavedRef.current) {
+          fetchInitialData(false);
+        }
+        scheduleRollover();
+      }, msUntil6AM);
+    };
+
+    scheduleRollover();
+    return () => clearTimeout(timerId);
+  }, []);
+
   useEffect(() => {
     fetchInitialData(false);
     // Auto-refresh scores & schedule silently in background every 30 seconds
@@ -129,10 +159,17 @@ export default function WinkosChallenges({ gmName, theme = 'dark' }: { gmName: s
       if (hasUnsavedRef.current) {
         return; // Auto-refresh is frozen while user is making picks
       }
-      fetchInitialData(true);
+      // Check if calendar date or 6AM threshold crossed
+      const targetDate = getChallengeSlateDate();
+      if (currentDateStr && targetDate !== currentDateStr) {
+        console.log(`[Challenges] Rollover threshold reached: switching from ${currentDateStr} to ${targetDate}`);
+        fetchInitialData(false, targetDate);
+      } else {
+        fetchInitialData(true, currentDateStr);
+      }
     }, 30000);
     return () => clearInterval(interval);
-  }, [gmName]);
+  }, [gmName, currentDateStr]);
 
   // Lockout calculation: 10 minutes before the first scheduled puck drop of the day
   const earliestGameTime = useMemo(() => {
@@ -178,7 +215,35 @@ export default function WinkosChallenges({ gmName, theme = 'dark' }: { gmName: s
 
   const isCompleteBallot = totalGamesCount > 0 && selectedPicksCount === totalGamesCount;
 
-  const fetchInitialData = async (isSilent = false) => {
+  // Helper to compute official challenge slate date with daily 6:00 AM rollover
+  const getChallengeSlateDate = (ref = new Date()): string => {
+    // Eastern Time is the standard official NHL schedule timezone
+    const formatter = new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'America/New_York',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit'
+    });
+    return formatter.format(ref);
+  };
+
+  const formattedSlateDate = useMemo(() => {
+    if (!currentDateStr) return "Today's Matchups";
+    try {
+      const [y, m, d] = currentDateStr.split('-').map(Number);
+      const dateObj = new Date(y, m - 1, d);
+      return dateObj.toLocaleDateString('en-US', {
+        weekday: 'short',
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric'
+      });
+    } catch {
+      return currentDateStr;
+    }
+  }, [currentDateStr]);
+
+  const fetchInitialData = async (isSilent = false, overrideDate?: string) => {
     // Only show full loading spinner on initial cold start when there is no data yet
     if (!isSilent && liveGames.length === 0) {
       setLoading(true);
@@ -197,20 +262,33 @@ export default function WinkosChallenges({ gmName, theme = 'dark' }: { gmName: s
         if (gmData) setWinkoins(gmData.winkoins || 0);
       }
 
-      // 2. Fetch live official NHL schedule & score feed with fast timeout
-      let currDate = new Date().toISOString().split('T')[0];
+      // 2. Fetch live official NHL schedule & score feed with automatic 6:00 AM slate resolution
+      const targetDate = overrideDate || currentDateStr || getChallengeSlateDate();
       let todayGames: Game[] = [];
+      let resolvedDate = targetDate;
 
       try {
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 2500);
-        const res = await fetch(`/api/nhl-proxy?url=${encodeURIComponent('https://api-web.nhle.com/v1/score/now')}`, {
+        const timeoutId = setTimeout(() => controller.abort(), 4000);
+
+        // 1. Query dedicated challenge endpoint first
+        let res = await fetch(`/api/challenges/today?date=${encodeURIComponent(targetDate)}`, {
           signal: controller.signal
         });
+
+        if (!res.ok) {
+          // Fallback directly to NHL score endpoint
+          res = await fetch(`/api/nhl-proxy?url=${encodeURIComponent(`https://api-web.nhle.com/v1/score/${targetDate}`)}`, {
+            signal: controller.signal
+          });
+        }
         clearTimeout(timeoutId);
+
         if (res.ok) {
           const data = await res.json();
-          if (data.currentDate) currDate = data.currentDate;
+          if (data.date) resolvedDate = data.date;
+          else if (data.currentDate) resolvedDate = data.currentDate;
+
           if (Array.isArray(data.games) && data.games.length > 0) {
             todayGames = data.games.map((g: any) => {
               const awayAbbrev = g.awayTeam?.abbrev || '';
@@ -234,13 +312,13 @@ export default function WinkosChallenges({ gmName, theme = 'dark' }: { gmName: s
           }
         }
       } catch (err) {
-        console.warn("NHL proxy call notice or timeout:", err);
+        console.warn("NHL challenge fetch notice or timeout:", err);
       }
-      setCurrentDateStr(currDate);
+      setCurrentDateStr(resolvedDate);
       
       let activeGames = todayGames;
       if (activeGames.length === 0) {
-        // Auto-setup active challenge matchups to keep picks rolling continuously
+        // Fallback demo games only if NHL API returns 0 games for both today and schedule
         activeGames = [
           {
             id: 2026020001,
@@ -295,13 +373,13 @@ export default function WinkosChallenges({ gmName, theme = 'dark' }: { gmName: s
       }
       setLiveGames(activeGames);
 
-      // 3. Fetch User's Daily Picks (ONLY on initial page load, NEVER during silent background refresh)
+      // 3. Fetch User's Daily Picks (ONLY on initial load or date change, NEVER during background refresh)
       if (gmName && !isSilent) {
         const { data: userPicks } = await supabase
           .from('daily_picks')
           .select('*')
           .eq('gm_name', gmName)
-          .eq('pick_date', currDate);
+          .eq('pick_date', resolvedDate);
           
         if (userPicks && userPicks.length > 0) {
           const mappedPicks: Record<number, string> = {};
@@ -309,14 +387,17 @@ export default function WinkosChallenges({ gmName, theme = 'dark' }: { gmName: s
             mappedPicks[p.game_id] = p.predicted_winner;
           });
           setPicks(mappedPicks);
-          setHasUnsavedChanges(false);
-          hasUnsavedRef.current = false;
+        } else {
+          // Fresh slate for this date
+          setPicks({});
         }
+        setHasUnsavedChanges(false);
+        hasUnsavedRef.current = false;
       }
       
       // 4. Process Tonight's Leaderboard
       if (activeGames.length > 0) {
-        await processTonightLeaderboard(activeGames, currDate);
+        await processTonightLeaderboard(activeGames, resolvedDate);
       }
 
       // 5. Process Overall Challenge Leaderboard
@@ -815,14 +896,55 @@ export default function WinkosChallenges({ gmName, theme = 'dark' }: { gmName: s
                           }`}>
                             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                               <div>
-                                <h2 className={`text-2xl font-black ${isLight ? 'text-slate-900' : 'text-white'}`}>
-                                  Tonight's Games
-                                </h2>
-                                <p className={`text-xs sm:text-sm mt-1 ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>
+                                <div className="flex flex-wrap items-center gap-2">
+                                  <h2 className={`text-2xl font-black ${isLight ? 'text-slate-900' : 'text-white'}`}>
+                                    Tonight's Games
+                                  </h2>
+                                  <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold border ${
+                                    isLight
+                                      ? 'bg-slate-100 text-slate-700 border-slate-200'
+                                      : 'bg-slate-800 text-slate-300 border-slate-700'
+                                  }`}>
+                                    <Calendar className="h-3 w-3 text-emerald-500" />
+                                    <span>{formattedSlateDate}</span>
+                                  </span>
+                                  <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold border ${
+                                    isLight
+                                      ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
+                                      : 'bg-emerald-950/40 text-emerald-300 border-emerald-500/30'
+                                  }`}>
+                                    <span>🏒 {totalGamesCount} Matchups</span>
+                                  </span>
+                                </div>
+                                <p className={`text-xs sm:text-sm mt-1.5 ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>
                                   Pick every winner on the slate to participate. Selections close 10m before first puck drop.
                                 </p>
+                                <div className="flex items-center gap-1.5 mt-2">
+                                  <Sparkles className="h-3 w-3 text-emerald-500 shrink-0" />
+                                  <span className={`text-[11px] font-semibold ${
+                                    isLight ? 'text-slate-500' : 'text-slate-400'
+                                  }`}>
+                                    Auto-rolls over daily at 6:00 AM • Live real-time scoring
+                                  </span>
+                                </div>
                               </div>
-                              <div className="flex items-center gap-2 self-start sm:self-auto shrink-0">
+                              <div className="flex flex-wrap items-center gap-2 self-start sm:self-auto shrink-0">
+                                <button
+                                  type="button"
+                                  id="btn-refresh-todays-slate"
+                                  onClick={() => fetchInitialData(false)}
+                                  disabled={isSyncing}
+                                  title="Sync today's games"
+                                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold border transition-colors select-none cursor-pointer ${
+                                    isLight
+                                      ? 'bg-slate-100 hover:bg-slate-200 text-slate-700 border-slate-300'
+                                      : 'bg-slate-800 hover:bg-slate-700 text-slate-200 border-slate-700'
+                                  }`}
+                                >
+                                  <RotateCw className={`h-3 w-3 ${isSyncing ? 'animate-spin text-emerald-500' : 'text-slate-400'}`} />
+                                  <span>Sync Slate</span>
+                                </button>
+
                                 {hasUnsavedChanges ? (
                                   <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold border ${
                                     isLight
@@ -830,7 +952,7 @@ export default function WinkosChallenges({ gmName, theme = 'dark' }: { gmName: s
                                       : 'bg-amber-950/50 border-amber-500/40 text-amber-300'
                                   }`}>
                                     <span className="h-2 w-2 rounded-full bg-amber-500 animate-pulse" />
-                                    <span>Picks in Progress • Sync Paused</span>
+                                    <span>Picks in Progress</span>
                                   </span>
                                 ) : (
                                   <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold border ${
