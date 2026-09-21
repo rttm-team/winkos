@@ -441,7 +441,7 @@ export default function WaiverWirePortal({
   return (
     <div
       id="waiver-wire-portal"
-      className={`min-h-screen py-6 sm:py-8 transition-colors ${
+      className={`py-6 sm:py-8 transition-colors ${
         isLight ? 'bg-transparent text-slate-900' : 'bg-transparent text-slate-100'
       }`}
     >

@@ -705,9 +705,7 @@ export default function WinkosChallenges({ gmName, theme = 'dark' }: { gmName: s
 
   return (
     <div className={isLight ? '' : 'dark'}>
-      <div className={`min-h-screen font-sans antialiased selection:bg-cyan-500/30 selection:text-cyan-200 ${
-        isLight ? 'bg-slate-50 text-slate-900' : 'bg-[#0f172a] text-slate-100'
-      }`}>
+      <div className="font-sans antialiased">
         <main className="py-6 sm:py-8">
           
           {/* Main Top Header Block */}
@@ -727,7 +725,7 @@ export default function WinkosChallenges({ gmName, theme = 'dark' }: { gmName: s
               <h2 className={`text-3xl sm:text-4xl font-black tracking-tight ${
                 isLight ? 'text-slate-900' : 'text-white'
               }`}>
-                Winko's Challenges
+                Challenges
               </h2>
               <p className={`text-xs sm:text-sm mt-1.5 max-w-2xl ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>
                 Compete in daily hockey challenges, win Winkoins, and claim pool supremacy.

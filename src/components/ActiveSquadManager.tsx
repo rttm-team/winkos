@@ -1801,11 +1801,7 @@ export const ActiveSquadManager: React.FC<ActiveSquadManagerProps> = ({
   // ==========================================
   return (
     <div className={isLight ? '' : 'dark'}>
-      <div
-        className={`min-h-screen font-sans antialiased selection:bg-emerald-500/30 selection:text-emerald-200 ${
-          isLight ? 'bg-slate-50 text-slate-900' : 'bg-[#0f172a] text-slate-100'
-        }`}
-      >
+      <div className="font-sans antialiased">
         {/* TOAST SYSTEM */}
         <div className="fixed bottom-5 right-5 z-50 flex flex-col gap-2 max-w-sm pointer-events-none">
           {toasts.map(t => (
@@ -1831,11 +1827,11 @@ export const ActiveSquadManager: React.FC<ActiveSquadManagerProps> = ({
           ))}
         </div>
 
-        <main className="space-y-6">
+        <main className="py-6 sm:py-8 space-y-6">
           {/* ==========================================
               PAGE TITLE OUTSIDE CARD
           ========================================== */}
-          <div>
+          <div className={`border-b pb-6 ${isLight ? 'border-slate-200' : 'border-slate-800/80'}`}>
             <div className="flex flex-wrap items-center justify-between gap-4">
               <h2 className={`text-3xl sm:text-4xl font-black tracking-tight ${isLight ? 'text-slate-900' : 'text-white'}`}>
                 Active Roster

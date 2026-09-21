@@ -234,7 +234,7 @@ export default function SeasonTransactionsFeed({
   return (
     <div
       id="season-transactions-feed-portal"
-      className={`min-h-screen py-6 sm:py-8 transition-colors ${
+      className={`py-6 sm:py-8 transition-colors ${
         isLight ? 'bg-transparent text-slate-900' : 'bg-transparent text-slate-100'
       }`}
     >
@@ -273,7 +273,7 @@ export default function SeasonTransactionsFeed({
                     isLight ? 'text-slate-900' : 'text-white'
                   }`}
                 >
-                  2026-27 League Transaction Log
+                  Transactions
                 </h2>
                 {/* Live pulsing status indicator */}
                 <div

@@ -233,7 +233,7 @@ export const SeasonsLanding: React.FC<SeasonsLandingProps> = ({
     ) : (
         <div className="space-y-6">
           {/* Individual Season Standings View */}
-          <div className="mb-8">
+          <div className={`mb-8 py-6 sm:py-8 border-b pb-6 ${isLight ? 'border-slate-200' : 'border-slate-800/80'}`}>
             <div className="flex flex-wrap items-center justify-between gap-4">
               <div>
                 <div className="flex items-center gap-3 mb-2">
