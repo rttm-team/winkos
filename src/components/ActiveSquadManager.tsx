@@ -1883,7 +1883,7 @@ export const ActiveSquadManager: React.FC<ActiveSquadManagerProps> = ({
           ))}
         </div>
 
-        <main className="py-6 sm:py-8 space-y-6">
+        <main className="space-y-6">
           {/* ==========================================
               PAGE TITLE OUTSIDE CARD
           ========================================== */}
