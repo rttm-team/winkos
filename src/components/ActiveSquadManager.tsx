@@ -1996,7 +1996,7 @@ export const ActiveSquadManager: React.FC<ActiveSquadManagerProps> = ({
                   </h2>
                 </div>
 
-                <div className="grid grid-cols-1 xl:grid-cols-2 gap-10">
+                <div className="space-y-10">
                   {/* Active Forwards */}
                   <div>
                     <div className="flex items-center justify-between mb-4">
@@ -2051,7 +2051,7 @@ export const ActiveSquadManager: React.FC<ActiveSquadManagerProps> = ({
                   </h2>
                 </div>
 
-                <div className="grid grid-cols-1 xl:grid-cols-2 gap-10">
+                <div className="space-y-10">
                   {/* Active Defense */}
                   <div>
                     <div className="flex items-center justify-between mb-4">
@@ -2106,7 +2106,7 @@ export const ActiveSquadManager: React.FC<ActiveSquadManagerProps> = ({
                   </h2>
                 </div>
 
-                <div className="grid grid-cols-1 xl:grid-cols-2 gap-10">
+                <div className="space-y-10">
                   {/* Active Goalies */}
                   <div>
                     <div className="flex items-center justify-between mb-4">
