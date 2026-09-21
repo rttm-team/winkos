@@ -1891,10 +1891,6 @@ export const ActiveSquadManager: React.FC<ActiveSquadManagerProps> = ({
             <h1 className={`text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight ${isLight ? 'text-slate-900' : 'text-white'}`}>
               Active Roster
             </h1>
-            <p className={`text-xs sm:text-sm mt-1.5 max-w-3xl ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>
-              Official roster structure: <strong>15 Active slots</strong> (9F, 4D, 2G earning Rule 5 FP) and{' '}
-              <strong>7 Bench slots</strong> (3BF, 2BD, 2BG earning 0 FP). Unlimited swaps permitted during the season.
-            </p>
           </div>
 
           {/* ==========================================
@@ -2038,41 +2034,6 @@ export const ActiveSquadManager: React.FC<ActiveSquadManagerProps> = ({
                 </button>
               </div>
             </div>
-
-            {/* Overall Roster Breakdown Banner */}
-            <div className="mt-5 pt-4 border-t border-slate-200 dark:border-slate-800/80 flex flex-wrap items-center justify-between gap-4">
-              <div className="flex flex-wrap items-center gap-3">
-                <div
-                  className={`px-3 py-1.5 rounded-xl border font-mono text-xs font-bold flex items-center gap-2 ${
-                    totalMainRosterCount === 22
-                      ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
-                      : 'bg-slate-800/60 text-slate-300 border-slate-700'
-                  }`}
-                >
-                  <Users className="h-3.5 w-3.5 text-emerald-400" />
-                  <span>Total Main Roster: <strong>{totalMainRosterCount} / 22</strong></span>
-                </div>
-
-                <div className="text-xs text-slate-400 font-medium">
-                  Active: <strong className="text-emerald-400">{totalActiveCount}/15</strong> • Bench: <strong className="text-amber-400">{totalBenchCount}/7</strong>
-                </div>
-              </div>
-
-              {/* Rule 5 Fantasy Points Total */}
-              <div className="flex items-center gap-2">
-                <div
-                  className={`px-3.5 py-1.5 rounded-xl border flex items-center gap-2 font-mono ${
-                    isLight
-                      ? 'bg-amber-50 border-amber-200 text-amber-900'
-                      : 'bg-amber-950/40 border-amber-700/50 text-amber-200'
-                  }`}
-                >
-                  <Trophy className="h-3.5 w-3.5 text-amber-500" />
-                  <span className="text-xs font-black">Active Rule 5 FP:</span>
-                  <span className="text-sm font-black">{activeFantasyStats.totalFP.toLocaleString()} PTS</span>
-                </div>
-              </div>
-            </div>
           </div>
 
           {loading ? (
@@ -2096,69 +2057,12 @@ export const ActiveSquadManager: React.FC<ActiveSquadManagerProps> = ({
                 {/* Active Squad Header with Slot Counters */}
                 <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-5 border-b border-slate-200 dark:border-slate-800">
                   <div>
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="text-xs font-black uppercase tracking-wider text-emerald-500">
-                        1. Active Squad (15 Slots Max)
-                      </span>
-                      <span className="text-xs text-slate-400">•</span>
-                      <span className="text-xs font-bold text-amber-500">Earns Rule 5 Fantasy Points</span>
-                    </div>
                     <h2 className={`text-xl font-black ${isLight ? 'text-slate-900' : 'text-white'}`}>
                       Active Starting Lineup
                     </h2>
                     <p className={`text-xs mt-0.5 ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>
                       Only promoted players in these 15 active slots produce fantasy points for your GM total.
                     </p>
-                  </div>
-
-                  {/* Active Slot Counter Badges */}
-                  <div className="flex flex-wrap items-center gap-2">
-                    {/* Active F */}
-                    <div
-                      className={`px-3 py-1.5 rounded-xl border text-xs font-mono font-bold flex items-center gap-1.5 ${
-                        activeFCount === 9
-                          ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
-                          : 'bg-slate-800/60 text-slate-300 border-slate-700'
-                      }`}
-                    >
-                      <span className="h-2 w-2 rounded-full bg-blue-400" />
-                      <span>Active F: <strong className={activeFCount === 9 ? 'text-emerald-400' : 'text-white'}>{activeFCount}</strong>/9</span>
-                    </div>
-
-                    {/* Active D */}
-                    <div
-                      className={`px-3 py-1.5 rounded-xl border text-xs font-mono font-bold flex items-center gap-1.5 ${
-                        activeDCount === 4
-                          ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
-                          : 'bg-slate-800/60 text-slate-300 border-slate-700'
-                      }`}
-                    >
-                      <span className="h-2 w-2 rounded-full bg-amber-400" />
-                      <span>Active D: <strong className={activeDCount === 4 ? 'text-emerald-400' : 'text-white'}>{activeDCount}</strong>/4</span>
-                    </div>
-
-                    {/* Active G */}
-                    <div
-                      className={`px-3 py-1.5 rounded-xl border text-xs font-mono font-bold flex items-center gap-1.5 ${
-                        activeGCount === 2
-                          ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
-                          : 'bg-slate-800/60 text-slate-300 border-slate-700'
-                      }`}
-                    >
-                      <span className="h-2 w-2 rounded-full bg-purple-400" />
-                      <span>Active G: <strong className={activeGCount === 2 ? 'text-emerald-400' : 'text-white'}>{activeGCount}</strong>/2</span>
-                    </div>
-
-                    {/* Total Active */}
-                    <div
-                      className={`px-3 py-1.5 rounded-xl border text-xs font-mono font-black ${
-                        totalActiveCount === 15
-                          ? 'bg-emerald-500 text-white border-emerald-400 shadow-xs'
-                          : 'bg-slate-800 text-slate-300 border-slate-700'
-                      }`}
-                    >
-                      Total Active: {totalActiveCount} / 15
-                    </div>
                   </div>
                 </div>
 
