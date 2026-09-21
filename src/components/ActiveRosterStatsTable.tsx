@@ -565,7 +565,7 @@ export const ActiveRosterStatsTable: React.FC<ActiveRosterStatsTableProps> = ({
         isLight ? 'bg-slate-50 text-slate-900' : 'bg-[#0b1120] text-slate-100'
       }`}
     >
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-6">
+      <div className="py-6 sm:py-8 space-y-6">
         {/* ==========================================
             SUMMARY HEADER (Total Active Squad FP)
         ========================================== */}

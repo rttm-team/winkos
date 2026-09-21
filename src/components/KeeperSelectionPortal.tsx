@@ -689,10 +689,10 @@ export default function KeeperSelectionPortal({ gms, theme = 'dark' }: KeeperSel
   const isReadyToLock = filledCount === 7;
 
   return (
-    <div className={`min-h-screen py-8 px-4 sm:px-6 lg:px-8 transition-colors ${
+    <div className={`min-h-screen py-8 transition-colors ${
       isLight ? 'bg-slate-50 text-slate-900' : 'bg-slate-950 text-slate-100'
     }`}>
-      <div className="max-w-6xl mx-auto space-y-8">
+      <div className="space-y-8">
         
         {/* Toast Notification */}
         {toast && (

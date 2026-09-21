@@ -524,7 +524,7 @@ export const ProspectLanding: React.FC<ProspectLandingProps> = ({
     <div className={`min-h-screen font-sans antialiased selection:bg-cyan-500/30 selection:text-cyan-200 ${
       isLight ? 'bg-slate-50 text-slate-900' : 'bg-[#0f172a] text-slate-100'
     }`}>
-      <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-8">
+      <div className="relative py-6 sm:py-8 space-y-8">
         {/* ========================================================================= */}
         {/* 1. TOP HEADER & CONTROL BAR */}
         {/* ========================================================================= */}

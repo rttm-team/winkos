@@ -246,6 +246,7 @@ export default function App() {
       if (String(gm.pin ?? '') !== String(pin ?? '')) return false;
       setAuthedGmId(gm.id);
       setSelectedGmId(gm.id);
+      setView('season'); // Jump straight to Season Hub
       try {
         localStorage.setItem('winkos_active_gm', gm.id);
       } catch {
@@ -1299,7 +1300,9 @@ export default function App() {
       )}
 
       {view === 'keepers' && (
-        <KeeperSelectionPortal gms={gms} theme={theme} />
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <KeeperSelectionPortal gms={gms} theme={theme} />
+        </div>
       )}
 
       {view === 'waivers' && (
@@ -1307,12 +1310,14 @@ export default function App() {
       )}
 
       {view === 'transactions' && (
-        <SeasonTransactionsFeed
-          gms={gms}
-          theme={theme}
-          seasonId="2026-2027"
-          onNavigateToWaivers={() => setView('waivers')}
-        />
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <SeasonTransactionsFeed
+            gms={gms}
+            theme={theme}
+            seasonId="2026-2027"
+            onNavigateToWaivers={() => setView('waivers')}
+          />
+        </div>
       )}
 
       {view === 'arcade' && (
@@ -1324,40 +1329,44 @@ export default function App() {
       )}
 
       {view === 'commish' && (
-        <CommishBackOffice
-          gms={gms}
-          activeGm={activeGm}
-          authedGm={authedGm}
-          theme={theme}
-          seasonId="2026-2027"
-          onNavigateBack={() => setView('hub')}
-        />
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <CommishBackOffice
+            gms={gms}
+            activeGm={activeGm}
+            authedGm={authedGm}
+            theme={theme}
+            seasonId="2026-2027"
+            onNavigateBack={() => setView('hub')}
+          />
+        </div>
       )}
 
       {view === 'prospect-central' && (
-        <ProspectLanding
-          gms={gms}
-          isAdmin={isAdmin}
-          theme={theme}
-          onSelectGmPool={(gmId) => {
-            setSelectedGmId(gmId);
-            setPositionFilter('ALL');
-            setStatusFilter('ALL');
-            setSearchQuery('');
-            setView('prospects');
-          }}
-          onNavigateToMyProspects={() => {
-            if (authedGmId) {
-              setSelectedGmId(authedGmId);
-            } else if (gms.length > 0) {
-              setSelectedGmId(gms[0].id);
-            }
-            setPositionFilter('ALL');
-            setStatusFilter('ALL');
-            setSearchQuery('');
-            setView('prospects');
-          }}
-        />
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <ProspectLanding
+            gms={gms}
+            isAdmin={isAdmin}
+            theme={theme}
+            onSelectGmPool={(gmId) => {
+              setSelectedGmId(gmId);
+              setPositionFilter('ALL');
+              setStatusFilter('ALL');
+              setSearchQuery('');
+              setView('prospects');
+            }}
+            onNavigateToMyProspects={() => {
+              if (authedGmId) {
+                setSelectedGmId(authedGmId);
+              } else if (gms.length > 0) {
+                setSelectedGmId(gms[0].id);
+              }
+              setPositionFilter('ALL');
+              setStatusFilter('ALL');
+              setSearchQuery('');
+              setView('prospects');
+            }}
+          />
+        </div>
       )}
 
       {view === 'prospects' && (

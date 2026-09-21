@@ -1883,9 +1883,22 @@ export const ActiveSquadManager: React.FC<ActiveSquadManagerProps> = ({
           ))}
         </div>
 
-        <main className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-8">
+        <main className="py-6 sm:py-8 space-y-6">
           {/* ==========================================
-              TOP HEADER & CONTROLS
+              PAGE TITLE OUTSIDE CARD
+          ========================================== */}
+          <div>
+            <h1 className={`text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight ${isLight ? 'text-slate-900' : 'text-white'}`}>
+              Active Roster
+            </h1>
+            <p className={`text-xs sm:text-sm mt-1.5 max-w-3xl ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>
+              Official roster structure: <strong>15 Active slots</strong> (9F, 4D, 2G earning Rule 5 FP) and{' '}
+              <strong>7 Bench slots</strong> (3BF, 2BD, 2BG earning 0 FP). Unlimited swaps permitted during the season.
+            </p>
+          </div>
+
+          {/* ==========================================
+              CONTROLS CARD
           ========================================== */}
           <div
             className={`p-6 rounded-2xl border transition-all ${
@@ -1895,37 +1908,8 @@ export const ActiveSquadManager: React.FC<ActiveSquadManagerProps> = ({
             }`}
           >
             <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-              <div>
-                {onNavigateBack && (
-                  <button
-                    type="button"
-                    onClick={onNavigateBack}
-                    className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border transition-all cursor-pointer mb-2.5 ${
-                      isLight
-                        ? 'bg-slate-100 hover:bg-slate-200 border-slate-300 text-slate-700'
-                        : 'bg-slate-800 hover:bg-slate-700 border-slate-700 text-slate-300'
-                    }`}
-                  >
-                    <ArrowLeft className="h-3.5 w-3.5" />
-                    <span>Back to Hub</span>
-                  </button>
-                )}
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="text-xs font-black uppercase tracking-wider text-emerald-500">
-                    Winko's Hockey Pool
-                  </span>
-                  <span className="text-xs text-slate-400">•</span>
-                  <span className="text-xs font-bold px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                    22-Player Main Roster
-                  </span>
-                </div>
-                <h1 className={`text-2xl sm:text-3xl font-black ${isLight ? 'text-slate-900' : 'text-white'}`}>
-                  Squad & Bench Manager
-                </h1>
-                <p className={`text-xs sm:text-sm mt-1 max-w-3xl ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>
-                  Official roster structure: <strong>15 Active slots</strong> (9F, 4D, 2G earning Rule 5 FP) and{' '}
-                  <strong>7 Bench slots</strong> (3BF, 2BD, 2BG earning 0 FP). Unlimited swaps permitted during the season.
-                </p>
+              <div className={`text-xs font-bold uppercase tracking-wider ${isLight ? 'text-slate-500' : 'text-slate-400'}`}>
+                Roster Controls &amp; Settings
               </div>
 
               {/* GM Selector, Season Selector & Quick actions */}

@@ -48,7 +48,7 @@ export const SeasonsLanding: React.FC<SeasonsLandingProps> = ({
   onManageTeam,
 }) => {
   const isLight = theme === 'light';
-  const [selectedSeasonId, setSelectedSeasonId] = React.useState<string | null>(null);
+  const [selectedSeasonId, setSelectedSeasonId] = React.useState<string | null>('2026-27');
   const [viewingRosterGm, setViewingRosterGm] = useState<string | null>(null);
 
   if (viewingRosterGm) {
@@ -102,6 +102,17 @@ export const SeasonsLanding: React.FC<SeasonsLandingProps> = ({
             isLight ? 'border-slate-200' : 'border-slate-800/80'
           }`}>
             <div>
+              <div className="flex items-center gap-3 mb-2">
+                <button
+                  onClick={() => setSelectedSeasonId('2026-27')}
+                  className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-bold transition-all ${
+                    isLight ? 'bg-slate-100 text-slate-600 hover:bg-slate-200' : 'bg-slate-800 text-slate-400 hover:bg-slate-700'
+                  }`}
+                >
+                  <ArrowRight className="h-3.5 w-3.5 rotate-180" />
+                  Back to Current Standings
+                </button>
+              </div>
               <div className="flex items-center gap-2 mb-1">
                 <span className="text-xs font-black uppercase tracking-wider text-emerald-500">
                   Winko's Hockey Pool
@@ -183,33 +194,60 @@ export const SeasonsLanding: React.FC<SeasonsLandingProps> = ({
           }`}>
             <div>
               <div className="flex items-center gap-3 mb-2">
-                <button
-                  onClick={() => setSelectedSeasonId(null)}
-                  className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-bold transition-all ${
-                    isLight ? 'bg-slate-100 text-slate-600 hover:bg-slate-200' : 'bg-slate-800 text-slate-400 hover:bg-slate-700'
-                  }`}
-                >
-                  <ArrowRight className="h-3.5 w-3.5 rotate-180" />
-                  Seasons
-                </button>
-                {SEASONS.find(s => s.id === selectedSeasonId)?.isCurrent && (
+                {selectedSeasonId !== '2026-27' ? (
+                  <button
+                    onClick={() => setSelectedSeasonId(null)}
+                    className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-bold transition-all ${
+                      isLight ? 'bg-slate-100 text-slate-600 hover:bg-slate-200' : 'bg-slate-800 text-slate-400 hover:bg-slate-700'
+                    }`}
+                  >
+                    <ArrowRight className="h-3.5 w-3.5 rotate-180" />
+                    Archive
+                  </button>
+                ) : (
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-xs font-black uppercase tracking-wider text-emerald-500">
+                      Winko's Hockey Pool
+                    </span>
+                    <span className="text-xs text-slate-400">•</span>
+                    <span className="text-xs font-bold px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                      Live Standings
+                    </span>
+                  </div>
+                )}
+                {SEASONS.find(s => s.id === selectedSeasonId)?.isCurrent && selectedSeasonId !== '2026-27' && (
                   <span className="flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-[10px] font-black uppercase tracking-wider">
                     <span className="h-1 w-1 rounded-full bg-emerald-500 animate-pulse" />
                     Active
                   </span>
                 )}
               </div>
-              <h1 className={`text-4xl sm:text-5xl font-black tracking-tight ${
+              <h1 className={`text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight ${
                 isLight ? 'text-slate-900' : 'text-white'
               }`}>
-                {SEASONS.find(s => s.id === selectedSeasonId)?.label}
+                {selectedSeasonId === '2026-27' ? 'Pool Standings' : SEASONS.find(s => s.id === selectedSeasonId)?.label}
               </h1>
-              <p className={`text-xs sm:text-sm mt-1 max-w-xl ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>
-                {SEASONS.find(s => s.id === selectedSeasonId)?.description}
+              <p className={`text-xs sm:text-sm mt-1.5 max-w-2xl ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>
+                {selectedSeasonId === '2026-27' 
+                  ? 'Real-time leaderboard for the 2026-27 Winko Cup race. Track your progress against the league.'
+                  : SEASONS.find(s => s.id === selectedSeasonId)?.description}
               </p>
             </div>
 
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-3">
+              {selectedSeasonId === '2026-27' && (
+                <button
+                  onClick={() => setSelectedSeasonId(null)}
+                  className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-black border transition-all active:scale-95 ${
+                    isLight 
+                      ? 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50' 
+                      : 'bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700'
+                  }`}
+                >
+                  <History className="h-4 w-4" />
+                  View Past Seasons
+                </button>
+              )}
               <button
                 onClick={onManageTeam}
                 className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-black bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg shadow-emerald-500/20 transition-all active:scale-95"

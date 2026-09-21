@@ -87,7 +87,9 @@ export const Header: React.FC<HeaderProps> = ({
           {/* Navigation & Theme Toggle */}
           <div className="flex items-center gap-2 sm:gap-3">
             <nav className="flex items-center gap-1 sm:gap-2">
-              <NavItem icon={Home} label="Hub" onClick={() => onNavigate('hub')} active={activeView === 'hub'} theme={theme} />
+              {activeView === 'hub' && (
+                <NavItem icon={Home} label="Hub" onClick={() => onNavigate('hub')} active={activeView === 'hub'} theme={theme} />
+              )}
               <NavItem icon={Trophy} label="Season" onClick={() => onNavigate('season')} active={activeView === 'season' || activeView === 'seasons' || activeView === 'waivers' || activeView === 'arcade' || activeView === 'active-squad'} theme={theme} />
               <NavItem icon={Shield} label="Keepers" onClick={() => onNavigate('keepers')} active={activeView === 'keepers'} theme={theme} />
               <NavItem icon={LayoutGrid} label="Prospect Central" onClick={() => onNavigate('prospect-central')} active={activeView === 'prospect-central'} theme={theme} />

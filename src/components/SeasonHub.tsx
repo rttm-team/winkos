@@ -6,18 +6,20 @@ import {
   Dice5, 
   ShieldCheck,
   Calendar,
-  Sparkles
+  Sparkles,
+  History
 } from 'lucide-react';
 import ActiveSquadManager from './ActiveSquadManager';
 import { SeasonsLanding } from './SeasonsLanding';
 import WaiverWirePortal from './WaiverWirePortal';
 import WinkosChallenges from './WinkosChallenges';
+import SeasonTransactionsFeed from './SeasonTransactionsFeed';
 
 interface SeasonHubProps {
   gms: any[];
   theme: 'light' | 'dark';
   authedGm: any;
-  defaultTab?: 'roster' | 'standings' | 'waivers' | 'challenges';
+  defaultTab?: 'roster' | 'standings' | 'waivers' | 'challenges' | 'transactions';
 }
 
 export const SeasonHub: React.FC<SeasonHubProps> = ({
@@ -27,7 +29,7 @@ export const SeasonHub: React.FC<SeasonHubProps> = ({
   defaultTab = 'roster',
 }) => {
   const isLight = theme === 'light';
-  const [activeTab, setActiveTab] = useState<'roster' | 'standings' | 'waivers' | 'challenges'>(defaultTab);
+  const [activeTab, setActiveTab] = useState<'roster' | 'standings' | 'waivers' | 'challenges' | 'transactions'>(defaultTab);
 
   const activeGmName = authedGm?.name || gms[0]?.name || 'Adam';
 
@@ -48,7 +50,7 @@ export const SeasonHub: React.FC<SeasonHubProps> = ({
                 Season Hub
               </h1>
               <p className={`text-xs sm:text-sm mt-1 ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>
-                Manage your active roster, track pool standings, claim waivers, and complete daily challenges.
+                Manage your active roster, track pool standings, claim waivers, and view the transaction log.
               </p>
             </div>
           </div>
@@ -98,6 +100,20 @@ export const SeasonHub: React.FC<SeasonHubProps> = ({
             </button>
 
             <button
+              onClick={() => setActiveTab('transactions')}
+              className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl text-xs sm:text-sm font-black transition-all cursor-pointer whitespace-nowrap ${
+                activeTab === 'transactions'
+                  ? 'bg-emerald-600 text-white shadow-md shadow-emerald-600/20'
+                  : isLight
+                  ? 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                  : 'bg-slate-800 text-slate-300 hover:text-white hover:bg-slate-700'
+              }`}
+            >
+              <History className="h-4 w-4" />
+              <span>Transactions</span>
+            </button>
+
+            <button
               onClick={() => setActiveTab('challenges')}
               className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl text-xs sm:text-sm font-black transition-all cursor-pointer whitespace-nowrap ${
                 activeTab === 'challenges'
@@ -143,6 +159,17 @@ export const SeasonHub: React.FC<SeasonHubProps> = ({
               theme={theme}
               initialGm={activeGmName}
               onNavigateBack={() => {}}
+            />
+          </div>
+        )}
+
+        {activeTab === 'transactions' && (
+          <div className="animate-in fade-in duration-300">
+            <SeasonTransactionsFeed
+              gms={gms}
+              theme={theme}
+              seasonId="2026-2027"
+              onNavigateToWaivers={() => setActiveTab('waivers')}
             />
           </div>
         )}

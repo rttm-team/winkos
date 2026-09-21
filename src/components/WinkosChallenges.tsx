@@ -708,7 +708,7 @@ export default function WinkosChallenges({ gmName, theme = 'dark' }: { gmName: s
       <div className={`min-h-screen font-sans antialiased selection:bg-cyan-500/30 selection:text-cyan-200 ${
         isLight ? 'bg-slate-50 text-slate-900' : 'bg-[#0f172a] text-slate-100'
       }`}>
-        <main className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+        <main className="py-6 sm:py-8">
           
           {/* Main Top Header Block */}
           <div className={`mb-8 flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between border-b pb-6 ${

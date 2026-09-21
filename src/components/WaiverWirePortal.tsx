@@ -18,9 +18,7 @@ import {
   Activity,
   Flame,
   HelpCircle,
-  History,
 } from 'lucide-react';
-import SeasonTransactionsFeed from './SeasonTransactionsFeed';
 
 export interface MasterPlayer {
   nhl_id: number | string;
@@ -104,7 +102,6 @@ export default function WaiverWirePortal({
     initialGm || gmList[0]?.name || 'Adam'
   );
   const [selectedSeason] = useState<string>('2026-2027');
-  const [activePortalTab, setActivePortalTab] = useState<'pool' | 'feed'>('pool');
 
   // Tracker State
   const [tracker, setTracker] = useState<GMSeasonTracker | null>(null);
@@ -444,7 +441,7 @@ export default function WaiverWirePortal({
   return (
     <div
       id="waiver-wire-portal"
-      className={`min-h-screen py-6 sm:py-8 px-4 sm:px-6 lg:px-8 transition-colors ${
+      className={`min-h-screen py-6 sm:py-8 transition-colors ${
         isLight ? 'bg-slate-50 text-slate-900' : 'bg-slate-950 text-slate-100'
       }`}
     >
@@ -621,56 +618,9 @@ export default function WaiverWirePortal({
         </section>
 
         {/* ========================================================================= */}
-        {/* SUB-NAVIGATION TABS: Available Pool vs Live Transactions Feed */}
+        {/* 1. GM WAIVER COUNTER BANNER */}
         {/* ========================================================================= */}
-        <div id="waiver-portal-subnav" className="flex items-center gap-2 border-b pb-4 border-slate-800/80">
-          <button
-            id="portal-subtab-pool"
-            onClick={() => setActivePortalTab('pool')}
-            className={`flex items-center gap-2 px-4 sm:px-5 py-2.5 rounded-2xl text-xs sm:text-sm font-black transition-all cursor-pointer ${
-              activePortalTab === 'pool'
-                ? 'bg-emerald-600 text-white shadow-md shadow-emerald-600/20'
-                : isLight
-                ? 'bg-slate-200 text-slate-700 hover:bg-slate-300'
-                : 'bg-slate-900 border border-slate-800 text-slate-300 hover:text-white hover:bg-slate-800'
-            }`}
-          >
-            <UserPlus className="h-4 w-4" />
-            <span>Available Players Pool</span>
-          </button>
-
-          <button
-            id="portal-subtab-feed"
-            onClick={() => setActivePortalTab('feed')}
-            className={`flex items-center gap-2 px-4 sm:px-5 py-2.5 rounded-2xl text-xs sm:text-sm font-black transition-all cursor-pointer ${
-              activePortalTab === 'feed'
-                ? 'bg-emerald-600 text-white shadow-md shadow-emerald-600/20'
-                : isLight
-                ? 'bg-slate-200 text-slate-700 hover:bg-slate-300'
-                : 'bg-slate-900 border border-slate-800 text-slate-300 hover:text-white hover:bg-slate-800'
-            }`}
-          >
-            <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-            </span>
-            <span>League Transactions Log</span>
-          </button>
-        </div>
-
-        {activePortalTab === 'feed' ? (
-          <SeasonTransactionsFeed
-            gms={gms}
-            theme={theme}
-            seasonId={selectedSeason}
-            onNavigateToWaivers={() => setActivePortalTab('pool')}
-          />
-        ) : (
-          <>
-            {/* ========================================================================= */}
-            {/* 1. GM WAIVER COUNTER BANNER */}
-            {/* ========================================================================= */}
-            <section
+        <section
           id="gm-waiver-counter-banner"
           className={`p-6 sm:p-7 rounded-3xl border shadow-xl relative overflow-hidden transition-all duration-300 ${
             isLimitReached
@@ -1101,27 +1051,11 @@ export default function WaiverWirePortal({
           </div>
 
           {/* Lazy Loading / Load More Bar */}
-          {visibleCount < filteredAndSortedPlayers.length && (
-            <div className={`p-4 border-t text-center ${isLight ? 'bg-slate-50 border-slate-200' : 'bg-slate-950/40 border-slate-800'}`}>
-              <button
-                onClick={() => setVisibleCount((prev) => prev + 30)}
-                className={`px-6 py-2.5 rounded-xl font-black text-xs transition-all cursor-pointer shadow-md ${
-                  isLight
-                    ? 'bg-emerald-600 hover:bg-emerald-500 text-white'
-                    : 'bg-emerald-600 hover:bg-emerald-500 text-white'
-                }`}
-              >
-                Load More Players ({displayedPlayers.length} of {filteredAndSortedPlayers.length} shown) ↓
-              </button>
-            </div>
-          )}
         </section>
-        </>
-        )}
 
-        {/* ========================================================================= */}
-        {/* 3. INTERACTIVE ADD / DROP SELECTION MODAL */}
-        {/* ========================================================================= */}
+    {/* ========================================================================= */}
+    {/* 3. INTERACTIVE ADD / DROP SELECTION MODAL */}
+    {/* ========================================================================= */}
         {isModalOpen && selectedAddPlayer && (
           <div
             id="waiver-claim-modal"

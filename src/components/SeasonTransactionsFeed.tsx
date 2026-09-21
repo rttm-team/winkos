@@ -234,7 +234,7 @@ export default function SeasonTransactionsFeed({
   return (
     <div
       id="season-transactions-feed-portal"
-      className={`min-h-screen py-6 sm:py-8 px-4 sm:px-6 lg:px-8 transition-colors ${
+      className={`min-h-screen py-6 sm:py-8 transition-colors ${
         isLight ? 'bg-slate-50 text-slate-900' : 'bg-slate-950 text-slate-100'
       }`}
     >
