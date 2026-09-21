@@ -9,7 +9,10 @@ import {
   X,
   Plus,
   Trash2,
-  Loader2
+  Loader2,
+  Users,
+  Calendar,
+  RotateCw
 } from 'lucide-react';
 
 export interface KeeperSelectionPortalProps {
@@ -307,7 +310,8 @@ export const KeeperSelectionPortal: React.FC<KeeperSelectionPortalProps> = ({
 
       // Build payload for chosen slots
       const keeperPayload: any[] = [];
-      Object.entries(slots).forEach(([slotKey, playerObj]) => {
+      Object.entries(slots).forEach(([slotKey, playerVal]) => {
+        const playerObj = playerVal as KeeperPlayer | null;
         if (playerObj) {
           keeperPayload.push({
             season_id: activeSeasonId,
@@ -385,6 +389,94 @@ export const KeeperSelectionPortal: React.FC<KeeperSelectionPortalProps> = ({
     }
   };
 
+  // Copy Keepers from Last Season
+  const handleCopyKeepersFromLastSeason = async () => {
+    setSaving(true);
+    try {
+      // Find previous season id, e.g. "2025-2026"
+      const [startYr, endYr] = selectedSeason.split('-');
+      if (!startYr || !endYr) {
+        showToast(`Invalid season structure: ${selectedSeason}`, 'error');
+        return;
+      }
+      const prevSeasonId = (Number(startYr) - 1) + '-' + (Number(endYr) - 1);
+      
+      const { data, error } = await supabase
+        .from('active_roster_players')
+        .select('*')
+        .eq('season_id', prevSeasonId)
+        .eq('gm_name', selectedGm)
+        .eq('is_keeper', true);
+
+      if (error) {
+        showToast(`Failed to load last season's keepers: ${error.message}`, 'error');
+        return;
+      }
+
+      if (!data || data.length === 0) {
+        showToast(`No keepers found for previous season (${prevSeasonId}).`, 'info');
+        return;
+      }
+
+      // Map them to the current slots
+      const newSlots: Record<string, KeeperPlayer | null> = {
+        F1: null, F2: null, F3: null, F4: null,
+        D1: null, D2: null,
+        G1: null,
+      };
+
+      const fList: KeeperPlayer[] = [];
+      const dList: KeeperPlayer[] = [];
+      const gList: KeeperPlayer[] = [];
+
+      data.forEach((row: any) => {
+        const rawPos = (row.position || 'F').toUpperCase();
+        const cleanPos: 'F' | 'D' | 'G' = rawPos.includes('G') ? 'G' : rawPos.includes('D') ? 'D' : 'F';
+
+        const pObj: KeeperPlayer = {
+          player_name: row.player_name || 'Player',
+          nhl_id: String(row.nhl_id || ''),
+          position: cleanPos,
+          nhl_team: row.nhl_team || 'N/A',
+          slot_position: row.slot_position
+        };
+
+        if (row.slot_position && newSlots.hasOwnProperty(row.slot_position)) {
+          newSlots[row.slot_position] = pObj;
+        } else {
+          if (pObj.position === 'G') gList.push(pObj);
+          else if (pObj.position === 'D') dList.push(pObj);
+          else fList.push(pObj);
+        }
+      });
+
+      // Auto-assign any that didn't have slots
+      const fKeys = ['F1', 'F2', 'F3', 'F4'];
+      const dKeys = ['D1', 'D2'];
+      const gKeys = ['G1'];
+
+      fList.forEach(p => {
+        const freeKey = fKeys.find(k => !newSlots[k]);
+        if (freeKey) newSlots[freeKey] = p;
+      });
+      dList.forEach(p => {
+        const freeKey = dKeys.find(k => !newSlots[k]);
+        if (freeKey) newSlots[freeKey] = p;
+      });
+      gList.forEach(p => {
+        const freeKey = gKeys.find(k => !newSlots[k]);
+        if (freeKey) newSlots[freeKey] = p;
+      });
+
+      setSlots(newSlots);
+      showToast(`Successfully copied keepers from ${prevSeasonId}!`, 'success');
+    } catch (err: any) {
+      showToast(`Error copying keepers: ${err.message}`, 'error');
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const filledCount = Object.values(slots).filter(Boolean).length;
 
   return (
@@ -401,82 +493,111 @@ export const KeeperSelectionPortal: React.FC<KeeperSelectionPortalProps> = ({
       )}
 
       <div className="max-w-6xl mx-auto px-4 space-y-6">
-        {/* Header Controls */}
-        <div className="flex flex-wrap items-center justify-between gap-4 p-6 rounded-3xl border bg-slate-900/80 border-slate-800">
+        {/* Page Title Section positioned outside of the card, exactly styled as Prospect Central */}
+        <section className={`mb-8 flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between border-b pb-6 ${
+          isLight ? 'border-slate-200' : 'border-slate-800/80'
+        }`}>
           <div>
-            <h1 className="text-2xl font-black tracking-tight flex items-center gap-2">
-              <Shield className="h-6 w-6 text-amber-400" />
-              <span>Keeper Selection Portal</span>
+            <h1 className={`text-4xl sm:text-5xl font-black tracking-tight uppercase select-none ${
+              isLight ? 'text-slate-900' : 'text-white'
+            }`}>
+              <span>Your Keepers</span>
             </h1>
-            <p className="text-xs text-slate-400 mt-1">
-              Designate 7 franchise keepers (4F, 2D, 1G). Promoted prospects are auto-retained separately.
+            <p className={`text-xs sm:text-sm mt-1 max-w-xl ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>
+              Lock in your 7 franchise keepers (4 Forwards, 2 Defensemen, 1 Goalie) for the upcoming season.
             </p>
           </div>
 
-          <div className="flex flex-wrap items-center gap-3">
-            {/* Season Selector */}
-            <select
-              value={selectedSeason}
-              onChange={(e) => setSelectedSeason(e.target.value)}
-              className="bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-xs font-bold text-slate-200 focus:outline-none"
-            >
-              {seasons.map((s) => (
-                <option key={s.season_id} value={s.season_id}>
-                  {s.season_id}
-                </option>
-              ))}
-            </select>
-
-            {/* GM Selector */}
-            <select
-              value={selectedGm}
-              onChange={(e) => setSelectedGm(e.target.value)}
-              className="bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-xs font-bold text-amber-400 focus:outline-none"
-            >
-              {gmList.map((gm) => (
-                <option key={gm.id || gm.name} value={gm.name}>
-                  {gm.name}
-                </option>
-              ))}
-            </select>
+          {/* Lock/Unlock Toggle Badge on Right */}
+          <div>
+            {isLocked ? (
+              <button
+                onClick={handleUnlockKeepers}
+                disabled={saving}
+                className={`px-5 py-2.5 rounded-2xl border text-xs font-black uppercase tracking-wider flex items-center gap-1.5 transition shadow-sm cursor-pointer ${
+                  isLight
+                    ? 'bg-emerald-50 border-emerald-200 text-emerald-700 hover:bg-emerald-100'
+                    : 'bg-emerald-950/40 border-emerald-800 text-emerald-300 hover:bg-emerald-900/40'
+                }`}
+              >
+                <Lock className="h-4 w-4 text-emerald-500" />
+                <span>Keepers Locked (Click to Unlock)</span>
+              </button>
+            ) : (
+              <div
+                className={`px-5 py-2.5 rounded-2xl border text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 select-none ${
+                  isLight
+                    ? 'bg-amber-50/55 border-amber-200 text-amber-800'
+                    : 'bg-amber-950/30 border-amber-800/50 text-amber-300'
+                }`}
+              >
+                <Unlock className="h-4 w-4 text-amber-500" />
+                <span>Drafting / Unlocked</span>
+              </div>
+            )}
           </div>
-        </div>
+        </section>
 
-        {/* Lock Status Banner */}
-        <div className={`p-4 rounded-2xl border flex items-center justify-between ${
-          isLocked
-            ? 'bg-emerald-950/40 border-emerald-800/60 text-emerald-300'
-            : 'bg-amber-950/30 border-amber-800/40 text-amber-300'
+        {/* Elegant Controls Card inspired exactly by image.png */}
+        <div className={`p-6 rounded-[24px] border transition-all ${
+          isLight 
+            ? 'bg-white border-slate-200/85 shadow-sm' 
+            : 'bg-slate-900 border-slate-800 shadow-2xl'
         }`}>
-          <div className="flex items-center gap-2">
-            {isLocked ? <Lock className="h-5 w-5 text-emerald-400" /> : <Unlock className="h-5 w-5 text-amber-400" />}
-            <span className="text-xs font-bold">
-              {isLocked ? 'Roster Keepers Locked' : `Drafting: ${filledCount} of 7 slots selected`}
-            </span>
-          </div>
+          {/* Bottom Row: Controls and Actions */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            {/* Dynamic GM and Season Context Info */}
+            <div className="flex items-center gap-2.5">
+              <span className={`text-xs font-black uppercase tracking-wider ${isLight ? 'text-slate-800' : 'text-slate-200'}`}>
+                GM: <span className="text-emerald-600 dark:text-emerald-400 font-extrabold">{selectedGm}</span>
+              </span>
+              <span className="text-slate-300 dark:text-slate-700 select-none">•</span>
+              <span className={`text-xs font-bold uppercase tracking-wider ${isLight ? 'text-slate-500' : 'text-slate-400'}`}>
+                Season 2026-2027
+              </span>
+            </div>
 
-          {isLocked && (
-            <button
-              onClick={handleUnlockKeepers}
-              disabled={saving}
-              className="px-3 py-1 bg-slate-800 hover:bg-slate-700 rounded-lg text-xs font-bold text-slate-200 border border-slate-700"
-            >
-              Unlock
-            </button>
-          )}
+            {/* Actions on Right Side */}
+            <div className="flex flex-wrap items-center gap-3">
+              {/* Copy Keepers Button */}
+              <button
+                onClick={handleCopyKeepersFromLastSeason}
+                disabled={saving || isLocked}
+                className={`px-4 py-2.5 rounded-xl text-xs font-black flex items-center gap-2 border shadow-sm transition cursor-pointer ${
+                  isLight
+                    ? 'bg-slate-50 hover:bg-slate-100 border-slate-200 text-slate-700 active:bg-slate-200'
+                    : 'bg-slate-800 hover:bg-slate-700 border-slate-700 text-slate-300 active:bg-slate-750'
+                } disabled:opacity-45 disabled:cursor-not-allowed`}
+              >
+                <RotateCw className={`h-3.5 w-3.5 ${saving ? 'animate-spin' : ''}`} />
+                <span>Copy Keepers from Last Season</span>
+              </button>
+
+              {/* Filled Slots Count Badge */}
+              <div
+                className={`px-4 py-2.5 rounded-xl border text-xs font-black shadow-sm select-none ${
+                  filledCount === 7
+                    ? (isLight ? 'bg-emerald-50 border-emerald-200 text-emerald-800' : 'bg-emerald-950/40 border-emerald-800/60 text-emerald-300')
+                    : (isLight ? 'bg-amber-50 border-amber-200 text-amber-800' : 'bg-amber-950/30 border-amber-800/40 text-amber-300')
+                }`}
+              >
+                <span>{filledCount} / 7 Keepers</span>
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* Slot Grid */}
         {loading ? (
-          <div className="p-12 text-center text-slate-400 flex items-center justify-center gap-2">
-            <Loader2 className="h-5 w-5 animate-spin text-amber-400" />
+          <div className={`p-12 text-center flex items-center justify-center gap-2 ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>
+            <Loader2 className="h-5 w-5 animate-spin text-amber-500" />
             <span>Loading active roster keepers...</span>
           </div>
         ) : (
           <div className="space-y-6">
             {/* Forwards (4) */}
             <div>
-              <h3 className="text-xs font-bold uppercase tracking-wider text-blue-400 mb-3">Forward Slots (4 Required)</h3>
+              <h3 className="text-xs font-bold uppercase tracking-wider text-blue-500 mb-3">Forward Slots (4 Required)</h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 {['F1', 'F2', 'F3', 'F4'].map((key) => renderSlotCard(key, 'F', 'Forward'))}
               </div>
@@ -484,7 +605,7 @@ export const KeeperSelectionPortal: React.FC<KeeperSelectionPortalProps> = ({
 
             {/* Defensemen (2) */}
             <div>
-              <h3 className="text-xs font-bold uppercase tracking-wider text-emerald-400 mb-3">Defenseman Slots (2 Required)</h3>
+              <h3 className="text-xs font-bold uppercase tracking-wider text-emerald-500 mb-3">Defenseman Slots (2 Required)</h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-4">
                 {['D1', 'D2'].map((key) => renderSlotCard(key, 'D', 'Defenseman'))}
               </div>
@@ -492,7 +613,7 @@ export const KeeperSelectionPortal: React.FC<KeeperSelectionPortalProps> = ({
 
             {/* Goalie (1) */}
             <div>
-              <h3 className="text-xs font-bold uppercase tracking-wider text-purple-400 mb-3">Goaltender Slot (1 Required)</h3>
+              <h3 className="text-xs font-bold uppercase tracking-wider text-purple-500 mb-3">Goaltender Slot (1 Required)</h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-4">
                 {['G1'].map((key) => renderSlotCard(key, 'G', 'Goaltender'))}
               </div>
@@ -502,21 +623,25 @@ export const KeeperSelectionPortal: React.FC<KeeperSelectionPortalProps> = ({
 
         {/* Action Footer */}
         {!isLocked && (
-          <div className="flex justify-end gap-3 pt-4 border-t border-slate-800">
+          <div className={`flex justify-end gap-3 pt-4 border-t ${isLight ? 'border-slate-200' : 'border-slate-800'}`}>
             <button
               onClick={() => handleSaveAndLock(false)}
               disabled={saving}
-              className="px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs border border-slate-700"
+              className={`px-5 py-2.5 rounded-xl font-bold text-xs border transition ${
+                isLight 
+                  ? 'bg-slate-100 hover:bg-slate-200 border-slate-200 text-slate-800' 
+                  : 'bg-slate-800 hover:bg-slate-700 border-slate-700 text-slate-200'
+              }`}
             >
               Save Draft
             </button>
             <button
               onClick={() => handleSaveAndLock(true)}
               disabled={saving || filledCount < 7}
-              className={`px-5 py-2.5 rounded-xl font-black text-xs flex items-center gap-2 ${
+              className={`px-5 py-2.5 rounded-xl font-black text-xs flex items-center gap-2 transition ${
                 filledCount === 7
                   ? 'bg-amber-500 hover:bg-amber-600 text-black cursor-pointer'
-                  : 'bg-slate-800 text-slate-500 cursor-not-allowed'
+                  : (isLight ? 'bg-slate-100 text-slate-400 cursor-not-allowed border border-slate-200' : 'bg-slate-800 text-slate-500 cursor-not-allowed')
               }`}
             >
               <Lock className="h-4 w-4" />
@@ -529,12 +654,16 @@ export const KeeperSelectionPortal: React.FC<KeeperSelectionPortalProps> = ({
       {/* Live Master Player Search Modal */}
       {isSearchOpen && (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-slate-900 border border-slate-800 rounded-3xl w-full max-w-lg p-6 space-y-4 shadow-2xl">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-              <h3 className="font-extrabold text-sm text-slate-100">
+          <div className={`border rounded-3xl w-full max-w-lg p-6 space-y-4 shadow-2xl transition ${
+            isLight ? 'bg-white border-slate-200' : 'bg-slate-900 border-slate-800'
+          }`}>
+            <div className={`flex items-center justify-between border-b pb-3 ${
+              isLight ? 'border-slate-200' : 'border-slate-800'
+            }`}>
+              <h3 className={`font-extrabold text-sm ${isLight ? 'text-slate-900' : 'text-slate-100'}`}>
                 Select {activeSlotPosition === 'F' ? 'Forward' : activeSlotPosition === 'D' ? 'Defenseman' : 'Goaltender'} ({activeSlotKey})
               </h3>
-              <button onClick={() => setIsSearchOpen(false)} className="text-slate-400 hover:text-white">
+              <button onClick={() => setIsSearchOpen(false)} className={`transition-colors ${isLight ? 'text-slate-400 hover:text-slate-600' : 'text-slate-400 hover:text-white'}`}>
                 <X className="h-5 w-5" />
               </button>
             </div>
@@ -547,18 +676,22 @@ export const KeeperSelectionPortal: React.FC<KeeperSelectionPortalProps> = ({
                 value={searchQuery}
                 onChange={handleSearchChange}
                 autoFocus
-                className="w-full bg-slate-800 border border-slate-700 rounded-xl pl-9 pr-4 py-2 text-xs font-semibold text-white focus:outline-none focus:border-amber-500"
+                className={`w-full border rounded-xl pl-9 pr-4 py-2 text-xs font-semibold focus:outline-none focus:border-amber-500 transition ${
+                  isLight 
+                    ? 'bg-slate-100 border-slate-200 text-slate-900 placeholder:text-slate-400' 
+                    : 'bg-slate-800 border-slate-700 text-white placeholder:text-slate-500'
+                }`}
               />
             </div>
 
             <div className="max-h-64 overflow-y-auto space-y-2 pr-1">
               {searching ? (
-                <div className="py-8 text-center text-xs text-slate-400 flex items-center justify-center gap-2">
-                  <Loader2 className="h-4 w-4 animate-spin text-amber-400" />
+                <div className={`py-8 text-center text-xs flex items-center justify-center gap-2 ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>
+                  <Loader2 className="h-4 w-4 animate-spin text-amber-500" />
                   <span>Searching NHL Master Database...</span>
                 </div>
               ) : searchResults.length === 0 ? (
-                <p className="py-8 text-center text-xs text-slate-500">
+                <p className="py-8 text-center text-xs text-slate-400">
                   No {activeSlotPosition} players found matching "{searchQuery}".
                 </p>
               ) : (
@@ -566,15 +699,19 @@ export const KeeperSelectionPortal: React.FC<KeeperSelectionPortalProps> = ({
                   <div
                     key={player.nhl_id}
                     onClick={() => handleSelectPlayer(player)}
-                    className="flex items-center justify-between p-3 rounded-xl bg-slate-800/60 hover:bg-slate-800 border border-slate-700/50 cursor-pointer transition-colors"
+                    className={`flex items-center justify-between p-3 rounded-xl border cursor-pointer transition ${
+                      isLight
+                        ? 'bg-slate-50 hover:bg-slate-100 border-slate-200 shadow-sm'
+                        : 'bg-slate-800/60 hover:bg-slate-800 border border-slate-700/50'
+                    }`}
                   >
                     <div>
-                      <div className="font-extrabold text-xs text-slate-100">{player.player_name}</div>
-                      <div className="text-[10px] text-slate-400 mt-0.5">
+                      <div className={`font-kanit font-extrabold text-xs ${isLight ? 'text-slate-900' : 'text-slate-100'}`}>{player.player_name}</div>
+                      <div className={`text-[10px] mt-0.5 ${isLight ? 'text-slate-500' : 'text-slate-400'}`}>
                         {player.position} • {player.nhl_team || 'N/A'} • #{player.nhl_id}
                       </div>
                     </div>
-                    <button className="px-2.5 py-1 rounded-lg bg-amber-500 hover:bg-amber-600 text-black font-black text-[11px]">
+                    <button className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs transition-all shadow-md cursor-pointer shrink-0">
                       + Select
                     </button>
                   </div>
@@ -595,15 +732,17 @@ export const KeeperSelectionPortal: React.FC<KeeperSelectionPortalProps> = ({
         onClick={() => !player && handleOpenSearch(slotKey, pos)}
         className={`p-5 rounded-3xl border transition-all flex flex-col justify-between min-h-[140px] ${
           player
-            ? 'bg-slate-900 border-slate-700'
-            : 'bg-slate-900/40 border-dashed border-slate-700 hover:border-amber-500 cursor-pointer'
+            ? (isLight ? 'bg-white border-slate-200 shadow-sm' : 'bg-slate-900 border-slate-700')
+            : (isLight 
+                ? 'bg-slate-50/50 border-dashed border-slate-300 hover:border-amber-500 cursor-pointer' 
+                : 'bg-slate-900/40 border-dashed border-slate-700 hover:border-amber-500 cursor-pointer')
         }`}
       >
         <div className="flex items-center justify-between">
           <span className={`px-2 py-0.5 rounded text-[10px] font-black ${
-            slotKey.startsWith('F') ? 'bg-blue-500/10 text-blue-400 border border-blue-500/20' :
-            slotKey.startsWith('D') ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' :
-            'bg-purple-500/10 text-purple-400 border border-purple-500/20'
+            slotKey.startsWith('F') ? 'bg-blue-500/10 text-blue-500 border border-blue-500/20' :
+            slotKey.startsWith('D') ? 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20' :
+            'bg-purple-500/10 text-purple-500 border border-purple-500/20'
           }`}>
             {slotKey} • {posLabel}
           </span>
@@ -611,7 +750,7 @@ export const KeeperSelectionPortal: React.FC<KeeperSelectionPortalProps> = ({
           {player && !isLocked && (
             <button
               onClick={(e) => handleRemovePlayer(slotKey, e)}
-              className="text-rose-400 hover:text-rose-300 p-1"
+              className="text-rose-500 hover:text-rose-600 p-1 transition-colors"
             >
               <Trash2 className="h-4 w-4" />
             </button>
@@ -620,20 +759,20 @@ export const KeeperSelectionPortal: React.FC<KeeperSelectionPortalProps> = ({
 
         {player ? (
           <div className="mt-3">
-            <h4 className="font-extrabold text-sm text-slate-100">{player.player_name}</h4>
-            <p className="text-[11px] text-slate-400 mt-0.5">{player.nhl_team}</p>
+            <h4 className={`font-kanit font-extrabold text-sm ${isLight ? 'text-slate-900' : 'text-slate-100'}`}>{player.player_name}</h4>
+            <p className={`text-[11px] mt-0.5 ${isLight ? 'text-slate-500' : 'text-slate-400'}`}>{player.nhl_team}</p>
             {!isLocked && (
               <button
                 onClick={() => handleOpenSearch(slotKey, pos)}
-                className="mt-2 text-[10px] font-bold text-amber-400 hover:underline"
+                className="mt-2 text-[10px] font-bold text-amber-500 hover:text-amber-600 hover:underline transition-colors"
               >
                 Change Player
               </button>
             )}
           </div>
         ) : (
-          <div className="mt-2 flex items-center justify-center gap-1 text-slate-400 text-xs font-bold">
-            <Plus className="h-4 w-4 text-amber-400" />
+          <div className={`mt-2 flex items-center justify-center gap-1 text-xs font-bold ${isLight ? 'text-slate-500' : 'text-slate-400'}`}>
+            <Plus className="h-4 w-4 text-amber-500" />
             <span>Select Keeper</span>
           </div>
         )}
@@ -641,3 +780,5 @@ export const KeeperSelectionPortal: React.FC<KeeperSelectionPortalProps> = ({
     );
   }
 };
+
+export default KeeperSelectionPortal;

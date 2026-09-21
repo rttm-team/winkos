@@ -1306,9 +1306,7 @@ export default function App() {
       )}
 
       {view === 'keepers' && (
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <KeeperSelectionPortal gms={gms} authedGm={authedGm} theme={theme} />
-        </div>
+        <KeeperSelectionPortal gms={gms} authedGm={authedGm} theme={theme} />
       )}
 
       {view === 'waivers' && (
