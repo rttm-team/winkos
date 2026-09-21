@@ -12,6 +12,7 @@ import {
   AlertCircle, 
   X, 
   Plus, 
+  UserPlus,
   Trash2, 
   Calendar,
   Save,
@@ -20,6 +21,7 @@ import {
 
 export interface KeeperSelectionPortalProps {
   gms?: GeneralManager[];
+  authedGm?: GeneralManager | null;
   theme?: 'light' | 'dark';
 }
 
@@ -67,11 +69,46 @@ export interface MasterPlayer {
   fantasy_points?: number;
 }
 
-export default function KeeperSelectionPortal({ gms, theme = 'dark' }: KeeperSelectionPortalProps) {
+// Sample top NHL players database for search fallback
+const SAMPLE_NHL_PLAYERS: MasterPlayer[] = [
+  { player_name: 'Seth Jarvis', nhl_id: '8482103', position: 'F', nhl_team: 'Carolina Hurricanes' },
+  { player_name: 'Connor McDavid', nhl_id: '8479318', position: 'F', nhl_team: 'Edmonton Oilers' },
+  { player_name: 'Nathan MacKinnon', nhl_id: '8477492', position: 'F', nhl_team: 'Colorado Avalanche' },
+  { player_name: 'Auston Matthews', nhl_id: '8479314', position: 'F', nhl_team: 'Toronto Maple Leafs' },
+  { player_name: 'Nikita Kucherov', nhl_id: '8476826', position: 'F', nhl_team: 'Tampa Bay Lightning' },
+  { player_name: 'Leon Draisaitl', nhl_id: '8477934', position: 'F', nhl_team: 'Edmonton Oilers' },
+  { player_name: 'David Pastrnak', nhl_id: '8477956', position: 'F', nhl_team: 'Boston Bruins' },
+  { player_name: 'Artemi Panarin', nhl_id: '8478550', position: 'F', nhl_team: 'New York Rangers' },
+  { player_name: 'Mikko Rantanen', nhl_id: '8478420', position: 'F', nhl_team: 'Colorado Avalanche' },
+  { player_name: 'Cale Makar', nhl_id: '8479397', position: 'D', nhl_team: 'Colorado Avalanche' },
+  { player_name: 'Roman Josi', nhl_id: '8474600', position: 'D', nhl_team: 'Nashville Predators' },
+  { player_name: 'Adam Fox', nhl_id: '8479323', position: 'D', nhl_team: 'New York Rangers' },
+  { player_name: 'Quinn Hughes', nhl_id: '8480829', position: 'D', nhl_team: 'Vancouver Canucks' },
+  { player_name: 'Victor Hedman', nhl_id: '8474564', position: 'D', nhl_team: 'Tampa Bay Lightning' },
+  { player_name: 'Evan Bouchard', nhl_id: '8480873', position: 'D', nhl_team: 'Edmonton Oilers' },
+  { player_name: 'Igor Shesterkin', nhl_id: '8478048', position: 'G', nhl_team: 'New York Rangers' },
+  { player_name: 'Connor Hellebuyck', nhl_id: '8477479', position: 'G', nhl_team: 'Winnipeg Jets' },
+  { player_name: 'Andrei Vasilevskiy', nhl_id: '8476883', position: 'G', nhl_team: 'Tampa Bay Lightning' },
+  { player_name: 'Juuse Saros', nhl_id: '8477424', position: 'G', nhl_team: 'Nashville Predators' },
+  { player_name: 'Jack Hughes', nhl_id: '8481559', position: 'F', nhl_team: 'New Jersey Devils' },
+  { player_name: 'Kirill Kaprizov', nhl_id: '8478864', position: 'F', nhl_team: 'Minnesota Wild' },
+  { player_name: 'Jason Robertson', nhl_id: '8479975', position: 'F', nhl_team: 'Dallas Stars' },
+  { player_name: 'Matthew Tkachuk', nhl_id: '8479337', position: 'F', nhl_team: 'Florida Panthers' },
+  { player_name: 'Brady Tkachuk', nhl_id: '8480801', position: 'F', nhl_team: 'Ottawa Senators' },
+  { player_name: 'Jesper Bratt', nhl_id: '8479420', position: 'F', nhl_team: 'New Jersey Devils' },
+  { player_name: 'Rasmus Dahlin', nhl_id: '8480827', position: 'D', nhl_team: 'Buffalo Sabres' },
+  { player_name: 'Noah Dobson', nhl_id: '8480867', position: 'D', nhl_team: 'New York Islanders' },
+];
+
+export default function KeeperSelectionPortal({ gms, authedGm, theme = 'dark' }: KeeperSelectionPortalProps) {
   const isLight = theme === 'light';
   const gmList = gms && gms.length > 0 ? gms : DEFAULT_GMS;
 
-  const [selectedGm, setSelectedGm] = useState<string>(gmList[0]?.name || 'Adam');
+  const isCommish = Boolean(authedGm?.is_commish || authedGm?.name.toLowerCase() === 'adam');
+
+  const [selectedGm, setSelectedGm] = useState<string>(
+    (!isCommish && authedGm) ? authedGm.name : (gmList[0]?.name || 'Adam')
+  );
   const [seasons, setSeasons] = useState<LeagueSeason[]>([
     { season_id: '2026-2027', name: '2026-2027 Season', is_current: true },
     { season_id: '2025-2026', name: '2025-2026 Season', is_current: false }
@@ -647,10 +684,26 @@ export default function KeeperSelectionPortal({ gms, theme = 'dark' }: KeeperSel
     }
   };
 
+  // Combined master players from database + fallback hardcoded stars
+  const allMasterPlayers = useMemo(() => {
+    // Start with master players from DB
+    const players = [...masterPlayers];
+    
+    // Add sample players if they don't exist in the list (by nhl_id)
+    SAMPLE_NHL_PLAYERS.forEach(sample => {
+      const exists = players.some(p => String(p.nhl_id) === String(sample.nhl_id));
+      if (!exists) {
+        players.push(sample);
+      }
+    });
+    
+    return players;
+  }, [masterPlayers]);
+
   // Filtered NHL player search results querying exclusively from nhl_master_players
   const filteredPlayers = useMemo(() => {
     const q = (searchQuery || '').toLowerCase().trim();
-    return masterPlayers.filter((p) => {
+    return allMasterPlayers.filter((p) => {
       if (!p || !p.player_name) return false;
 
       // Position matching
@@ -665,11 +718,12 @@ export default function KeeperSelectionPortal({ gms, theme = 'dark' }: KeeperSel
           pos === 'LW' ||
           pos === 'RW' ||
           pos.includes('W') ||
-          pos.includes('C');
+          pos.includes('C') ||
+          pos.includes('FOR'); // Forward
       } else if (activeSlotPosition === 'D') {
-        matchesPosition = pos === 'D' || pos.includes('D');
+        matchesPosition = pos === 'D' || pos.includes('D') || pos.includes('DEF');
       } else if (activeSlotPosition === 'G') {
-        matchesPosition = pos === 'G';
+        matchesPosition = pos === 'G' || pos.includes('G') || pos.includes('GOA');
       }
 
       if (!matchesPosition) return false;
@@ -683,7 +737,7 @@ export default function KeeperSelectionPortal({ gms, theme = 'dark' }: KeeperSel
         String(p.nhl_id).includes(q)
       );
     });
-  }, [masterPlayers, searchQuery, activeSlotPosition]);
+  }, [allMasterPlayers, searchQuery, activeSlotPosition]);
 
   const filledCount = Object.values(slots).filter(Boolean).length;
   const isReadyToLock = filledCount === 7;
@@ -714,20 +768,16 @@ export default function KeeperSelectionPortal({ gms, theme = 'dark' }: KeeperSel
         }`}>
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
             <div>
-              <div className="flex items-center gap-2 mb-1">
-                <span className="text-xs font-black uppercase tracking-wider text-emerald-500">
-                  Winko's Hockey Pool
-                </span>
-                <span className="text-xs text-slate-400">•</span>
-                <span className="text-xs font-bold px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                  Annual Keeper Lock
-                </span>
+              <div className="flex items-center gap-3 mb-2">
+                <div className="h-10 w-10 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-500 border border-emerald-500/20">
+                  <Shield className="h-6 w-6" />
+                </div>
+                <h1 className={`text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight ${isLight ? 'text-slate-900' : 'text-white'}`}>
+                  Your Keepers
+                </h1>
               </div>
-              <h1 className={`text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight ${isLight ? 'text-slate-900' : 'text-white'}`}>
-                NHL Keeper Selection Portal
-              </h1>
               <p className={`text-xs sm:text-sm mt-1.5 max-w-2xl ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>
-                Lock in your 7 franchise keepers (4 Forwards, 2 Defensemen, 1 Goalie) directly into the Active Roster.
+                Lock in your 7 franchise keepers (4 Forwards, 2 Defensemen, 1 Goalie) for the upcoming season.
               </p>
             </div>
 
@@ -746,55 +796,66 @@ export default function KeeperSelectionPortal({ gms, theme = 'dark' }: KeeperSel
 
           {/* Selectors Bar */}
           <div className="mt-6 pt-6 border-t grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 items-center border-slate-200 dark:border-slate-800">
-            {/* Season Selector */}
-            <div>
-              <label className={`block text-xs font-bold uppercase tracking-wider mb-1.5 ${isLight ? 'text-slate-500' : 'text-slate-400'}`}>
-                League Season
-              </label>
-              <div className="relative">
-                <Calendar className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
-                <select
-                  value={selectedSeason}
-                  onChange={(e) => setSelectedSeason(e.target.value)}
-                  className={`w-full pl-10 pr-4 py-2.5 rounded-xl border text-sm font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 ${
-                    isLight 
-                      ? 'bg-slate-50 border-slate-200 text-slate-800 hover:bg-slate-100' 
-                      : 'bg-slate-800 border-slate-700 text-slate-200 hover:bg-slate-750'
-                  }`}
-                >
-                  {seasons.map(s => (
-                    <option key={s.season_id} value={s.season_id}>
-                      {s.name || s.season_id} {s.is_current ? '(Current)' : ''}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
+            {isCommish ? (
+              <>
+                {/* Season Selector */}
+                <div>
+                  <label className={`block text-xs font-bold uppercase tracking-wider mb-1.5 ${isLight ? 'text-slate-500' : 'text-slate-400'}`}>
+                    League Season
+                  </label>
+                  <div className="relative">
+                    <Calendar className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
+                    <select
+                      value={selectedSeason}
+                      onChange={(e) => setSelectedSeason(e.target.value)}
+                      className={`w-full pl-10 pr-4 py-2.5 rounded-xl border text-sm font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 ${
+                        isLight 
+                          ? 'bg-slate-50 border-slate-200 text-slate-800 hover:bg-slate-100' 
+                          : 'bg-slate-800 border-slate-700 text-slate-200 hover:bg-slate-750'
+                      }`}
+                    >
+                      {seasons.map(s => (
+                        <option key={s.season_id} value={s.season_id}>
+                          {s.name || s.season_id} {s.is_current ? '(Current)' : ''}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
 
-            {/* GM Selector */}
-            <div>
-              <label className={`block text-xs font-bold uppercase tracking-wider mb-1.5 ${isLight ? 'text-slate-500' : 'text-slate-400'}`}>
-                General Manager
-              </label>
-              <div className="relative">
-                <Users className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
-                <select
-                  value={selectedGm}
-                  onChange={(e) => setSelectedGm(e.target.value)}
-                  className={`w-full pl-10 pr-4 py-2.5 rounded-xl border text-sm font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 ${
-                    isLight 
-                      ? 'bg-slate-50 border-slate-200 text-slate-800 hover:bg-slate-100' 
-                      : 'bg-slate-800 border-slate-700 text-slate-200 hover:bg-slate-750'
-                  }`}
-                >
-                  {gmList.map(gm => (
-                    <option key={gm.id || gm.name} value={gm.name}>
-                      {gm.name} ({gm.teamName || `${gm.name}'s Team`})
-                    </option>
-                  ))}
-                </select>
+                {/* GM Selector */}
+                <div>
+                  <label className={`block text-xs font-bold uppercase tracking-wider mb-1.5 ${isLight ? 'text-slate-500' : 'text-slate-400'}`}>
+                    General Manager
+                  </label>
+                  <div className="relative">
+                    <Users className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
+                    <select
+                      value={selectedGm}
+                      onChange={(e) => setSelectedGm(e.target.value)}
+                      className={`w-full pl-10 pr-4 py-2.5 rounded-xl border text-sm font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 ${
+                        isLight 
+                          ? 'bg-slate-50 border-slate-200 text-slate-800 hover:bg-slate-100' 
+                          : 'bg-slate-800 border-slate-700 text-slate-200 hover:bg-slate-750'
+                      }`}
+                    >
+                      {gmList.map(gm => (
+                        <option key={gm.id || gm.name} value={gm.name}>
+                          {gm.name} ({gm.teamName || `${gm.name}'s Team`})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+              </>
+            ) : (
+              <div className="lg:col-span-2">
+                <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl border ${isLight ? 'bg-slate-50 border-slate-200 text-slate-700' : 'bg-slate-800/40 border-slate-700 text-slate-300'}`}>
+                  <Users className="h-4 w-4 text-emerald-500" />
+                  <span className="text-sm font-bold">{selectedGm}'s Keeper Selection</span>
+                </div>
               </div>
-            </div>
+            )}
 
             {/* Progress & Rollover Button */}
             <div className="sm:col-span-2 flex items-center justify-end gap-3 pt-2 sm:pt-0">
@@ -1023,11 +1084,28 @@ export default function KeeperSelectionPortal({ gms, theme = 'dark' }: KeeperSel
                       <Search className="h-6 w-6" />
                     </div>
                     <p className="text-sm font-bold">No players found in nhl_master_players</p>
-                    <p className={`text-xs mt-1 ${isLight ? 'text-slate-500' : 'text-slate-400'}`}>
+                    <p className={`text-xs mt-1 mb-6 ${isLight ? 'text-slate-500' : 'text-slate-400'}`}>
                       {searchQuery
                         ? `No matching ${activeSlotPosition === 'F' ? 'Forwards' : activeSlotPosition === 'D' ? 'Defensemen' : 'Goalies'} for "${searchQuery}".`
                         : `No eligible players found in the database for position ${activeSlotPosition}.`}
                     </p>
+
+                    {searchQuery && (
+                      <button
+                        onClick={() => {
+                          handleSelectPlayer({
+                            player_name: searchQuery,
+                            nhl_id: `manual-${Date.now()}`,
+                            position: activeSlotPosition as 'F' | 'D' | 'G',
+                            nhl_team: 'Custom Entry'
+                          });
+                        }}
+                        className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold shadow-lg shadow-emerald-500/20 active:scale-95 transition cursor-pointer"
+                      >
+                        <UserPlus className="h-4 w-4" />
+                        <span>Add "{searchQuery}" Manually</span>
+                      </button>
+                    )}
                   </div>
                 ) : (
                   filteredPlayers.map((player) => {
