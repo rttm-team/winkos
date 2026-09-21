@@ -1973,35 +1973,40 @@ export const ActiveSquadManager: React.FC<ActiveSquadManagerProps> = ({
             </div>
           ) : (
             <>
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+              <div className="space-y-12">
               {/* ==========================================
-                  1. FORWARDS (Active + Bench)
+                  1. FORWARDS (Full-Width Table Section)
               ========================================== */}
               <div
-                className={`p-6 rounded-3xl border transition-all flex flex-col space-y-6 ${
+                className={`p-6 sm:p-8 rounded-3xl border transition-all ${
                   isLight
                     ? 'bg-white border-slate-200 shadow-sm'
                     : 'bg-slate-900/90 border-slate-800 shadow-xl'
                 }`}
               >
-                <div className="border-b border-slate-200 dark:border-slate-800 pb-4">
+                <div className="border-b border-slate-200 dark:border-slate-800 pb-5 mb-6">
                   <div className="flex items-center gap-2 mb-1">
-                    <div className="h-2 w-2 rounded-full bg-blue-400" />
-                    <span className="text-xs font-black uppercase tracking-wider text-blue-500">
-                      Position Group
+                    <div className="h-2.5 w-2.5 rounded-full bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.5)]" />
+                    <span className="text-xs font-black uppercase tracking-[0.2em] text-blue-500">
+                      Primary Attack
                     </span>
                   </div>
-                  <h2 className={`text-2xl font-black ${isLight ? 'text-slate-900' : 'text-white'}`}>
-                    Forwards
+                  <h2 className={`text-3xl font-black ${isLight ? 'text-slate-900' : 'text-white'}`}>
+                    Forward Corps
                   </h2>
                 </div>
 
-                <div className="space-y-6 flex-1">
+                <div className="grid grid-cols-1 xl:grid-cols-2 gap-10">
                   {/* Active Forwards */}
                   <div>
-                    <h3 className={`text-[11px] font-black uppercase tracking-[0.15em] mb-3 ${isLight ? 'text-slate-500' : 'text-slate-500'}`}>
-                      Active Lineup (9 Slots)
-                    </h3>
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className={`text-xs font-black uppercase tracking-[0.15em] ${isLight ? 'text-slate-500' : 'text-slate-500'}`}>
+                        Active Starting Lineup (9)
+                      </h3>
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-500 border border-emerald-500/20">
+                        Rule 5 FP Active
+                      </span>
+                    </div>
                     <div className="divide-y divide-slate-200 dark:divide-slate-800/60 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs overflow-hidden">
                       {ACTIVE_FORWARD_SLOTS.map(slot => renderActivePlayerRow(slot, activeSlotMap.get(slot)))}
                     </div>
@@ -2009,9 +2014,14 @@ export const ActiveSquadManager: React.FC<ActiveSquadManagerProps> = ({
 
                   {/* Bench Forwards */}
                   <div>
-                    <h3 className={`text-[11px] font-black uppercase tracking-[0.15em] mb-3 ${isLight ? 'text-slate-500' : 'text-slate-500'}`}>
-                      Bench (3 Slots)
-                    </h3>
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className={`text-xs font-black uppercase tracking-[0.15em] ${isLight ? 'text-slate-500' : 'text-slate-500'}`}>
+                        Reserve Bench (3)
+                      </h3>
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-slate-500/10 text-slate-500 border border-slate-500/20">
+                        0 FP Active
+                      </span>
+                    </div>
                     <div className="divide-y divide-slate-200 dark:divide-slate-800/60 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs overflow-hidden">
                       {BENCH_FORWARD_SLOTS.map(slot => renderBenchPlayerRow(slot, benchSlotMap.get(slot)))}
                     </div>
@@ -2020,33 +2030,38 @@ export const ActiveSquadManager: React.FC<ActiveSquadManagerProps> = ({
               </div>
 
               {/* ==========================================
-                  2. DEFENSE (Active + Bench)
+                  2. DEFENSE (Full-Width Table Section)
               ========================================== */}
               <div
-                className={`p-6 rounded-3xl border transition-all flex flex-col space-y-6 ${
+                className={`p-6 sm:p-8 rounded-3xl border transition-all ${
                   isLight
                     ? 'bg-white border-slate-200 shadow-sm'
                     : 'bg-slate-900/90 border-slate-800 shadow-xl'
                 }`}
               >
-                <div className="border-b border-slate-200 dark:border-slate-800 pb-4">
+                <div className="border-b border-slate-200 dark:border-slate-800 pb-5 mb-6">
                   <div className="flex items-center gap-2 mb-1">
-                    <div className="h-2 w-2 rounded-full bg-amber-400" />
-                    <span className="text-xs font-black uppercase tracking-wider text-amber-500">
-                      Position Group
+                    <div className="h-2.5 w-2.5 rounded-full bg-amber-500 shadow-[0_0_10px_rgba(245,158,11,0.5)]" />
+                    <span className="text-xs font-black uppercase tracking-[0.2em] text-amber-500">
+                      Blue Line Defense
                     </span>
                   </div>
-                  <h2 className={`text-2xl font-black ${isLight ? 'text-slate-900' : 'text-white'}`}>
-                    Defense
+                  <h2 className={`text-3xl font-black ${isLight ? 'text-slate-900' : 'text-white'}`}>
+                    Defensemen
                   </h2>
                 </div>
 
-                <div className="space-y-6 flex-1">
+                <div className="grid grid-cols-1 xl:grid-cols-2 gap-10">
                   {/* Active Defense */}
                   <div>
-                    <h3 className={`text-[11px] font-black uppercase tracking-[0.15em] mb-3 ${isLight ? 'text-slate-500' : 'text-slate-500'}`}>
-                      Active Lineup (4 Slots)
-                    </h3>
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className={`text-xs font-black uppercase tracking-[0.15em] ${isLight ? 'text-slate-500' : 'text-slate-500'}`}>
+                        Active Starting Lineup (4)
+                      </h3>
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-500 border border-emerald-500/20">
+                        Rule 5 FP Active
+                      </span>
+                    </div>
                     <div className="divide-y divide-slate-200 dark:divide-slate-800/60 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs overflow-hidden">
                       {ACTIVE_DEFENSE_SLOTS.map(slot => renderActivePlayerRow(slot, activeSlotMap.get(slot)))}
                     </div>
@@ -2054,9 +2069,14 @@ export const ActiveSquadManager: React.FC<ActiveSquadManagerProps> = ({
 
                   {/* Bench Defense */}
                   <div>
-                    <h3 className={`text-[11px] font-black uppercase tracking-[0.15em] mb-3 ${isLight ? 'text-slate-500' : 'text-slate-500'}`}>
-                      Bench (2 Slots)
-                    </h3>
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className={`text-xs font-black uppercase tracking-[0.15em] ${isLight ? 'text-slate-500' : 'text-slate-500'}`}>
+                        Reserve Bench (2)
+                      </h3>
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-slate-500/10 text-slate-500 border border-slate-500/20">
+                        0 FP Active
+                      </span>
+                    </div>
                     <div className="divide-y divide-slate-200 dark:divide-slate-800/60 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs overflow-hidden">
                       {BENCH_DEFENSE_SLOTS.map(slot => renderBenchPlayerRow(slot, benchSlotMap.get(slot)))}
                     </div>
@@ -2065,33 +2085,38 @@ export const ActiveSquadManager: React.FC<ActiveSquadManagerProps> = ({
               </div>
 
               {/* ==========================================
-                  3. GOALIES (Active + Bench)
+                  3. GOALIES (Full-Width Table Section)
               ========================================== */}
               <div
-                className={`p-6 rounded-3xl border transition-all flex flex-col space-y-6 ${
+                className={`p-6 sm:p-8 rounded-3xl border transition-all ${
                   isLight
                     ? 'bg-white border-slate-200 shadow-sm'
                     : 'bg-slate-900/90 border-slate-800 shadow-xl'
                 }`}
               >
-                <div className="border-b border-slate-200 dark:border-slate-800 pb-4">
+                <div className="border-b border-slate-200 dark:border-slate-800 pb-5 mb-6">
                   <div className="flex items-center gap-2 mb-1">
-                    <div className="h-2 w-2 rounded-full bg-purple-400" />
-                    <span className="text-xs font-black uppercase tracking-wider text-purple-500">
-                      Position Group
+                    <div className="h-2.5 w-2.5 rounded-full bg-purple-500 shadow-[0_0_10px_rgba(168,85,247,0.5)]" />
+                    <span className="text-xs font-black uppercase tracking-[0.2em] text-purple-500">
+                      Between the Pipes
                     </span>
                   </div>
-                  <h2 className={`text-2xl font-black ${isLight ? 'text-slate-900' : 'text-white'}`}>
-                    Goalies
+                  <h2 className={`text-3xl font-black ${isLight ? 'text-slate-900' : 'text-white'}`}>
+                    Goaltenders
                   </h2>
                 </div>
 
-                <div className="space-y-6 flex-1">
+                <div className="grid grid-cols-1 xl:grid-cols-2 gap-10">
                   {/* Active Goalies */}
                   <div>
-                    <h3 className={`text-[11px] font-black uppercase tracking-[0.15em] mb-3 ${isLight ? 'text-slate-500' : 'text-slate-500'}`}>
-                      Active Lineup (2 Slots)
-                    </h3>
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className={`text-xs font-black uppercase tracking-[0.15em] ${isLight ? 'text-slate-500' : 'text-slate-500'}`}>
+                        Active Starting Lineup (2)
+                      </h3>
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-500 border border-emerald-500/20">
+                        Rule 5 FP Active
+                      </span>
+                    </div>
                     <div className="divide-y divide-slate-200 dark:divide-slate-800/60 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs overflow-hidden">
                       {ACTIVE_GOALIE_SLOTS.map(slot => renderActivePlayerRow(slot, activeSlotMap.get(slot)))}
                     </div>
@@ -2099,9 +2124,14 @@ export const ActiveSquadManager: React.FC<ActiveSquadManagerProps> = ({
 
                   {/* Bench Goalies */}
                   <div>
-                    <h3 className={`text-[11px] font-black uppercase tracking-[0.15em] mb-3 ${isLight ? 'text-slate-500' : 'text-slate-500'}`}>
-                      Bench (2 Slots)
-                    </h3>
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className={`text-xs font-black uppercase tracking-[0.15em] ${isLight ? 'text-slate-500' : 'text-slate-500'}`}>
+                        Reserve Bench (2)
+                      </h3>
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-slate-500/10 text-slate-500 border border-slate-500/20">
+                        0 FP Active
+                      </span>
+                    </div>
                     <div className="divide-y divide-slate-200 dark:divide-slate-800/60 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs overflow-hidden">
                       {BENCH_GOALIE_SLOTS.map(slot => renderBenchPlayerRow(slot, benchSlotMap.get(slot)))}
                     </div>
