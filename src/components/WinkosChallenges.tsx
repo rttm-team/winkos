@@ -715,14 +715,21 @@ export default function WinkosChallenges({ gmName, theme = 'dark' }: { gmName: s
             isLight ? 'border-slate-200' : 'border-slate-800/80'
           }`}>
             <div>
-              <div className="flex items-center gap-3">
-                <h1 className={`text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight flex items-center gap-3 ${
-                  isLight ? 'text-slate-900' : 'text-white'
-                }`}>
-                  <span>Winko's Challenges</span>
-                </h1>
+              <div className="flex items-center gap-2 mb-1">
+                <span className="text-xs font-black uppercase tracking-wider text-emerald-500">
+                  Winko's Hockey Pool
+                </span>
+                <span className="text-xs text-slate-400">•</span>
+                <span className="text-xs font-bold px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                  Daily Mini-Games
+                </span>
               </div>
-              <p className={`text-xs sm:text-sm mt-1 max-w-xl ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>
+              <h1 className={`text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight ${
+                isLight ? 'text-slate-900' : 'text-white'
+              }`}>
+                Winko's Challenges
+              </h1>
+              <p className={`text-xs sm:text-sm mt-1.5 max-w-2xl ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>
                 Compete in daily hockey challenges, win Winkoins, and claim pool supremacy.
               </p>
             </div>

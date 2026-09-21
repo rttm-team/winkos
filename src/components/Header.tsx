@@ -18,9 +18,9 @@ import logoLight from '../assets/images/winkos-logo-light.png';
 import logoDark from '../assets/images/winkos-logo-dark.png';
 
 interface HeaderProps {
-  onNavigate: (view: 'hub' | 'seasons' | 'keepers' | 'waivers' | 'transactions' | 'prospect-central' | 'prospects' | 'arcade' | 'active-squad' | 'commish') => void;
+  onNavigate: (view: 'hub' | 'season' | 'seasons' | 'keepers' | 'waivers' | 'transactions' | 'prospect-central' | 'prospects' | 'arcade' | 'active-squad' | 'commish') => void;
   onOpenRules: () => void;
-  activeView: 'hub' | 'seasons' | 'keepers' | 'waivers' | 'transactions' | 'prospect-central' | 'prospects' | 'arcade' | 'active-squad' | 'commish' | string;
+  activeView: 'hub' | 'season' | 'seasons' | 'keepers' | 'waivers' | 'transactions' | 'prospect-central' | 'prospects' | 'arcade' | 'active-squad' | 'commish' | string;
   theme: 'light' | 'dark';
   onToggleTheme: () => void;
   activeGm?: any;
@@ -88,12 +88,9 @@ export const Header: React.FC<HeaderProps> = ({
           <div className="flex items-center gap-2 sm:gap-3">
             <nav className="flex items-center gap-1 sm:gap-2">
               <NavItem icon={Home} label="Hub" onClick={() => onNavigate('hub')} active={activeView === 'hub'} theme={theme} />
-              <NavItem icon={Trophy} label="Seasons" onClick={() => onNavigate('seasons')} active={activeView === 'seasons'} theme={theme} />
+              <NavItem icon={Trophy} label="Season" onClick={() => onNavigate('season')} active={activeView === 'season' || activeView === 'seasons' || activeView === 'waivers' || activeView === 'arcade' || activeView === 'active-squad'} theme={theme} />
               <NavItem icon={Shield} label="Keepers" onClick={() => onNavigate('keepers')} active={activeView === 'keepers'} theme={theme} />
-              <NavItem icon={ArrowRightLeft} label="Waivers" onClick={() => onNavigate('waivers')} active={activeView === 'waivers'} theme={theme} />
               <NavItem icon={LayoutGrid} label="Prospect Central" onClick={() => onNavigate('prospect-central')} active={activeView === 'prospect-central'} theme={theme} />
-              <NavItem icon={Users} label="GM Pools" onClick={() => onNavigate('prospects')} active={activeView === 'prospects'} theme={theme} />
-              <NavItem icon={Dice5} label="Challenges" onClick={() => onNavigate('arcade')} active={activeView === 'arcade'} theme={theme} />
               <NavItem icon={Info} label="Rules" onClick={onOpenRules} active={false} theme={theme} />
             </nav>
             

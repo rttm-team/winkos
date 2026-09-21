@@ -102,12 +102,21 @@ export const SeasonsLanding: React.FC<SeasonsLandingProps> = ({
             isLight ? 'border-slate-200' : 'border-slate-800/80'
           }`}>
             <div>
-              <h1 className={`text-4xl sm:text-5xl font-black tracking-tight flex items-center gap-3 ${
+              <div className="flex items-center gap-2 mb-1">
+                <span className="text-xs font-black uppercase tracking-wider text-emerald-500">
+                  Winko's Hockey Pool
+                </span>
+                <span className="text-xs text-slate-400">•</span>
+                <span className="text-xs font-bold px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                  Historical Archive
+                </span>
+              </div>
+              <h1 className={`text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight ${
                 isLight ? 'text-slate-900' : 'text-white'
               }`}>
-                <span>Explore the Seasons</span>
+                Explore the Seasons
               </h1>
-              <p className={`text-xs sm:text-sm mt-1 max-w-xl ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>
+              <p className={`text-xs sm:text-sm mt-1.5 max-w-2xl ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>
                 Track standings, manage your roster, and view historical performance across Winko's Hockey Pool seasons.
               </p>
             </div>

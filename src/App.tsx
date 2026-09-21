@@ -26,6 +26,7 @@ import KeeperSelectionPortal from './components/KeeperSelectionPortal';
 import WaiverWirePortal from './components/WaiverWirePortal';
 import SeasonTransactionsFeed from './components/SeasonTransactionsFeed';
 import CommishBackOffice from './components/CommishBackOffice';
+import { SeasonHub } from './components/SeasonHub';
 import { syncProspectWithNhlApi, setStored25PlusSeasons } from './services/nhlApi';
 import { supabase, fetchLeagueData, mapProspectRow, addDeletedProspectId } from './lib/supabase';
 import {
@@ -45,7 +46,7 @@ export default function App() {
   const [gms, setGms] = useState<GeneralManager[]>(INITIAL_GMS);
   const [selectedGmId, setSelectedGmId] = useState<string>('gm-adam');
   const [authedGmId, setAuthedGmId] = useState<string | null>(null);
-  const [view, setView] = useState<'hub' | 'seasons' | 'keepers' | 'waivers' | 'transactions' | 'prospect-central' | 'prospects' | 'arcade' | 'active-squad' | 'commish'>('hub');
+  const [view, setView] = useState<'hub' | 'season' | 'seasons' | 'keepers' | 'waivers' | 'transactions' | 'prospect-central' | 'prospects' | 'arcade' | 'active-squad' | 'commish'>('hub');
   const [selectedSeason, setSelectedSeason] = useState<string>('2026-27');
   const [positionFilter, setPositionFilter] = useState<PositionFilter>('ALL');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('ALL');
@@ -1275,7 +1276,13 @@ export default function App() {
           activeGm={authedGm}
           onAuthenticate={handleAuthenticate}
           onLogout={handleLogout}
-          onNavigate={(target: 'seasons' | 'prospect-central' | 'prospects' | 'arcade') => setView(target)}
+          onNavigate={(target: 'seasons' | 'prospect-central' | 'prospects' | 'arcade') => {
+            if (target === 'seasons' || target === 'arcade') {
+              setView('season');
+            } else {
+              setView(target);
+            }
+          }}
           theme={theme}
           onToggleTheme={toggleTheme}
           gmLeaderboard={gms.map(gm => ({ ...gm, total_fantasy_points: 0, goals: 0, assists: 0, wins: 0 }))}
@@ -1283,14 +1290,12 @@ export default function App() {
         />
       )}
 
+      {view === 'season' && (
+        <SeasonHub gms={gms} theme={theme} authedGm={authedGm} defaultTab="roster" />
+      )}
+
       {view === 'seasons' && (
-        <main className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
-          <SeasonsLanding 
-            theme={theme}
-            gms={gms}
-            onManageTeam={() => setView('active-squad')}
-          />
-        </main>
+        <SeasonHub gms={gms} theme={theme} authedGm={authedGm} defaultTab="standings" />
       )}
 
       {view === 'keepers' && (
@@ -1298,12 +1303,7 @@ export default function App() {
       )}
 
       {view === 'waivers' && (
-        <WaiverWirePortal
-          gms={gms}
-          theme={theme}
-          initialGm={authedGm?.name || activeGm?.name || 'Adam'}
-          onNavigateBack={() => setView('hub')}
-        />
+        <SeasonHub gms={gms} theme={theme} authedGm={authedGm} defaultTab="waivers" />
       )}
 
       {view === 'transactions' && (
@@ -1316,21 +1316,11 @@ export default function App() {
       )}
 
       {view === 'arcade' && (
-        <WinkosChallenges gmName={authedGm?.name || ''} theme={theme} />
+        <SeasonHub gms={gms} theme={theme} authedGm={authedGm} defaultTab="challenges" />
       )}
 
       {view === 'active-squad' && (
-        isAdmin ? (
-          <ActiveSquadManager
-            initialGm={authedGm?.name || activeGm?.name || 'Adam'}
-            theme={theme}
-            onNavigateBack={() => setView('hub')}
-          />
-        ) : (
-          <div className="mx-auto max-w-7xl px-4 py-16 text-center">
-            <p className="text-sm font-bold text-slate-400">Commissioner access required.</p>
-          </div>
-        )
+        <SeasonHub gms={gms} theme={theme} authedGm={authedGm} defaultTab="roster" />
       )}
 
       {view === 'commish' && (
@@ -1351,6 +1341,17 @@ export default function App() {
           theme={theme}
           onSelectGmPool={(gmId) => {
             setSelectedGmId(gmId);
+            setPositionFilter('ALL');
+            setStatusFilter('ALL');
+            setSearchQuery('');
+            setView('prospects');
+          }}
+          onNavigateToMyProspects={() => {
+            if (authedGmId) {
+              setSelectedGmId(authedGmId);
+            } else if (gms.length > 0) {
+              setSelectedGmId(gms[0].id);
+            }
             setPositionFilter('ALL');
             setStatusFilter('ALL');
             setSearchQuery('');

@@ -265,10 +265,7 @@ export default function SeasonTransactionsFeed({
             isLight ? 'border-slate-200' : 'border-slate-800/80'
           }`}
         >
-          <div className="flex items-start sm:items-center gap-4">
-            <div className="p-3.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 shadow-inner shrink-0 mt-1 sm:mt-0">
-              <ArrowRightLeft className="h-7 w-7 sm:h-8 sm:w-8" />
-            </div>
+          <div>
             <div>
               <div className="flex items-center gap-3 flex-wrap">
                 <h1

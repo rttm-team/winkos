@@ -709,22 +709,26 @@ export default function KeeperSelectionPortal({ gms, theme = 'dark' }: KeeperSel
         )}
 
         {/* Header & Controls */}
-        <div className={`p-6 rounded-3xl border shadow-lg ${
+        <div className={`p-6 sm:p-8 rounded-3xl border shadow-lg mb-8 ${
           isLight ? 'bg-white border-slate-200 shadow-slate-200/50' : 'bg-slate-900 border-slate-800 shadow-black/40'
         }`}>
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
             <div>
-              <div className="flex items-center gap-3">
-                <div className="p-3 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-500">
-                  <Shield className="h-8 w-8" />
-                </div>
-                <div>
-                  <h1 className="text-2xl sm:text-3xl font-black tracking-tight">NHL Keeper Selection Portal</h1>
-                  <p className={`text-sm mt-1 ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>
-                    Lock in your 7 franchise keepers (4 Forwards, 2 Defensemen, 1 Goalie) directly into the Active Roster.
-                  </p>
-                </div>
+              <div className="flex items-center gap-2 mb-1">
+                <span className="text-xs font-black uppercase tracking-wider text-emerald-500">
+                  Winko's Hockey Pool
+                </span>
+                <span className="text-xs text-slate-400">•</span>
+                <span className="text-xs font-bold px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                  Annual Keeper Lock
+                </span>
               </div>
+              <h1 className={`text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight ${isLight ? 'text-slate-900' : 'text-white'}`}>
+                NHL Keeper Selection Portal
+              </h1>
+              <p className={`text-xs sm:text-sm mt-1.5 max-w-2xl ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>
+                Lock in your 7 franchise keepers (4 Forwards, 2 Defensemen, 1 Goalie) directly into the Active Roster.
+              </p>
             </div>
 
             {/* Status Badge */}

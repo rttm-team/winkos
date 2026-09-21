@@ -546,10 +546,7 @@ export default function WaiverWirePortal({
             isLight ? 'border-slate-200' : 'border-slate-800/80'
           }`}
         >
-          <div className="flex items-start sm:items-center gap-4">
-            <div className="p-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-500 shadow-inner shrink-0 mt-1 sm:mt-0">
-              <ArrowRightLeft className="h-7 w-7 sm:h-8 sm:w-8" />
-            </div>
+          <div>
             <div>
               <div className="flex items-center gap-2.5 flex-wrap">
                 <h1
@@ -632,7 +629,7 @@ export default function WaiverWirePortal({
             onClick={() => setActivePortalTab('pool')}
             className={`flex items-center gap-2 px-4 sm:px-5 py-2.5 rounded-2xl text-xs sm:text-sm font-black transition-all cursor-pointer ${
               activePortalTab === 'pool'
-                ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20'
+                ? 'bg-emerald-600 text-white shadow-md shadow-emerald-600/20'
                 : isLight
                 ? 'bg-slate-200 text-slate-700 hover:bg-slate-300'
                 : 'bg-slate-900 border border-slate-800 text-slate-300 hover:text-white hover:bg-slate-800'
@@ -843,7 +840,7 @@ export default function WaiverWirePortal({
                       onClick={() => setPositionFilter(pos)}
                       className={`px-3.5 py-1.5 rounded-xl text-xs font-extrabold transition-all ${
                         active
-                          ? 'bg-amber-500 text-slate-950 shadow-md scale-105'
+                          ? 'bg-emerald-600 text-white shadow-md scale-105'
                           : isLight
                           ? 'text-slate-600 hover:text-slate-950'
                           : 'text-slate-400 hover:text-white'
@@ -962,7 +959,7 @@ export default function WaiverWirePortal({
                               setSearchQuery('');
                               setPositionFilter('ALL');
                             }}
-                            className="mt-3 px-4 py-2 rounded-xl bg-amber-500 text-slate-950 font-bold text-xs"
+                            className="mt-3 px-4 py-2 rounded-xl bg-emerald-600 text-white font-bold text-xs"
                           >
                             Reset Filters
                           </button>
@@ -1088,7 +1085,7 @@ export default function WaiverWirePortal({
                             className={`px-3.5 py-1.5 rounded-xl font-black text-xs transition-all flex items-center justify-center gap-1.5 mx-auto ${
                               isLimitReached
                                 ? 'opacity-40 cursor-not-allowed bg-slate-800 text-slate-400 border border-slate-700'
-                                : 'bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 shadow-md shadow-amber-500/20 active:scale-95'
+                                : 'bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white shadow-md shadow-emerald-500/20 active:scale-95'
                             }`}
                           >
                             <UserPlus className="h-3.5 w-3.5" />
@@ -1110,8 +1107,8 @@ export default function WaiverWirePortal({
                 onClick={() => setVisibleCount((prev) => prev + 30)}
                 className={`px-6 py-2.5 rounded-xl font-black text-xs transition-all cursor-pointer shadow-md ${
                   isLight
-                    ? 'bg-amber-500 hover:bg-amber-400 text-slate-950'
-                    : 'bg-amber-500 hover:bg-amber-400 text-slate-950'
+                    ? 'bg-emerald-600 hover:bg-emerald-500 text-white'
+                    : 'bg-emerald-600 hover:bg-emerald-500 text-white'
                 }`}
               >
                 Load More Players ({displayedPlayers.length} of {filteredAndSortedPlayers.length} shown) ↓
@@ -1391,7 +1388,7 @@ export default function WaiverWirePortal({
                   className={`px-5 py-2.5 rounded-xl font-black text-xs transition-all flex items-center gap-2 shadow-lg ${
                     !selectedDropPlayer || submittingClaim
                       ? 'opacity-40 cursor-not-allowed bg-slate-700 text-slate-400'
-                      : 'bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 shadow-amber-500/20 active:scale-95'
+                      : 'bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white shadow-emerald-500/20 active:scale-95'
                   }`}
                 >
                   {submittingClaim ? (

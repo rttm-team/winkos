@@ -871,10 +871,7 @@ export const CommishBackOffice: React.FC<CommishBackOfficeProps> = ({
             isLight ? 'border-slate-200' : 'border-slate-800/80'
           }`}
         >
-          <div className="flex items-start sm:items-center gap-4">
-            <div className="p-3.5 rounded-2xl bg-amber-500/15 border border-amber-500/30 text-amber-400 shadow-inner shrink-0 mt-1 sm:mt-0">
-              <ShieldCheck className="h-7 w-7 sm:h-8 sm:w-8 text-amber-400" />
-            </div>
+          <div>
             <div>
               <div className="flex items-center gap-2.5 flex-wrap">
                 <h1

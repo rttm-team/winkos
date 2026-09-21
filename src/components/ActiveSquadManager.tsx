@@ -1911,7 +1911,6 @@ export const ActiveSquadManager: React.FC<ActiveSquadManagerProps> = ({
                   </button>
                 )}
                 <div className="flex items-center gap-2 mb-1">
-                  <Shield className="h-6 w-6 text-emerald-500" />
                   <span className="text-xs font-black uppercase tracking-wider text-emerald-500">
                     Winko's Hockey Pool
                   </span>

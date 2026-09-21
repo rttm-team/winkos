@@ -76,6 +76,7 @@ interface ProspectLandingProps {
   onSelectGmPool: (gmId: string) => void;
   isAdmin?: boolean;
   theme?: 'light' | 'dark';
+  onNavigateToMyProspects?: () => void;
 }
 
 export const ProspectLanding: React.FC<ProspectLandingProps> = ({
@@ -83,6 +84,7 @@ export const ProspectLanding: React.FC<ProspectLandingProps> = ({
   onSelectGmPool,
   isAdmin = false,
   theme = 'light',
+  onNavigateToMyProspects,
 }) => {
   const isLight = theme === 'light';
   const [leaderboard, setLeaderboard] = useState<GmDraftLeaderboardRow[]>([]);
@@ -530,15 +532,24 @@ export const ProspectLanding: React.FC<ProspectLandingProps> = ({
           isLight ? 'border-slate-200' : 'border-slate-800/80'
         }`}>
           <div>
-            <h1 className={`text-4xl sm:text-5xl font-black tracking-tight flex items-center gap-3 ${
+            <h1 className={`text-4xl sm:text-5xl font-black tracking-tight ${
               isLight ? 'text-slate-900' : 'text-white'
             }`}>
-              <span>Winko's Draft &amp; Prospect HQ</span>
+              <span>Prospect Central</span>
             </h1>
             <p className={`text-xs sm:text-sm mt-1 max-w-xl ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>
               League-wide draft hit rates, star producer leaderboards, and real-time NHL promotion threshold tracking.
             </p>
           </div>
+          {onNavigateToMyProspects && (
+            <button
+              onClick={onNavigateToMyProspects}
+              className="px-5 py-2.5 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs transition-all shadow-md flex items-center gap-2 cursor-pointer self-start lg:self-center"
+            >
+              <Users className="h-4 w-4" />
+              <span>Manage My Prospects</span>
+            </button>
+          )}
         </section>
 
         {/* 3 Quick Stat Cards */}
