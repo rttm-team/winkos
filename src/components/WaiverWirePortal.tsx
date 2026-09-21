@@ -442,7 +442,7 @@ export default function WaiverWirePortal({
     <div
       id="waiver-wire-portal"
       className={`min-h-screen py-6 sm:py-8 transition-colors ${
-        isLight ? 'bg-slate-50 text-slate-900' : 'bg-slate-950 text-slate-100'
+        isLight ? 'bg-transparent text-slate-900' : 'bg-transparent text-slate-100'
       }`}
     >
       <div className="mx-auto max-w-7xl space-y-8">
@@ -534,129 +534,60 @@ export default function WaiverWirePortal({
           </div>
         )}
 
-        {/* GM WAIVER COUNTER BANNER */}
-        <section
-          id="gm-waiver-counter-banner"
-          className={`p-6 sm:p-7 rounded-3xl border shadow-xl relative overflow-hidden transition-all duration-300 ${
-            isLimitReached
-              ? isLight
-                ? 'bg-gradient-to-r from-rose-50 via-white to-amber-50 border-rose-200 shadow-rose-500/5'
-                : 'bg-gradient-to-r from-rose-950/40 via-slate-900 to-amber-950/20 border-rose-900/60 shadow-black/40'
-              : isLight
-              ? 'bg-gradient-to-r from-white via-slate-50 to-amber-50/50 border-slate-200 shadow-slate-200/50'
-              : 'bg-gradient-to-r from-slate-900 via-slate-900/90 to-amber-950/15 border-slate-800 shadow-black/50'
-          }`}
-        >
-          {/* Subtle Ambient Background Accent */}
-          <div className="absolute top-0 right-0 -mt-8 -mr-8 w-48 h-48 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
-
-          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 relative z-10">
-            {/* Left: GM Overview & Counter */}
-            <div className="space-y-2 flex-1">
-              <div className="flex items-center justify-between lg:justify-start lg:gap-4">
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-black uppercase tracking-wider text-amber-500">
-                    GM Seasonal Tracker
-                  </span>
-                  <span className="text-slate-400">•</span>
-                  <span className={`text-xs font-bold ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>
-                    {selectedGM}&apos;s Franchise
-                  </span>
-                </div>
-                {/* Refresh Pool Button moved here */}
-                <button
-                  id="refresh-waiver-pool-btn"
-                  onClick={() => {
-                    fetchGMTracker(selectedGM);
-                    fetchPlayersAndTakenPool();
-                    showToast('Refreshed waiver wire pool', 'info');
-                  }}
-                  title="Refresh waiver wire pool"
-                  className={`p-2 rounded-2xl border shadow-sm transition-colors ${
-                    isLight
-                      ? 'bg-white border-slate-200 text-slate-600 hover:text-slate-900 hover:bg-slate-50'
-                      : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-white hover:bg-slate-800'
-                  }`}
-                >
-                  <RefreshCw className={`h-4 w-4 ${loadingPlayers || loadingTracker ? 'animate-spin' : ''}`} />
-                </button>
-              </div>
-
-              <div className="flex items-baseline gap-3 flex-wrap">
-                <h2 className="text-2xl sm:text-3xl font-black tracking-tight">
-                  Waiver Pickups Used:{' '}
-                  <span className={isLimitReached ? 'text-rose-500' : 'text-amber-500 font-mono'}>
-                    {loadingTracker ? '...' : pickupsUsed} / {maxPickups}
-                  </span>
-                </h2>
-
-                <span
-                  className={`px-3 py-1 rounded-xl text-xs font-extrabold border ${
-                    isLimitReached
-                      ? 'bg-rose-500/15 text-rose-500 border-rose-500/30'
-                      : 'bg-emerald-500/15 text-emerald-500 border-emerald-500/30'
-                  }`}
-                >
-                  {isLimitReached ? '0 Pickups Remaining' : `${pickupsRemaining} Pickup${pickupsRemaining === 1 ? '' : 's'} Remaining`}
-                </span>
-              </div>
-
-              <p className={`text-xs sm:text-sm max-w-xl ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>
-                Transactions immediately add claimed players into your 2026-27 active roster in place of your dropped player.
-              </p>
+        {/* ==========================================================
+            PAGE TITLE OUTSIDE CARD (Aligned with other tabs)
+        ========================================================== */}
+        <div className="flex flex-col gap-4 border-b pb-6 border-slate-200 dark:border-slate-800/80">
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div>
+              <h2 className={`text-3xl sm:text-4xl font-black tracking-tight ${isLight ? 'text-slate-900' : 'text-white'}`}>
+                Waiver Wire
+              </h2>
             </div>
 
-            {/* Right: Visual Badges & Status Indicator */}
-            <div className="flex flex-col sm:flex-row sm:items-center gap-4 lg:gap-6">
-              {/* 3 Visual Badges / Dots */}
-              <div
-                id="waiver-visual-dots"
-                className={`flex items-center gap-3 p-3.5 rounded-2xl border ${
-                  isLight ? 'bg-white/80 border-slate-200 shadow-sm' : 'bg-slate-950/70 border-slate-800 shadow-inner'
+            <div className="flex items-center gap-3">
+              {/* Pickups Remaining badge */}
+              <span
+                className={`px-3 py-1.5 rounded-xl text-xs font-extrabold border ${
+                  isLimitReached
+                    ? 'bg-rose-500/15 text-rose-500 border-rose-500/30'
+                    : 'bg-emerald-500/15 text-emerald-500 border-emerald-500/30'
                 }`}
               >
-                {[0, 1, 2].map((idx) => {
-                  const isUsed = idx < pickupsUsed;
-                  return (
-                    <div
-                      key={idx}
-                      className="flex items-center gap-2 px-3 py-1.5 rounded-xl transition-all"
-                    >
-                      <span className="text-base">
-                        {isUsed ? '🔴' : '🟢'}
-                      </span>
-                      <div className="text-left">
-                        <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">
-                          Pickup #{idx + 1}
-                        </p>
-                        <p
-                          className={`text-xs font-black ${
-                            isUsed
-                              ? 'text-rose-500'
-                              : 'text-emerald-500'
-                          }`}
-                        >
-                          {isUsed ? 'Used' : 'Available'}
-                        </p>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
+                {isLimitReached ? '0 Pickups Remaining' : `${pickupsRemaining} Pickup${pickupsRemaining === 1 ? '' : 's'} Remaining`}
+              </span>
 
-              {/* Warning badge if 3 pickups used */}
-              {isLimitReached && (
-                <div
-                  id="waiver-limit-reached-badge"
-                  className="flex items-center gap-2.5 px-4 py-3 rounded-2xl bg-rose-500/15 border border-rose-500/30 text-rose-500 font-black text-xs sm:text-sm shadow-sm animate-pulse"
-                >
-                  <AlertTriangle className="h-5 w-5 shrink-0" />
-                  <span>Waiver Pickup Limit Reached for 2026-27</span>
-                </div>
-              )}
+              {/* Refresh Button */}
+              <button
+                id="refresh-waiver-pool-btn"
+                onClick={() => {
+                  fetchGMTracker(selectedGM);
+                  fetchPlayersAndTakenPool();
+                  showToast('Refreshed waiver wire pool', 'info');
+                }}
+                title="Refresh waiver wire pool"
+                className={`p-2.5 rounded-2xl border shadow-sm transition-colors ${
+                  isLight
+                    ? 'bg-white border-slate-200 text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+                    : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-white hover:bg-slate-800'
+                }`}
+              >
+                <RefreshCw className={`h-4.5 w-4.5 ${loadingPlayers || loadingTracker ? 'animate-spin' : ''}`} />
+              </button>
             </div>
           </div>
-        </section>
+
+          {/* Warning badge if 3 pickups used */}
+          {isLimitReached && (
+            <div
+              id="waiver-limit-reached-badge"
+              className="flex items-center gap-2.5 px-4 py-3 rounded-2xl bg-rose-500/15 border border-rose-500/30 text-rose-500 font-black text-xs sm:text-sm shadow-sm animate-pulse w-fit"
+            >
+              <AlertTriangle className="h-5 w-5 shrink-0" />
+              <span>Waiver Pickup Limit Reached for 2026-27</span>
+            </div>
+          )}
+        </div>
 
         {/* ========================================================================= */}
         {/* 2. AVAILABLE PLAYERS TABLE (WAIVER WIRE POOL) */}
