@@ -273,6 +273,16 @@ export const KeeperSelectionPortal: React.FC<KeeperSelectionPortalProps> = ({
   const handleSelectPlayer = (player: MasterPlayer) => {
     if (!activeSlotKey) return;
 
+    // Prevent selecting the same player twice across different slots
+    const isAlreadySelected = (Object.values(slots) as (KeeperPlayer | null)[]).some(
+      (slot) => slot && String(slot.nhl_id) === String(player.nhl_id)
+    );
+
+    if (isAlreadySelected) {
+      showToast(`${player.player_name} is already selected as one of your keepers!`, 'error');
+      return;
+    }
+
     const rawPos = (player.position || activeSlotPosition).toUpperCase();
     const cleanPos: 'F' | 'D' | 'G' = rawPos.includes('G') ? 'G' : rawPos.includes('D') ? 'D' : 'F';
 
@@ -712,7 +722,7 @@ export const KeeperSelectionPortal: React.FC<KeeperSelectionPortalProps> = ({
                     }`}
                   >
                     <div>
-                      <div className={`font-kanit font-black text-sm sm:text-base ${isLight ? 'text-slate-900' : 'text-slate-100'}`}>{player.player_name}</div>
+                      <div className={`font-kanit font-bold text-sm sm:text-base ${isLight ? 'text-slate-900' : 'text-slate-100'}`}>{player.player_name}</div>
                       <div className={`text-xs mt-1.5 font-semibold ${isLight ? 'text-slate-500' : 'text-slate-400'}`}>
                         {player.position} • {player.nhl_team || 'N/A'} • #{player.nhl_id}
                       </div>
