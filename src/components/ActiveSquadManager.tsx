@@ -148,11 +148,11 @@ interface ToastMessage {
 // ==========================================
 
 export function safeLower(val?: any): string {
-  return String(val || '').toLowerCase();
+  return String(val || '').trim().toLowerCase();
 }
 
 export function safeUpper(val?: any): string {
-  return String(val || '').toUpperCase();
+  return String(val || '').trim().toUpperCase();
 }
 
 export function normalizePosition(pos?: string): 'F' | 'D' | 'G' {
@@ -393,39 +393,60 @@ export const ActiveSquadManager: React.FC<ActiveSquadManagerProps> = ({
       is_keeper?: boolean;
     }
   ) => {
-    const currentSeason = seasonId || '2026-2027';
+    const currentSeason = seasonId || '2026-27';
     const altSeason = currentSeason === '2026-27' ? '2026-2027' : '2026-27';
+    const cleanName = (playerName || '').trim();
 
-    // 1. Try updating existing row
-    const { data: updated, error: updateError } = await supabase
-      .from('active_roster_players')
-      .update({
-        roster_status: updates.roster_status,
-        slot_position: updates.slot_position,
-        position: updates.position,
-        nhl_id: updates.nhl_id ? Number(updates.nhl_id) || null : null,
-        nhl_team: updates.nhl_team,
-        is_keeper: updates.is_keeper,
-        updated_at: new Date().toISOString(),
-      })
-      .eq('gm_name', gmName)
-      .in('season_id', [currentSeason, altSeason, '2026-2027', '2026-27'])
-      .eq('player_name', playerName)
-      .select();
+    if (!cleanName) return;
 
-    // 2. If no matching row exists, insert it
-    if (!updateError && (!updated || updated.length === 0)) {
-      await supabase.from('active_roster_players').insert([{
-        season_id: currentSeason,
-        gm_name: gmName,
-        player_name: playerName,
-        position: updates.position || 'F',
-        nhl_id: updates.nhl_id ? Number(updates.nhl_id) || null : null,
-        nhl_team: updates.nhl_team || 'NHL Team',
-        roster_status: updates.roster_status,
-        slot_position: updates.slot_position,
-        is_keeper: Boolean(updates.is_keeper),
-      }]);
+    try {
+      // 1. Try to find any existing records for this player to update them specifically by ID
+      const { data: existing, error: fetchError } = await supabase
+        .from('active_roster_players')
+        .select('id')
+        .eq('gm_name', gmName)
+        .eq('player_name', cleanName)
+        .in('season_id', [currentSeason, altSeason, '2026-2027', '2026-27']);
+
+      if (fetchError) throw fetchError;
+
+      if (existing && existing.length > 0) {
+        // Update all matching rows to keep them in sync
+        const updatePromises = existing.map(rec => 
+          supabase
+            .from('active_roster_players')
+            .update({
+              roster_status: updates.roster_status,
+              slot_position: updates.slot_position,
+              position: updates.position,
+              nhl_id: updates.nhl_id ? Number(updates.nhl_id) || null : null,
+              nhl_team: updates.nhl_team,
+              is_keeper: updates.is_keeper,
+              updated_at: new Date().toISOString(),
+            })
+            .eq('id', rec.id)
+        );
+        const results = await Promise.all(updatePromises);
+        const errors = results.filter(r => r.error).map(r => r.error);
+        if (errors.length > 0) throw errors[0];
+      } else {
+        // 2. If no matching row exists, insert it into the current season
+        const { error: insertError } = await supabase.from('active_roster_players').insert([{
+          season_id: currentSeason,
+          gm_name: gmName,
+          player_name: cleanName,
+          position: updates.position || 'F',
+          nhl_id: updates.nhl_id ? Number(updates.nhl_id) || null : null,
+          nhl_team: updates.nhl_team || 'NHL Team',
+          roster_status: updates.roster_status,
+          slot_position: updates.slot_position,
+          is_keeper: Boolean(updates.is_keeper),
+        }]);
+        if (insertError) throw insertError;
+      }
+    } catch (err) {
+      console.error('Failed to update active roster record:', err);
+      throw err; // Rethrow so caller knows it failed
     }
   };
 
@@ -537,6 +558,7 @@ export const ActiveSquadManager: React.FC<ActiveSquadManagerProps> = ({
             roster_status: row.roster_status || (row.promoted ? 'BENCH' : 'PROSPECT_POOL'),
             promoted: Boolean(row.promoted),
             is_keeper: false,
+            isProtected: Boolean(row.protected ?? row.is_protected ?? row.isProtected),
             source: 'prospects',
             ...row
           });
@@ -549,20 +571,41 @@ export const ActiveSquadManager: React.FC<ActiveSquadManagerProps> = ({
           if (!name) return;
           const key = safeLower(name);
           const existing = unifiedMap.get(key) || {};
-          unifiedMap.set(key, {
-            ...existing,
-            ...row,
-            player_name: name,
-            position: row.position || existing.position || 'F',
-            nhl_team: row.nhl_team || existing.nhl_team || 'NHL Team',
-            slot_position: row.slot_position || (row.is_keeper ? 'F1' : existing.slot_position || 'BENCH'),
-            roster_status: row.roster_status || (row.is_keeper ? 'ACTIVE' : existing.roster_status || 'BENCH'),
-            promoted: true,
-            protected: true,
-            isProtected: true,
-            is_keeper: Boolean(row.is_keeper || existing.is_keeper),
-            source: 'active_roster',
-          });
+
+          // Prioritize assigned slots over generic 'BENCH' or 'FARM' placeholders
+          // This prevents older/redundant records from overwriting active assignments
+          const isRowAssigned = row.slot_position && row.slot_position !== 'BENCH' && row.slot_position !== 'FARM';
+          const isExistingAssigned = existing.slot_position && existing.slot_position !== 'BENCH' && existing.slot_position !== 'FARM';
+
+          if (isExistingAssigned && !isRowAssigned) {
+            // If we already have an assigned slot for this player, don't let a generic record overwrite it
+            // Just update stats/keeper status if they are present in the row
+            unifiedMap.set(key, {
+              ...existing,
+              is_keeper: Boolean(row.is_keeper || existing.is_keeper),
+              // update any stats that might be newer in the active_roster table
+              ...row,
+              id: existing.id || row.id, // Preserve the prospect ID if it exists for persistence reliability
+              slot_position: existing.slot_position,
+              roster_status: existing.roster_status,
+            });
+          } else {
+            unifiedMap.set(key, {
+              ...existing,
+              ...row,
+              id: existing.id || row.id, // Preserve the prospect ID if it exists for persistence reliability
+              player_name: name,
+              position: row.position || existing.position || 'F',
+              nhl_team: row.nhl_team || existing.nhl_team || 'NHL Team',
+              slot_position: row.slot_position || (row.is_keeper ? 'F1' : existing.slot_position || 'BENCH'),
+              roster_status: row.roster_status || (row.is_keeper ? 'ACTIVE' : existing.roster_status || 'BENCH'),
+              promoted: true,
+              protected: true,
+              isProtected: true,
+              is_keeper: Boolean(row.is_keeper || existing.is_keeper),
+              source: 'active_roster',
+            });
+          }
         });
 
         const rawRows = Array.from(unifiedMap.values());
@@ -676,17 +719,6 @@ export const ActiveSquadManager: React.FC<ActiveSquadManagerProps> = ({
           };
         });
 
-        // Use the validated activeRows from Promise.all fetch and purge stale local storage cache
-        let activeRosterRows: any[] = activeRows.map((r: any) => ({
-          ...r,
-          player_name: r.player_name || r.name || 'Unknown',
-          position: r.position || 'F',
-          roster_status: r.roster_status || (r.is_keeper ? 'ACTIVE' : 'ACTIVE'),
-          slot_position: r.slot_position || (r.is_keeper ? 'F1' : ''),
-          gm_name: r.gm_name || gm,
-          is_keeper: Boolean(r.is_keeper),
-        }));
-
         try {
           for (let i = localStorage.length - 1; i >= 0; i--) {
             const key = localStorage.key(i);
@@ -695,81 +727,6 @@ export const ActiveSquadManager: React.FC<ActiveSquadManagerProps> = ({
             }
           }
         } catch (e) {}
-
-        // Apply active_roster_players and keepers to mapped list
-        if (activeRosterRows.length > 0) {
-          activeRosterRows.forEach((rRow: any) => {
-            if (!rRow) return;
-            const rName = rRow.player_name || rRow.name;
-            if (!rName) return;
-
-            const existingIndex = mapped.findIndex(
-              m => safeLower(m?.player_name) === safeLower(rName)
-            );
-            const slotPos = rRow.slot_position || '';
-            const isBenchSlot = slotPos && ALL_BENCH_SLOTS.includes(slotPos as any);
-            const targetStatus = rRow.roster_status === 'BENCH' || isBenchSlot ? 'BENCH' : 'ACTIVE';
-            const targetSlot = slotPos || (targetStatus === 'BENCH' ? 'BENCH' : 'F1');
-
-            if (existingIndex >= 0) {
-              mapped[existingIndex].roster_status = targetStatus;
-              mapped[existingIndex].slot_position = targetSlot;
-              mapped[existingIndex].promoted = true;
-              mapped[existingIndex].isProtected = true;
-              mapped[existingIndex].is_keeper = Boolean(rRow.is_keeper);
-              if (rRow.nhl_id) mapped[existingIndex].nhl_id = rRow.nhl_id;
-              if (rRow.nhl_team) mapped[existingIndex].team = rRow.nhl_team;
-            } else {
-              mapped.push({
-                id: rRow.id || `roster-${rName}`,
-                player_name: rName,
-                position: rRow.position || 'F',
-                team: rRow.nhl_team || 'NHL Team',
-                team_abbr: 'NHL',
-                roster_status: targetStatus,
-                slot_position: targetSlot,
-                goals: rRow.goals ?? 0,
-                assists: rRow.assists ?? 0,
-                points: (rRow.goals ?? 0) + (rRow.assists ?? 0),
-                wins: rRow.wins ?? 0,
-                shutouts: rRow.shutouts ?? 0,
-                saves: rRow.saves ?? 0,
-                goals_against: rRow.goals_against ?? 0,
-                save_pct: rRow.save_pct ?? 0,
-                total_games: rRow.gp ?? rRow.total_games ?? 0,
-                promoted: true,
-                isProtected: true,
-                is_keeper: Boolean(rRow.is_keeper),
-                status: 'active',
-                nhl_id: rRow.nhl_id || null,
-                fantasy_points: rRow.fantasy_points ?? 0,
-                plus_minus: rRow.plus_minus ?? 0,
-                pim: rRow.pim ?? 0,
-                shots: rRow.sog ?? rRow.shots ?? 0,
-                power_play_points: rRow.power_play_points ?? 0,
-                shorthanded_points: rRow.shorthanded_points ?? 0,
-                game_winning_goals: rRow.game_winning_goals ?? 0,
-                gm_name: gm,
-                goals_2026_27: rRow.goals ?? 0,
-                assists_2026_27: rRow.assists ?? 0,
-                points_2026_27: (rRow.goals ?? 0) + (rRow.assists ?? 0),
-                plus_minus_2026_27: rRow.plus_minus ?? 0,
-                pim_2026_27: rRow.pim ?? 0,
-                shots_2026_27: rRow.sog ?? rRow.shots ?? 0,
-                power_play_points_2026_27: rRow.power_play_points ?? 0,
-                shorthanded_points_2026_27: rRow.shorthanded_points ?? 0,
-                game_winning_goals_2026_27: rRow.game_winning_goals ?? 0,
-                wins_2026_27: rRow.wins ?? 0,
-                shutouts_2026_27: rRow.shutouts ?? 0,
-                saves_2026_27: rRow.saves ?? 0,
-                goals_against_2026_27: rRow.goals_against ?? 0,
-                save_pct_2026_27: rRow.save_pct ?? 0,
-                total_games_2026_27: rRow.gp ?? rRow.total_games ?? 0,
-                fantasy_points_2026_27: rRow.fantasy_points ?? 0,
-              });
-            }
-          });
-        }
 
         // Cache loaded roster state in season-aware local storage key
         try {
@@ -959,71 +916,63 @@ export const ActiveSquadManager: React.FC<ActiveSquadManagerProps> = ({
     setSaveStatus('saving');
 
     try {
-      // 1. Sync to season-aware local storage
-      const seasonRosterStorageKey = `winko_roster_${selectedSeason}_${selectedGm}`;
-      try {
-        const eligibleForCache = nextPlayers
-          .filter(p => p.roster_status === 'ACTIVE' || p.roster_status === 'BENCH')
-          .map(p => ({
-            player_name: p.player_name,
-            position: p.position,
-            nhl_id: p.nhl_id,
-            nhl_team: p.team,
-            slot_position: p.slot_position,
-            gm_name: selectedGm,
-            roster_status: p.roster_status,
-            is_keeper: p.is_keeper,
-          }));
-        localStorage.setItem(seasonRosterStorageKey, JSON.stringify(eligibleForCache));
-      } catch (e) {}
+      const dbPromises: (Promise<any> | PromiseLike<any>)[] = [];
 
-      // 2. Direct update / insert into active_roster_players with season_id
-      const updatePlayerActiveRoster = updateActiveRosterRecord(selectedSeason, selectedGm, player.player_name, {
+      // 1. Sync to active_roster_players
+      dbPromises.push(updateActiveRosterRecord(selectedSeason, selectedGm, player.player_name, {
         roster_status: targetStatus,
         slot_position: targetSlot,
         position: player.position || 'F',
         nhl_id: player.nhl_id,
         nhl_team: player.team || player.team_abbr || 'NHL Team',
         is_keeper: Boolean(player.is_keeper),
-      });
+      }));
 
-      const updateOccupantActiveRoster = occupant
-        ? updateActiveRosterRecord(selectedSeason, selectedGm, occupant.player_name, {
-            roster_status: returnStatus,
-            slot_position: returnSlot,
-            position: occupant.position || 'F',
-            nhl_id: occupant.nhl_id,
-            nhl_team: occupant.team || occupant.team_abbr || 'NHL Team',
-            is_keeper: Boolean(occupant.is_keeper),
-          })
-        : Promise.resolve();
+      // 2. If there was someone in the target slot, unassign them in DB
+      if (occupant) {
+        dbPromises.push(updateActiveRosterRecord(selectedSeason, selectedGm, occupant.player_name, {
+          roster_status: returnStatus,
+          slot_position: returnSlot,
+          position: occupant.position || 'F',
+          nhl_id: occupant.nhl_id,
+          nhl_team: occupant.team || occupant.team_abbr || 'NHL Team',
+          is_keeper: Boolean(occupant.is_keeper),
+        }));
 
-      // Backwards-compatible prospects table update
-      const updatePlayerProspect = supabase
-        .from('prospects')
-        .update({ roster_status: targetStatus, slot_position: targetSlot })
-        .eq('id', player.id);
-
-      const updateOccupantProspect = occupant
-        ? supabase
+        // Update occupant in prospects table if they have a numeric or p- prefix ID
+        if (String(occupant.id).startsWith('p-') || !isNaN(Number(occupant.id))) {
+          dbPromises.push(supabase
             .from('prospects')
             .update({ roster_status: returnStatus, slot_position: returnSlot })
             .eq('id', occupant.id)
-        : Promise.resolve({ error: null });
+            .then(res => { if (res.error) throw res.error; return res.data; }));
+        }
+      }
 
-      await Promise.allSettled([
-        updatePlayerActiveRoster,
-        updateOccupantActiveRoster,
-        updatePlayerProspect,
-        updateOccupantProspect,
-      ]);
+      // 3. Update primary player in prospects table if applicable
+      if (String(player.id).startsWith('p-') || !isNaN(Number(player.id))) {
+        dbPromises.push(supabase
+          .from('prospects')
+          .update({ roster_status: targetStatus, slot_position: targetSlot })
+          .eq('id', player.id)
+          .then(res => { if (res.error) throw res.error; return res.data; }));
+      }
 
-      setSaveStatus('saved');
-      setTimeout(() => {
-        setSaveStatus(prev => prev === 'saved' ? 'idle' : prev);
-      }, 3500);
+      const results = await Promise.allSettled(dbPromises);
+      const errors = results.filter(r => r.status === 'rejected');
+      
+      if (errors.length > 0) {
+        console.error('Some roster sync operations failed:', errors);
+        addToast('Roster updated in UI, but some database syncs failed. Refresh recommended.', 'error');
+        setSaveStatus('idle');
+      } else {
+        setSaveStatus('saved');
+        setTimeout(() => {
+          setSaveStatus(prev => prev === 'saved' ? 'idle' : prev);
+        }, 3500);
+      }
     } catch (err: any) {
-      console.error('Roster movement error:', err);
+      console.error('Critical roster movement error:', err);
       setSaveStatus('idle');
       setPlayers(prevPlayers);
       addToast(`Movement failed: ${err.message}`, 'error');
@@ -1081,43 +1030,38 @@ export const ActiveSquadManager: React.FC<ActiveSquadManagerProps> = ({
 
     setSaveStatus('saving');
     try {
-      const seasonRosterStorageKey = `winko_roster_${selectedSeason}_${selectedGm}`;
-      try {
-        const eligibleForCache = players
-          .map(p => p.id === player.id ? { ...p, roster_status: 'BENCH' as const, slot_position: 'BENCH' } : p)
-          .filter(p => p.roster_status === 'ACTIVE' || p.roster_status === 'BENCH')
-          .map(p => ({
-            player_name: p.player_name,
-            position: p.position,
-            nhl_id: p.nhl_id,
-            nhl_team: p.team,
-            slot_position: p.slot_position,
-            gm_name: selectedGm,
-            roster_status: p.roster_status,
-            is_keeper: p.is_keeper,
-          }));
-        localStorage.setItem(seasonRosterStorageKey, JSON.stringify(eligibleForCache));
-      } catch (e) {}
+      const dbPromises: (Promise<any> | PromiseLike<any>)[] = [];
 
-      await Promise.allSettled([
-        updateActiveRosterRecord(selectedSeason, selectedGm, player.player_name, {
-          roster_status: 'BENCH',
-          slot_position: 'BENCH',
-          position: player.position || 'F',
-          nhl_id: player.nhl_id,
-          nhl_team: player.team || player.team_abbr || 'NHL Team',
-          is_keeper: Boolean(player.is_keeper),
-        }),
-        supabase
+      dbPromises.push(updateActiveRosterRecord(selectedSeason, selectedGm, player.player_name, {
+        roster_status: 'BENCH',
+        slot_position: 'BENCH',
+        position: player.position || 'F',
+        nhl_id: player.nhl_id,
+        nhl_team: player.team || player.team_abbr || 'NHL Team',
+        is_keeper: Boolean(player.is_keeper),
+      }));
+
+      if (String(player.id).startsWith('p-') || !isNaN(Number(player.id))) {
+        dbPromises.push(supabase
           .from('prospects')
           .update({ roster_status: 'BENCH', slot_position: 'BENCH' })
           .eq('id', player.id)
-      ]);
+          .then(res => { if (res.error) throw res.error; return res.data; }));
+      }
 
-      setSaveStatus('saved');
-      setTimeout(() => {
-        setSaveStatus(prev => prev === 'saved' ? 'idle' : prev);
-      }, 3500);
+      const results = await Promise.allSettled(dbPromises);
+      const errors = results.filter(r => r.status === 'rejected');
+
+      if (errors.length > 0) {
+        console.error('Unassign sync failures:', errors);
+        addToast('Removed in UI, but database update failed.', 'error');
+        setSaveStatus('idle');
+      } else {
+        setSaveStatus('saved');
+        setTimeout(() => {
+          setSaveStatus(prev => prev === 'saved' ? 'idle' : prev);
+        }, 3500);
+      }
     } catch (err: any) {
       console.error('Unassign error:', err);
       setSaveStatus('idle');

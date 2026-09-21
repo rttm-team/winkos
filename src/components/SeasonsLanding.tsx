@@ -56,6 +56,7 @@ export const SeasonsLanding: React.FC<SeasonsLandingProps> = ({
       <div className="space-y-6 animate-in fade-in duration-300">
         <ActiveRosterStatsTable
           selectedGm={viewingRosterGm}
+          selectedSeason={selectedSeasonId || '2026-27'}
           theme={theme}
           availableGms={gms.map(g => g.name)}
           onSelectGm={(gm) => setViewingRosterGm(gm)}

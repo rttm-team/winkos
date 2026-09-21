@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
-import { INITIAL_GMS, NHL_TEAMS_MAP, getStoredScoringStats, getBaselineScoringStats } from '../data/mockData';
+import { NHL_TEAMS_MAP, getStoredScoringStats, getBaselineScoringStats } from '../data/mockData';
 import PositionSlotTracker from './PositionSlotTracker';
 import {
   Trophy,
@@ -52,6 +52,7 @@ export interface RosterPlayerStats {
 export interface ActiveRosterStatsTableProps {
   gmName?: string;
   selectedGm?: string;
+  selectedSeason?: string;
   theme?: 'light' | 'dark';
   onSelectGm?: (gmName: string) => void;
   availableGms?: string[];
@@ -158,6 +159,7 @@ type SortField =
 export const ActiveRosterStatsTable: React.FC<ActiveRosterStatsTableProps> = ({
   gmName,
   selectedGm,
+  selectedSeason,
   theme,
   onSelectGm,
   availableGms = LEAGUE_GMS,
@@ -193,61 +195,22 @@ export const ActiveRosterStatsTable: React.FC<ActiveRosterStatsTableProps> = ({
   const loadRosterStats = useCallback(async (gm: string) => {
     setLoading(true);
     try {
-      // 1. Primary: query active_roster_players table filtered by selected gm_name
+      const currentSeason = selectedSeason || '2026-27';
+      const altSeason = currentSeason === '2026-27' ? '2026-2027' : '2026-27';
+
+      // 1. Primary: query active_roster_players table filtered by selected gm_name and season_id
       const { data: rosterTableData, error: rosterTableError } = await supabase
         .from('active_roster_players')
         .select('*')
-        .eq('gm_name', gm);
+        .eq('gm_name', gm)
+        .in('season_id', [currentSeason, altSeason, '2026-2027', '2026-27']);
 
       let rows: any[] = [];
 
       if (!rosterTableError && rosterTableData && rosterTableData.length > 0) {
         rows = rosterTableData;
-      } else {
-        // 2. Seamless fallback to prospects table for 22 main roster players (promoted / active / bench)
-        const { data: prospectsData, error: prospectsError } = await supabase
-          .from('prospects')
-          .select('*')
-          .eq('gm_name', gm);
-
-        if (!prospectsError && prospectsData && prospectsData.length > 0) {
-          // Filter for promoted/protected or explicit active/bench status
-          // NOT farm prospects
-          const mainRosterProspects = prospectsData.filter((p: any) => {
-            if (p.is_inactive || p.player_name === '[DELETED]') return false;
-            if (p.roster_status === 'ACTIVE' || p.roster_status === 'BENCH') return true;
-            if (p.promoted || p.protected || p.is_protected) return true;
-            if (p.slot_position && p.slot_position !== 'FARM') return true;
-            return false;
-          });
-
-          if (mainRosterProspects.length > 0) {
-            rows = mainRosterProspects;
-          }
-        }
-
-        // 3. Fallback to INITIAL_GMS if DB is completely unpopulated for this GM
-        if (rows.length === 0) {
-          const gmObj = INITIAL_GMS.find(g => (g?.name || '').toLowerCase() === (gm || '').toLowerCase());
-          if (gmObj && gmObj.prospects) {
-            rows = gmObj.prospects
-              .filter(p => p && p.status !== 'trashed' && (p.promoted || p.isProtected))
-              .map(p => ({
-                id: p.id,
-                player_name: p.name,
-                position: p.position,
-                nhl_team: p.nhlTeam,
-                nhl_team_abbr: p.nhlTeamAbbr,
-                promoted: p.promoted,
-                protected: p.isProtected,
-                goals: p.goals,
-                assists: p.assists,
-                total_games: p.totalGames,
-                gm_name: gm,
-              }));
-          }
-        }
-      }
+      } 
+      // Removed fallbacks to prospects and INITIAL_GMS to strictly show only active_roster_players as requested
 
       // Format and ensure 22 Main Roster players are correctly slotted into Active (15) and Bench (7)
       // Group by position
