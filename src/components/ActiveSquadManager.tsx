@@ -2138,7 +2138,6 @@ export const ActiveSquadManager: React.FC<ActiveSquadManagerProps> = ({
                   </div>
                 </div>
               </div>
-            </div>
                 {/* UNASSIGNED RESERVES (If GM has additional drafted/promoted & protected players waiting for slots) */}
                 {unassignedBenchPlayers.length > 0 && (
                   <div className="mt-8 pt-6 border-t border-slate-200 dark:border-slate-800">
@@ -2241,92 +2240,7 @@ export const ActiveSquadManager: React.FC<ActiveSquadManagerProps> = ({
                     </div>
                   </div>
                 )}
-              {/* ==========================================
-                  SECTION 3: PROSPECT POOL / FARM
-                  Non-promoted developing prospects
-              ========================================== */}
-              <div
-                className={`p-6 rounded-2xl border transition-all ${
-                  isLight
-                    ? 'bg-white border-slate-200 shadow-xs'
-                    : 'bg-slate-900/60 border-slate-800 shadow-md'
-                }`}
-              >
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-200 dark:border-slate-800">
-                  <div>
-                    <div className="flex items-center gap-2 mb-1">
-                      <Lock className="h-4 w-4 text-amber-400" />
-                      <span className="text-xs font-black uppercase tracking-wider text-amber-500">
-                        3. Prospect Pool / Farm
-                      </span>
-                      <span className="text-xs text-slate-400">•</span>
-                      <span className="text-xs font-semibold text-slate-400">In Development</span>
-                    </div>
-                    <h3 className={`text-lg font-black ${isLight ? 'text-slate-900' : 'text-white'}`}>
-                      Prospect Pool / Farm ({farmPlayers.length})
-                    </h3>
-                    <p className={`text-xs mt-0.5 ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>
-                      Non-promoted or non-protected prospects stay in the Farm section. They cannot occupy Active or Bench slots until they are both promoted and protected.
-                    </p>
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={() => setShowFarmSection(prev => !prev)}
-                    className={`px-3.5 py-1.5 rounded-xl text-xs font-bold border transition-all cursor-pointer ${
-                      isLight
-                        ? 'bg-slate-100 hover:bg-slate-200 border-slate-300 text-slate-700'
-                        : 'bg-slate-800 hover:bg-slate-700 border-slate-700 text-slate-300'
-                    }`}
-                  >
-                    {showFarmSection ? 'Hide Farm Prospects' : `View Farm Prospects (${farmPlayers.length})`}
-                  </button>
-                </div>
-
-                {showFarmSection && (
-                  <div className="mt-4">
-                    {farmPlayers.length === 0 ? (
-                      <div className="py-8 text-center text-slate-400 text-xs">
-                        <p className="font-semibold">No developing prospects in the farm pool.</p>
-                      </div>
-                    ) : (
-                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                        {farmPlayers.map(prospect => (
-                          <div
-                            key={prospect.id}
-                            className={`p-3.5 rounded-xl border flex items-center justify-between gap-3 ${
-                              isLight ? 'bg-slate-50 border-slate-200' : 'bg-slate-950/70 border-slate-800/90'
-                            }`}
-                          >
-                            <div className="min-w-0 flex-1">
-                              <div className="flex items-center gap-2">
-                                <span className="font-bold text-xs truncate text-slate-200">
-                                  {prospect.player_name}
-                                </span>
-                                <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-slate-800 text-slate-400 border border-slate-700">
-                                  {prospect.position}
-                                </span>
-                              </div>
-                              <div className="text-[11px] text-slate-400 mt-0.5">
-                                {prospect.team_abbr} • {prospect.total_games} NHL GP • {prospect.promoted ? 'Promoted (Unprotected)' : 'In Development'}
-                              </div>
-                            </div>
-
-                            <button
-                              type="button"
-                              onClick={() => handlePromoteFarmProspect(prospect)}
-                              className="px-2.5 py-1 rounded-lg text-xs font-bold bg-purple-600 hover:bg-purple-500 text-white transition-all cursor-pointer shrink-0"
-                              title={prospect.promoted ? "Protect prospect to make eligible for roster" : "Promote prospect to make eligible for Bench & Active roster"}
-                            >
-                              {prospect.promoted ? 'Protect' : 'Promote'}
-                            </button>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
+            </div>
             </>
           )}
         </main>
