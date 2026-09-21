@@ -93,6 +93,49 @@ export const SeasonsLanding: React.FC<SeasonsLandingProps> = ({
 
   const currentLeaderboard = selectedSeasonId ? getLeaderboardForSeason(selectedSeasonId) : [];
 
+  // Mock mini-leaderboards for positions (using same ranking for now, but conceptually distinct)
+  const forwardLeaders = [...currentLeaderboard].sort((a, b) => b.total_fantasy_points - a.total_fantasy_points).slice(0, 5);
+  const defenseLeaders = [...currentLeaderboard].sort((a, b) => b.total_fantasy_points - a.total_fantasy_points).slice(0, 5);
+  const goalieLeaders = [...currentLeaderboard].sort((a, b) => b.total_fantasy_points - a.total_fantasy_points).slice(0, 5);
+
+  const MiniLeaderboard = ({ title, data, icon: Icon, accentColor }: { title: string, data: any[], icon: any, accentColor: string }) => (
+    <div className={`rounded-2xl border transition-all overflow-hidden h-full ${
+      isLight ? 'border-slate-200 bg-white shadow-xs' : 'border-slate-800/90 bg-slate-900/40 backdrop-blur-sm shadow-xl shadow-black/20'
+    }`}>
+      <div className="px-5 py-4 border-b border-slate-200 dark:border-slate-800/60 flex items-center gap-2.5">
+        <div className={`p-1.5 rounded-lg ${accentColor} bg-opacity-10 text-opacity-100`}>
+          <Icon className="h-4 w-4" />
+        </div>
+        <h3 className={`text-sm font-black uppercase tracking-wider ${isLight ? 'text-slate-900' : 'text-white'}`}>
+          {title}
+        </h3>
+      </div>
+      <div className="divide-y divide-slate-100 dark:divide-slate-800/40">
+        {data.map((entry, idx) => (
+          <div key={entry.id} className="px-5 py-3 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
+            <div className="flex items-center gap-3 min-w-0">
+              <span className={`text-[10px] font-black tabular-nums w-4 ${isLight ? 'text-slate-400' : 'text-slate-500'}`}>
+                {idx + 1}
+              </span>
+              <div className="min-w-0">
+                <div className={`text-xs font-bold truncate ${isLight ? 'text-slate-800' : 'text-slate-200'}`}>
+                  {entry.teamName}
+                </div>
+                <div className="text-[10px] text-slate-500 truncate">{entry.name}</div>
+              </div>
+            </div>
+            <div className="text-right shrink-0 ml-4">
+              <span className="text-xs font-black text-cyan-500 tabular-nums">
+                {entry.total_fantasy_points.toLocaleString()}
+              </span>
+              <span className="text-[9px] font-bold text-slate-500 block">FP</span>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
       {!selectedSeasonId ? (
@@ -188,8 +231,8 @@ export const SeasonsLanding: React.FC<SeasonsLandingProps> = ({
       </>
     ) : (
         <div className="space-y-6">
-          {/* Standard Header Style for Individual Season */}
-          <section className={`mb-8 flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between border-b pb-6 ${
+          {/* Individual Season Standings View */}
+          <section className={`mb-8 flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between border-b pb-8 ${
             isLight ? 'border-slate-200' : 'border-slate-800/80'
           }`}>
             <div>
@@ -206,32 +249,17 @@ export const SeasonsLanding: React.FC<SeasonsLandingProps> = ({
                   </button>
                 ) : (
                   <div className="flex items-center gap-2 mb-1">
-                    <span className="text-xs font-black uppercase tracking-wider text-emerald-500">
-                      Winko's Hockey Pool
-                    </span>
-                    <span className="text-xs text-slate-400">•</span>
-                    <span className="text-xs font-bold px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                      Live Standings
+                    <span className={`text-xs font-black uppercase tracking-widest ${isLight ? 'text-slate-400' : 'text-slate-500'}`}>
+                      {selectedSeasonId === '2026-27' ? '2026-27 League Race' : SEASONS.find(s => s.id === selectedSeasonId)?.label}
                     </span>
                   </div>
                 )}
-                {SEASONS.find(s => s.id === selectedSeasonId)?.isCurrent && selectedSeasonId !== '2026-27' && (
-                  <span className="flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-[10px] font-black uppercase tracking-wider">
-                    <span className="h-1 w-1 rounded-full bg-emerald-500 animate-pulse" />
-                    Active
-                  </span>
-                )}
               </div>
-              <h1 className={`text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight ${
+              <h1 className={`text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight ${
                 isLight ? 'text-slate-900' : 'text-white'
               }`}>
-                {selectedSeasonId === '2026-27' ? 'Pool Standings' : SEASONS.find(s => s.id === selectedSeasonId)?.label}
+                Pool Standings
               </h1>
-              <p className={`text-xs sm:text-sm mt-1.5 max-w-2xl ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>
-                {selectedSeasonId === '2026-27' 
-                  ? 'Real-time leaderboard for the 2026-27 Winko Cup race. Track your progress against the league.'
-                  : SEASONS.find(s => s.id === selectedSeasonId)?.description}
-              </p>
             </div>
 
             <div className="flex flex-wrap items-center gap-3">
@@ -245,161 +273,130 @@ export const SeasonsLanding: React.FC<SeasonsLandingProps> = ({
                   }`}
                 >
                   <History className="h-4 w-4" />
-                  View Past Seasons
+                  Season Archive
                 </button>
               )}
               <button
                 onClick={onManageTeam}
-                className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-black bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg shadow-emerald-500/20 transition-all active:scale-95"
+                className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-black bg-slate-900 dark:bg-white text-white dark:text-slate-950 shadow-xl transition-all active:scale-95"
               >
                 <LayoutDashboard className="h-4 w-4" />
-                Manage My Team
+                Manage Team
               </button>
             </div>
           </section>
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {/* Leaderboard Section */}
-            <div className="lg:col-span-2 space-y-6">
-              <div className={`rounded-3xl border ${isLight ? 'bg-white border-slate-200' : 'bg-slate-900 border-slate-800'} overflow-hidden`}>
-                <div className="p-6 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="h-10 w-10 rounded-xl bg-amber-500/10 flex items-center justify-center text-amber-500">
-                      <Trophy className="h-5 w-5" />
-                    </div>
-                    <div>
-                      <h2 className={`text-xl font-black ${isLight ? 'text-slate-900' : 'text-white'}`}>
-                        Season Leaderboard
-                      </h2>
-                      <p className="text-xs text-slate-500">Overall fantasy points ranking</p>
-                    </div>
-                  </div>
-                </div>
+          <div className="space-y-12">
+            {/* Primary Leaderboard Table */}
+            <div className={`rounded-3xl border transition-all overflow-hidden ${
+              isLight
+                ? 'border-slate-200 bg-white shadow-xs'
+                : 'border-slate-800/90 bg-gradient-to-b from-slate-900/95 via-slate-900 to-slate-950 shadow-xl shadow-black/40'
+            }`}>
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-sm whitespace-nowrap">
+                  <thead className={`border-b text-xs font-black uppercase tracking-wider ${
+                    isLight
+                      ? 'bg-slate-50 text-slate-500 border-slate-200'
+                      : 'bg-slate-950/80 text-slate-400 border-slate-800/80'
+                  }`}>
+                    <tr>
+                      <th className="px-6 py-5 w-16 text-center">Rank</th>
+                      <th className="px-6 py-5">General Manager / Team</th>
+                      <th className="px-6 py-5 text-right">Goals / Assists</th>
+                      <th className="px-6 py-5 text-right">Fantasy Points</th>
+                      <th className="px-6 py-5 text-right w-32">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody className={`divide-y ${isLight ? 'divide-slate-100' : 'divide-slate-800/70'}`}>
+                    {currentLeaderboard.map((gm, idx) => (
+                      <tr
+                        key={gm.id}
+                        onClick={() => setViewingRosterGm(gm.name)}
+                        className={`transition-colors group cursor-pointer ${
+                          isLight ? 'hover:bg-slate-50/80' : 'hover:bg-slate-800/40'
+                        }`}
+                      >
+                        <td className="px-6 py-5 text-center">
+                          {idx === 0 ? (
+                            <div className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-amber-500/15 text-amber-500 font-black ring-1 ring-amber-500/40 shadow-sm">
+                              <Crown className="h-5 w-5" />
+                            </div>
+                          ) : (
+                            <span className={`text-sm font-black tabular-nums ${isLight ? 'text-slate-400' : 'text-slate-500'}`}>
+                              {idx + 1}
+                            </span>
+                          )}
+                        </td>
 
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left border-collapse">
-                    <thead>
-                      <tr className={`text-[10px] font-black uppercase tracking-widest ${isLight ? 'bg-slate-50 text-slate-500' : 'bg-slate-800/50 text-slate-400'}`}>
-                        <th className="px-6 py-4">Rank</th>
-                        <th className="px-6 py-4">General Manager</th>
-                        <th className="px-6 py-4 text-right">Points</th>
-                        <th className="px-6 py-4 text-right">W-G-A</th>
-                        <th className="px-6 py-4 text-right">Roster</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
-                      {currentLeaderboard.map((gm, idx) => (
-                        <tr 
-                          key={gm.id} 
-                          onClick={() => setViewingRosterGm(gm.name)}
-                          className={`group transition-colors cursor-pointer ${isLight ? 'hover:bg-slate-100/80' : 'hover:bg-slate-800/50'}`}
-                        >
-                          <td className="px-6 py-5">
-                            <div className="flex items-center gap-2">
-                              {idx === 0 ? (
-                                <div className="h-8 w-8 rounded-full bg-amber-500 flex items-center justify-center text-white shadow-md shadow-amber-500/20">
-                                  <Crown className="h-4 w-4" />
-                                </div>
-                              ) : (
-                                <span className={`text-sm font-bold ${isLight ? 'text-slate-500' : 'text-slate-400'}`}>
-                                  #{idx + 1}
-                                </span>
-                              )}
-                            </div>
-                          </td>
-                          <td className="px-6 py-5">
-                            <div>
-                              <div className={`text-sm font-black group-hover:text-cyan-500 transition-colors ${isLight ? 'text-slate-900' : 'text-white'}`}>
-                                {gm.teamName}
-                              </div>
-                              <div className="text-[11px] text-slate-500 flex items-center gap-1 mt-0.5">
-                                <Users className="h-3 w-3" />
-                                {gm.name}
-                              </div>
-                            </div>
-                          </td>
-                          <td className="px-6 py-5 text-right">
-                            <span className="text-base font-black text-cyan-500">
+                        <td className="px-6 py-5">
+                          <div className="flex flex-col">
+                            <span className={`text-base font-black ${isLight ? 'text-slate-900' : 'text-white group-hover:text-cyan-400 transition-colors'}`}>
+                              {gm.teamName}
+                            </span>
+                            <span className="text-[11px] font-bold text-slate-500 flex items-center gap-1 uppercase tracking-wide">
+                              <Users className="h-3 w-3" />
+                              {gm.name}
+                            </span>
+                          </div>
+                        </td>
+
+                        <td className="px-6 py-5 text-right">
+                          <div className={`text-sm font-black font-mono ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>
+                            {gm.goals}<span className="text-[10px] text-slate-500 ml-0.5">G</span>
+                            <span className="mx-2 text-slate-700">•</span>
+                            {gm.assists}<span className="text-[10px] text-slate-500 ml-0.5">A</span>
+                          </div>
+                        </td>
+
+                        <td className="px-6 py-5 text-right">
+                          <div className="flex flex-col items-end">
+                            <span className="text-xl font-black text-cyan-500 tabular-nums">
                               {gm.total_fantasy_points.toLocaleString()}
                             </span>
-                            <span className="text-[10px] font-bold text-slate-500 block">FP</span>
-                          </td>
-                          <td className="px-6 py-5 text-right">
-                            <div className={`text-xs font-mono font-bold ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>
-                              {gm.wins}W • {gm.goals}G • {gm.assists}A
-                            </div>
-                          </td>
-                          <td className="px-6 py-5 text-right" onClick={(e) => { e.stopPropagation(); setViewingRosterGm(gm.name); }}>
-                            <button
-                              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
-                                isLight
-                                  ? 'bg-slate-100 text-slate-700 hover:bg-cyan-600 hover:text-white'
-                                  : 'bg-slate-800 text-slate-300 hover:bg-cyan-500 hover:text-slate-950'
-                              }`}
-                            >
-                              <Eye className="h-3.5 w-3.5" />
-                              View Roster
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                            <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Winko Points</span>
+                          </div>
+                        </td>
+
+                        <td className="px-6 py-5 text-right">
+                          <button
+                            onClick={(e) => { e.stopPropagation(); setViewingRosterGm(gm.name); }}
+                            className={`p-2 rounded-xl border transition-all ${
+                              isLight
+                                ? 'bg-slate-100 border-slate-200 text-slate-600 hover:bg-slate-900 hover:text-white hover:border-slate-900 shadow-sm'
+                                : 'bg-slate-800/80 border-slate-700 text-slate-400 hover:bg-white hover:text-slate-950 hover:border-white shadow-lg'
+                            }`}
+                          >
+                            <Eye className="h-5 w-5" />
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             </div>
 
-            {/* Stats Summary Sidebar */}
-            <div className="space-y-6">
-              <div className={`p-6 rounded-3xl border ${isLight ? 'bg-white border-slate-200 shadow-sm' : 'bg-slate-900 border-slate-800 shadow-lg'}`}>
-                <h3 className={`text-sm font-black uppercase tracking-wider mb-4 ${isLight ? 'text-slate-900' : 'text-white'}`}>
-                  Season Stats
-                </h3>
-                <div className="space-y-4">
-                  <div className={`p-4 rounded-2xl ${isLight ? 'bg-slate-50' : 'bg-slate-800/50'}`}>
-                    <div className="flex items-center gap-3 mb-1">
-                      <TrendingUp className="h-4 w-4 text-emerald-500" />
-                      <span className="text-xs font-bold text-slate-500 uppercase tracking-wide">League Avg</span>
-                    </div>
-                    <div className={`text-2xl font-black ${isLight ? 'text-slate-900' : 'text-white'}`}>
-                      {Math.round(currentLeaderboard.reduce((acc, curr) => acc + curr.total_fantasy_points, 0) / (currentLeaderboard.length || 1)).toLocaleString()}
-                    </div>
-                  </div>
-
-                  <div className={`p-4 rounded-2xl ${isLight ? 'bg-slate-50' : 'bg-slate-800/50'}`}>
-                    <div className="flex items-center gap-3 mb-1">
-                      <Users className="h-4 w-4 text-cyan-500" />
-                      <span className="text-xs font-bold text-slate-500 uppercase tracking-wide">Total GMs</span>
-                    </div>
-                    <div className={`text-2xl font-black ${isLight ? 'text-slate-900' : 'text-white'}`}>
-                      {currentLeaderboard.length}
-                    </div>
-                  </div>
-                </div>
-
-                <div className="mt-6 pt-6 border-t border-slate-200 dark:border-slate-800">
-                  <button
-                    onClick={onManageTeam}
-                    className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl text-sm font-bold bg-slate-900 dark:bg-white text-white dark:text-slate-950 transition-all hover:scale-[1.02] active:scale-95"
-                  >
-                    Go to Team Manager
-                    <ChevronRight className="h-4 w-4" />
-                  </button>
-                </div>
-              </div>
-
-              {/* Status Badge */}
-              <div className="p-6 rounded-3xl bg-gradient-to-br from-cyan-500 to-purple-600 text-white shadow-xl shadow-cyan-500/20">
-                <div className="flex items-center gap-3 mb-3">
-                  <div className="h-8 w-8 rounded-lg bg-white/20 flex items-center justify-center">
-                    <Info className="h-5 w-5 text-white" />
-                  </div>
-                  <span className="text-xs font-black uppercase tracking-widest">Season Note</span>
-                </div>
-                <p className="text-sm font-medium leading-relaxed opacity-90">
-                  The 2026-27 season is currently in the "Regular Season" phase. Roster moves are unrestricted until the trade deadline.
-                </p>
-              </div>
+            {/* Positional Mini-Leaderboards Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <MiniLeaderboard 
+                title="Forward Leaders" 
+                data={forwardLeaders} 
+                icon={TrendingUp} 
+                accentColor="bg-blue-500 text-blue-500"
+              />
+              <MiniLeaderboard 
+                title="Defense Leaders" 
+                data={defenseLeaders} 
+                icon={Crown} 
+                accentColor="bg-amber-500 text-amber-500"
+              />
+              <MiniLeaderboard 
+                title="Goalie Leaders" 
+                data={goalieLeaders} 
+                icon={Trophy} 
+                accentColor="bg-purple-500 text-purple-500"
+              />
             </div>
           </div>
         </div>
