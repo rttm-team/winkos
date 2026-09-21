@@ -26,7 +26,7 @@ jobs:
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-        run: python scripts/sync_stats.py
+        run: python scripts/nhl_sync.py
 
       - name: 2. Sync Active Roster Stats
         env:
