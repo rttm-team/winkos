@@ -205,10 +205,41 @@ export const ActiveRosterStatsTable: React.FC<ActiveRosterStatsTableProps> = ({
         .eq('gm_name', gm)
         .in('season_id', [currentSeason, altSeason, '2026-2027', '2026-27']);
 
+      // 1b. Fetch all prospects for this GM to identify which active_roster rows are actually prospects
+      // This is crucial for filtering out demoted/unprotected farm prospects that shouldn't be on the active roster
+      const { data: allProspects, error: prospectError } = await supabase
+        .from('prospects')
+        .select('*')
+        .eq('gm_name', gm);
+
       let rows: any[] = [];
 
       if (!rosterTableError && rosterTableData && rosterTableData.length > 0) {
-        rows = rosterTableData;
+        const rawRows = rosterTableData;
+        const prospectsMap = new Map<string, any>();
+        if (allProspects) {
+          allProspects.forEach((p: any) => {
+            const name = (p.player_name || p.name || '').toLowerCase().trim();
+            if (name) prospectsMap.set(name, p);
+          });
+        }
+
+        // Apply filtering logic mirroring ActiveSquadManager.tsx
+        rows = rawRows.filter((row: any) => {
+          const name = (row.player_name || row.name || '').toLowerCase().trim();
+          const prospect = prospectsMap.get(name);
+          
+          if (!prospect) {
+            // Not a farm prospect, likely an NHL pro or keeper
+            return true;
+          }
+
+          // It's a prospect - only include if promoted AND protected
+          const isPromoted = Boolean(prospect.promoted);
+          const isProtected = Boolean(prospect.protected ?? prospect.is_protected ?? prospect.isProtected);
+          
+          return isPromoted && isProtected;
+        });
       } 
       // Removed fallbacks to prospects and INITIAL_GMS to strictly show only active_roster_players as requested
 

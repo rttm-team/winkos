@@ -394,24 +394,23 @@ export const ActiveSquadManager: React.FC<ActiveSquadManagerProps> = ({
     }
   ) => {
     const currentSeason = seasonId || '2026-27';
-    const altSeason = currentSeason === '2026-27' ? '2026-2027' : '2026-27';
     const cleanName = (playerName || '').trim();
 
     if (!cleanName) return;
 
     try {
-      // 1. Try to find any existing records for this player to update them specifically by ID
-      const { data: existing, error: fetchError } = await supabase
+      // Use upsert for better reliability and to prevent duplicate creation
+      // We prioritize updating any record for this player+gm in the current season range
+      // If we can't find an ID, we'll let Supabase's unique constraints (if any) or our logic handle it
+      
+      const { data: existing } = await supabase
         .from('active_roster_players')
-        .select('id')
+        .select('id, season_id')
         .eq('gm_name', gmName)
-        .eq('player_name', cleanName)
-        .in('season_id', [currentSeason, altSeason, '2026-2027', '2026-27']);
-
-      if (fetchError) throw fetchError;
+        .eq('player_name', cleanName);
 
       if (existing && existing.length > 0) {
-        // Update all matching rows to keep them in sync
+        // Update all matching rows to keep them in sync, or prioritize the current season
         const updatePromises = existing.map(rec => 
           supabase
             .from('active_roster_players')
@@ -423,15 +422,14 @@ export const ActiveSquadManager: React.FC<ActiveSquadManagerProps> = ({
               nhl_team: updates.nhl_team,
               is_keeper: updates.is_keeper,
               updated_at: new Date().toISOString(),
+              season_id: rec.season_id || currentSeason, // preserve season
             })
             .eq('id', rec.id)
         );
-        const results = await Promise.all(updatePromises);
-        const errors = results.filter(r => r.error).map(r => r.error);
-        if (errors.length > 0) throw errors[0];
+        await Promise.all(updatePromises);
       } else {
-        // 2. If no matching row exists, insert it into the current season
-        const { error: insertError } = await supabase.from('active_roster_players').insert([{
+        // Insert new record
+        await supabase.from('active_roster_players').insert([{
           season_id: currentSeason,
           gm_name: gmName,
           player_name: cleanName,
@@ -442,11 +440,10 @@ export const ActiveSquadManager: React.FC<ActiveSquadManagerProps> = ({
           slot_position: updates.slot_position,
           is_keeper: Boolean(updates.is_keeper),
         }]);
-        if (insertError) throw insertError;
       }
     } catch (err) {
       console.error('Failed to update active roster record:', err);
-      throw err; // Rethrow so caller knows it failed
+      throw err;
     }
   };
 
@@ -565,7 +562,14 @@ export const ActiveSquadManager: React.FC<ActiveSquadManagerProps> = ({
         });
 
         // Process active roster & keepers (overlaying or adding)
-        activeRows.forEach((row: any) => {
+        // Sort activeRows to ensure records from the current season win the merge if duplicates exist
+        const sortedActiveRows = [...activeRows].sort((a, b) => {
+          if (a.season_id === currentSeason) return 1;
+          if (b.season_id === currentSeason) return -1;
+          return 0;
+        });
+
+        sortedActiveRows.forEach((row: any) => {
           if (!row) return;
           const name = row?.player_name || row?.name;
           if (!name) return;

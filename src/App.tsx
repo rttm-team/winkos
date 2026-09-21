@@ -381,33 +381,39 @@ export default function App() {
 
   const syncProspectToBench = async (prospect: any, gmName: string) => {
     const isPromProt = prospect.promoted && prospect.isProtected;
+    const currentSeason = '2026-27'; // Default season for new additions
+    
     if (isPromProt) {
       // Find open bench slot
       const { data: currentBench } = await supabase
         .from('active_roster_players')
         .select('slot_position')
         .eq('gm_name', gmName)
-        .eq('roster_status', 'BENCH');
+        .eq('roster_status', 'BENCH')
+        .in('season_id', [currentSeason, '2026-2027']);
       
       const usedSlots = currentBench?.map(r => r.slot_position) || [];
-      const pos = prospect.position.toUpperCase();
+      const pos = (prospect.position || 'F').toUpperCase();
       let targetSlot = 'BENCH';
 
       if (pos === 'F') targetSlot = ['BF1', 'BF2', 'BF3'].find(s => !usedSlots.includes(s)) || 'BENCH';
       else if (pos === 'D') targetSlot = ['BD1', 'BD2'].find(s => !usedSlots.includes(s)) || 'BENCH';
       else if (pos === 'G') targetSlot = ['BG1', 'BG2'].find(s => !usedSlots.includes(s)) || 'BENCH';
 
-      // Upsert
+      // Upsert into active_roster_players for the current season
+      // We try to match by name, gm, and season to avoid duplicates across seasons
       await supabase.from('active_roster_players').upsert({
+        season_id: currentSeason,
         gm_name: gmName,
         player_name: prospect.player_name,
-        position: prospect.position,
+        position: prospect.position || 'F',
         roster_status: 'BENCH',
         slot_position: targetSlot,
         gp: prospect.total_games || 0,
-      }, { onConflict: 'player_name,gm_name' });
+      }, { onConflict: 'player_name,gm_name,season_id' });
     } else {
-      // Remove from bench
+      // Remove from bench specifically for this GM and name
+      // We keep it broad on season to ensure we clean up any demoted records
       await supabase.from('active_roster_players')
         .delete()
         .eq('gm_name', gmName)
