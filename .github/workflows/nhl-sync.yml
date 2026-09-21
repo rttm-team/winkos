@@ -1,13 +1,13 @@
-name: Nightly NHL Stats & Scoring Sync
+name: Daily Winko's Sync (Prospects, Active Roster & Challenges)
 
 on:
   schedule:
-    # Runs every night at 3:00 AM EST (08:00 UTC)
-    - cron: '0 8 * * *'
+    # Runs every morning at 9:00 AM EST (14:00 UTC)
+    - cron: '0 14 * * *'
   workflow_dispatch: # Allows manual trigger button in GitHub Actions UI
 
 jobs:
-  sync-stats:
+  daily-sync:
     runs-on: ubuntu-latest
 
     steps:
@@ -17,19 +17,25 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: '3.12'
 
       - name: Install dependencies
         run: pip install requests
 
-      - name: Run NHL Sync & Scoring Script
+      - name: 1. Sync Farm Prospects
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-        run: python scripts/nhl_sync.py
+        run: python scripts/sync_stats.py
 
-      - name: Sync Active Roster Stats
+      - name: 2. Sync Active Roster Stats
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
         run: python scripts/sync_active_roster.py
+
+      - name: 3. Sync Daily Challenges & Schedule
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: python scripts/sync_daily_challenges.py
