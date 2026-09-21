@@ -1045,7 +1045,7 @@ export const ActiveRosterStatsTable: React.FC<ActiveRosterStatsTableProps> = ({
                           <div className="flex items-center gap-2.5 min-w-0">
                             <div className="min-w-0">
                               <div className="flex items-center gap-1.5">
-                                <span className={`font-bold text-xs truncate ${isLight ? 'text-slate-900' : 'text-white'}`}>
+                                <span className={`font-kanit font-medium text-sm truncate ${isLight ? 'text-slate-900' : 'text-white'}`}>
                                   {player.player_name}
                                 </span>
                                 <span

@@ -872,7 +872,7 @@ export default function WaiverWirePortal({
                         <td className="py-3.5 px-4 sm:px-6">
                           <div className="flex items-center gap-3">
                             <div className="flex flex-col">
-                              <span className="font-extrabold text-sm sm:text-base tracking-tight hover:text-amber-500 transition-colors">
+                              <span className="font-kanit font-medium text-base sm:text-lg tracking-tight hover:text-amber-500 transition-colors">
                                 {player.player_name}
                               </span>
                               <div className="flex items-center gap-1.5 mt-0.5">
@@ -1107,7 +1107,7 @@ export default function WaiverWirePortal({
                             />
                             <div>
                               <div className="flex items-center gap-2">
-                                <span className="font-extrabold text-sm tracking-tight">
+                                <span className="font-kanit font-medium text-base tracking-tight">
                                   {player.player_name}
                                 </span>
                                 <span className={`px-2 py-0.5 rounded-md text-[10px] font-black border ${posColor}`}>

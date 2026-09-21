@@ -1567,7 +1567,7 @@ export const ActiveSquadManager: React.FC<ActiveSquadManagerProps> = ({
 
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2">
-              <h4 className={`font-black text-sm truncate ${isLight ? 'text-slate-900' : 'text-white'}`}>
+              <h4 className={`font-kanit font-medium text-base truncate ${isLight ? 'text-slate-900' : 'text-white'}`}>
                 {player.player_name}
               </h4>
               <span
@@ -1779,7 +1779,7 @@ export const ActiveSquadManager: React.FC<ActiveSquadManagerProps> = ({
 
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2">
-              <h4 className={`font-black text-sm truncate ${isLight ? 'text-slate-900' : 'text-white'}`}>
+              <h4 className={`font-kanit font-medium text-base truncate ${isLight ? 'text-slate-900' : 'text-white'}`}>
                 {player.player_name}
               </h4>
               <span

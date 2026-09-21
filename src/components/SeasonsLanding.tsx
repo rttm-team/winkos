@@ -118,7 +118,7 @@ export const SeasonsLanding: React.FC<SeasonsLandingProps> = ({
                 {idx + 1}
               </span>
               <div className="min-w-0">
-                <div className={`text-xs font-bold truncate ${isLight ? 'text-slate-800' : 'text-slate-200'}`}>
+                <div className={`font-kanit font-medium text-xs truncate ${isLight ? 'text-slate-800' : 'text-slate-200'}`}>
                   {entry.teamName}
                 </div>
                 <div className="text-[10px] text-slate-500 truncate">{entry.name}</div>
@@ -324,7 +324,7 @@ export const SeasonsLanding: React.FC<SeasonsLandingProps> = ({
 
                         <td className="px-6 py-3.5">
                           <div className="flex flex-col">
-                            <span className={`text-sm font-black ${isLight ? 'text-slate-900' : 'text-white group-hover:text-cyan-400 transition-colors'}`}>
+                            <span className={`font-kanit font-medium text-base ${isLight ? 'text-slate-900' : 'text-white group-hover:text-cyan-400 transition-colors'}`}>
                               {gm.teamName}
                             </span>
                             <span className="text-[10px] font-bold text-slate-500 flex items-center gap-1 uppercase tracking-wide">

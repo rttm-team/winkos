@@ -4,6 +4,7 @@
 
 @theme {
   --font-bungee: "Bungee", cursive;
+  --font-kanit: "Kanit", sans-serif;
 }
 
 /* Eliminate mobile WebKit / Safari tap highlight white flash & flicker */
