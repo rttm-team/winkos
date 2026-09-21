@@ -608,9 +608,9 @@ export default function KeeperSelectionPortal({ gms, authedGm, theme = 'dark' }:
       }
 
       // Insert new keepers
-      const { data, error: insError } = await supabase
+      const { error } = await supabase
         .from('active_roster_players')
-        .insert(keeperPayload)
+        .upsert(keepersPayload, { onConflict: 'season_id, nhl_id' });
         .select();
 
       if (insError) {
