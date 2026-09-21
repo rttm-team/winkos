@@ -13,6 +13,12 @@ HEADERS = {
     "Prefer": "resolution=merge-duplicates"
 }
 
+# Browser User-Agent to avoid API CDN rate-limiting/blocking
+NHL_HEADERS = {
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36",
+    "Accept": "application/json"
+}
+
 # All 32 active NHL team tri-codes
 NHL_TEAMS = [
     'ANA', 'BOS', 'BUF', 'CAR', 'CBJ', 'CGY', 'CHI', 'COL', 
@@ -52,6 +58,25 @@ def calculate_rule_5_points(position, stats):
             (stats.get('shorthanded_points', 0) * 20)
         )
 
+def fetch_roster_with_retry(team, max_retries=3):
+    """Fetches a team roster from NHL API with retries and rate-limit handling."""
+    roster_url = f"https://api-web.nhle.com/v1/roster/{team}/current"
+    for attempt in range(1, max_retries + 1):
+        try:
+            res = requests.get(roster_url, headers=NHL_HEADERS, timeout=12)
+            if res.status_code == 200:
+                return res.json()
+            elif res.status_code == 429:
+                print(f"  ⚠️ Rate limited (429) on {team}. Retrying in 2s (Attempt {attempt}/{max_retries})...")
+                time.sleep(2)
+            else:
+                print(f"  ⚠️ Status {res.status_code} for {team}. Retrying in 1s...")
+                time.sleep(1)
+        except Exception as e:
+            print(f"  ⚠️ Request error on {team}: {str(e)}. Retrying...")
+            time.sleep(1)
+    return None
+
 def fetch_player_season_stats(nhl_id, target_season_int, position):
     """Fetches single-season stats for a player from the NHL Landing API."""
     api_url = f"https://api-web.nhle.com/v1/player/{nhl_id}/landing"
@@ -63,7 +88,7 @@ def fetch_player_season_stats(nhl_id, target_season_int, position):
     }
     
     try:
-        res = requests.get(api_url, timeout=10)
+        res = requests.get(api_url, headers=NHL_HEADERS, timeout=10)
         if res.status_code != 200:
             return stats
 
@@ -111,41 +136,35 @@ def seed_master_players():
     target_season_int = format_season_for_nhl_api("2026-2027")
     all_players = []
 
-    # 1. Fetch rosters across all 32 NHL teams
+    # 1. Fetch rosters across all 32 NHL teams with retries & headers
     for team in NHL_TEAMS:
         print(f"📥 Fetching roster for {team}...")
-        roster_url = f"https://api-web.nhle.com/v1/roster/{team}/current"
-        try:
-            res = requests.get(roster_url, timeout=10)
-            if res.status_code != 200:
-                print(f"⚠️ Could not fetch roster for {team}")
-                continue
+        roster_data = fetch_roster_with_retry(team)
+        if not roster_data:
+            print(f"❌ Failed to fetch roster for {team} after retries.")
+            continue
 
-            roster_data = res.json()
-            # Combine forwards, defensemen, and goalies
-            groups = [
-                (roster_data.get("forwards", []), "F"),
-                (roster_data.get("defensemen", []), "D"),
-                (roster_data.get("goalies", []), "G")
-            ]
+        groups = [
+            (roster_data.get("forwards", []), "F"),
+            (roster_data.get("defensemen", []), "D"),
+            (roster_data.get("goalies", []), "G")
+        ]
 
-            for players_list, pos_type in groups:
-                for p in players_list:
-                    nhl_id = p.get("id")
-                    first_name = p.get("firstName", {}).get("default", "")
-                    last_name = p.get("lastName", {}).get("default", "")
-                    full_name = f"{first_name} {last_name}".strip()
-                    pos_code = p.get("positionCode", pos_type)
+        for players_list, pos_type in groups:
+            for p in players_list:
+                nhl_id = p.get("id")
+                first_name = p.get("firstName", {}).get("default", "")
+                last_name = p.get("lastName", {}).get("default", "")
+                full_name = f"{first_name} {last_name}".strip()
+                pos_code = p.get("positionCode", pos_type)
 
-                    all_players.append({
-                        "nhl_id": nhl_id,
-                        "player_name": full_name,
-                        "position": pos_code,
-                        "nhl_team": team
-                    })
-        except Exception as e:
-            print(f"⚠️ Error fetching roster for {team}: {str(e)}")
-        time.sleep(0.1)
+                all_players.append({
+                    "nhl_id": nhl_id,
+                    "player_name": full_name,
+                    "position": pos_code,
+                    "nhl_team": team
+                })
+        time.sleep(0.25)  # Respect rate limit
 
     print(f"\n✅ Total active NHL players collected: {len(all_players)}")
     print("⏳ Fetching stats and upserting into Supabase 'nhl_master_players'...")
